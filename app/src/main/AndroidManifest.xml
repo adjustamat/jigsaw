@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+ xmlns:tools="http://schemas.android.com/tools"
+ >
+
+<!--
+generate puzzle from an image
+
+write help popups with explanation for options and menu items
+
+(generative options)
+(background options)
+(game options)
+
+define and name areas of the image
+move and rotate puzzle pieces (single and larger)
+try to put pieces together into larger pieces
+automate trying to put pieces together
+give hints or help (like these two pieces don't fit together or this belongs in that area)
+sort/group them manually or by properties
+move groups of pieces across the playing field
+search for them, individually and as part of larger pieces/groups
+lock them in place
+select or change background
+
+
+
+
+-->
+   <application android:allowBackup="true"
+    android:dataExtractionRules="@xml/data_extraction_rules"
+    android:fullBackupContent="@xml/backup_rules"
+    android:icon="@mipmap/ic_launcher"
+    android:label="@string/app_name"
+    android:roundIcon="@mipmap/ic_launcher_round"
+    android:supportsRtl="true"
+    android:theme="@style/Theme.JigsawPuzzleFLOSS"
+    tools:targetApi="31"
+    >
+      <activity android:name=".MainActivity"
+       android:exported="true"
+       >
+         <intent-filter>
+            <action android:name="android.intent.action.MAIN"/>
+
+            <category android:name="android.intent.category.LAUNCHER"/>
+         </intent-filter>
+      </activity>
+   </application>
+
+</manifest>
