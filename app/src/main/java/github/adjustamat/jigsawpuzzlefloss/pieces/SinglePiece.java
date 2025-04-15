@@ -1,7 +1,6 @@
 package github.adjustamat.jigsawpuzzlefloss.pieces;
 
 import android.graphics.Path;
-import android.graphics.Path.Op;
 import android.graphics.Point;
 import android.graphics.RectF;
 import android.graphics.drawable.shapes.PathShape;
@@ -14,67 +13,64 @@ import github.adjustamat.jigsawpuzzlefloss.game.ImagePuzzle;
 public class SinglePiece
  extends AbstractPiece
 {
-
-final EdgeType left;
-final EdgeType top;
-final EdgeType right;
-final EdgeType bottom;
-final RectF edgeWidths;
-
-final Point correctPlace;
-
-//PointF imageCoordinates; // use imageMask instead
-
-ImagePuzzle.Area area;
-
-PathShape imageMask;
-//Shape completeEdgePath;
-//Shape outline;
-
-LargerPiece largerPieceParent;
-Point positionInLargerPiece;
+// ImagePuzzle.Area areaParent; // can be calculated when needed, instead of stored in memory.
+// LargerPiece largerPieceParent;
+// Point positionInLargerPiece;
 
 public SinglePiece(Box box, Point coordinates,
- float stdWidth, float stdHeight, RectF widths,
  EdgeType left, EdgeType top, EdgeType right, EdgeType bottom,
- Path path1, Path path2, Path path3, Path path4
-)
+ SVGPath[] rotatedPaths, RectF edgeWidths
+) // TODO: do not store it as Path objects, but as instructions that can be pre-translated and mirrored, rotated and such - by my own algorithm which has known and unchanging rotating standard. implement as PathIterator perhaps.
 {
    super(box);
    this.correctPlace = coordinates;
-   this.edgeWidths = widths;
-   this.left = left;
-   this.top = top;
-   this.right = right;
-   this.bottom = bottom;
+   this.edgeWidths = edgeWidths;
+   this.leftEdge = left;
+   this.topEdge = top;
+   this.rightEdge = right;
+   this.bottomEdge = bottom;
+
+   // LATER: don't worry about drawing and lighting of animation-rotated pieces yet!
+   // TODO: just draw top and right as light, and bottom left as dark. less opacity when pieces are put together into LargerPieces.
    
-   
-   Path path = new Path(path1);
-   path.op(path2, Op.UNION);
-   path.op(path3, Op.UNION);
-   path.op(path4, Op.UNION);
-   imageMask = new PathShape(path, stdWidth, stdHeight);
+   // rotatedPaths come from pre-rotated (in all directions) instances loaded when starting the app.
+   Path path = new Path(rotatedPaths[0]); //  // 0: left 1/2
+    // TODO: translate by (coordinates.x * SIDE_SIZE, coordinates.y * SIDE_SIZE)
+
+   // 1: left 2/2. 2: top 1/2. 3: top 2/2. 4: right 1/2. 5: right 2/2. 6: bottom 1/2. 7: bottom 2/2.
+   for(Path rp:rotatedPaths){
+      // TODO: use PathIterator to add all but the first moveTo (all rLineTo and rCubicTo).
+      PathIterator i = rp.getIterator();
+      i.next(); // skip first!
+      while(i.hasNext()){
+         path.add(i.next()); // TODO: translate by SIDE_SIZE (y for bottom, x for right). tranlate all "2/2" by HALF_SIZE!
+      }
+   }
+    // TODO: translate by (coordinates.x * SIDE_SIZE, coordinates.y * SIDE_SIZE)
+
+   //path.op(path4, Op.UNION); this does not work.
+
+   imageMask = new PathShape(path, 
+   SIDE_SIZE+edgeWidths.left+edgeWidths.right, 
+   SIDE_SIZE+edgeWidths.top+edgeWidths.bottom);
 
 }
 
-public boolean isLeftEdge()
-{
-   return left == EdgeType.OUTER_EDGE;
+public boolean hasLarger(){
+   return largerPieceParent != null;
 }
 
-public boolean isTopEdge()
-{
-   return top == EdgeType.OUTER_EDGE;
+void setLargerPiece(LargerPiece parent, Point position){
+   largerPieceParent = parent;
+   positionInLargerPiece = position;
 }
 
-public boolean isRightEdge()
-{
-   return right == EdgeType.OUTER_EDGE;
+void insertPieceLeft(){
+   positionInLargerPiece.x++;
 }
 
-public boolean isBottomEdge()
-{
-   return bottom == EdgeType.OUTER_EDGE;
+void insertPieceTop(){
+   positionInLargerPiece.y++;
 }
 
 public boolean isEdgePiece()
