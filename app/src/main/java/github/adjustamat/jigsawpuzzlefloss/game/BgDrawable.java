@@ -1,5 +1,7 @@
 package github.adjustamat.jigsawpuzzlefloss.game;
 
+import github.adjustamat.jigsawpuzzlefloss.pieces.AbstractPiece.Direction;
+
 public class BgDrawable{
 
     public static BgDrawable edge(int x, int y, Direction dir){
