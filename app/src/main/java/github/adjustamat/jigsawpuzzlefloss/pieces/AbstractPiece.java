@@ -1,9 +1,9 @@
 package github.adjustamat.jigsawpuzzlefloss.pieces;
 
+import android.graphics.Path;
 import android.graphics.Point;
 import android.graphics.PointF;
 import android.graphics.RectF;
-import android.graphics.drawable.shapes.PathShape;
 
 import androidx.annotation.NonNull;
 
@@ -28,53 +28,6 @@ public enum EdgeType
    OUT
 }
 
-public enum Direction
-{
-   NORTH(1, 2, 0, 0, 1, 0, 0, -1),
-   EAST(2, 1, 0, 1, 0, 0, 1, 0),
-   SOUTH(1, 2, 0, 0, 0, 1, 0, 1),
-   WEST(2,1,1,0,0,0,-1,0);
-   public final int startWidth;
-   public final int startHeight;
-   public final int startX1;
-   public final int startX2;
-   public final int startY1;
-   public final int startY2;
-   public final int directionX;
-   public final int directionY;
-   //public final int ;
-   //public final int ;
-   //public final int ;
-   
-   Direction(int startWidth, int startHeight,
-    int startX1, int startX2, int startY1, int startY2,
-    int directionX, int directionY)
-   {
-      this.startWidth = startWidth;
-      this.startHeight = startHeight;
-      this.startX1 = startX1;
-      this.startX2 = startX2;
-      this.startY1 = startY1;
-      this.startY2 = startY2;
-      this.directionX = directionX;
-      this.directionY = directionY;
-   }
-   
-   public Direction opposite()
-   {
-      switch (this) {
-      case NORTH:
-         return SOUTH;
-      case SOUTH:
-         return NORTH;
-      case EAST:
-         return WEST;
-      default:
-         return EAST;
-      }
-   }
-} // enum Direction
-
 Direction currentRotation;
 
 EdgeType leftEdge;
@@ -85,7 +38,7 @@ EdgeType bottomEdge;
 /**
  * The mask of the ImagePuzzle image. Consists of {@link #outline} turned into a Shape.
  */
-PathShape imageMask;
+Path imageMask;
 /**
  * The outline to draw when rotating or when drawing embossed 3D-effect.
  */

@@ -1,6 +1,6 @@
 package github.adjustamat.jigsawpuzzlefloss.game;
 
-import github.adjustamat.jigsawpuzzlefloss.pieces.AbstractPiece.Direction;
+import github.adjustamat.jigsawpuzzlefloss.pieces.Direction;
 
 public class BgDrawable{
 

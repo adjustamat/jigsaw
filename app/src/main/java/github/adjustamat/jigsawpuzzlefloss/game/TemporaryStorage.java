@@ -31,19 +31,19 @@ private TemporaryStorage(){
 //   add(piece,from);
 //}
 
-private void add(AbstractPieces piece, Container from){
-
-}
-
-@Override
-public boolean moveHere(AbstractPieces piece, Container from)
-{
-   if(from == this)
-      return false;
-   //if()
-     add(piece,from);
-     return true;
-}
+//private void add(AbstractPieces piece, Container from){
+//
+//}
+//
+//@Override
+//public boolean moveHere(AbstractPieces piece, Container from)
+//{
+//   if(from == this)
+//      return false;
+//   //if()
+//     add(piece,from);
+//     return true;
+//}
 
 @Override
 public boolean spreadOutGroup(Group group)

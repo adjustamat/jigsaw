@@ -1,5 +1,6 @@
 package github.adjustamat.jigsawpuzzlefloss.game;
 
+import github.adjustamat.jigsawpuzzlefloss.pieces.AbstractPiece;
 import github.adjustamat.jigsawpuzzlefloss.pieces.Group;
 
 /**
@@ -9,14 +10,22 @@ public class PlayField
  extends Container
 {
 
-@Override
+public void add(AbstractPiece p)
+{
+
+}
+
+public void remove(AbstractPiece p)
+{
+
+}
+
 public boolean spreadOutGroup(Group group)
 {
    // TODO!
    return true;
 }
 
-@Override
 public boolean pileUpGroup(Group group)
 {
    // TODO!

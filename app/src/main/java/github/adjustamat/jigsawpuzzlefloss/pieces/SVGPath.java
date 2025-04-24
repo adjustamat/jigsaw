@@ -3,15 +3,42 @@ package github.adjustamat.jigsawpuzzlefloss.pieces;
 import android.graphics.Path;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 
 public class SVGPath
 {
-public static final int NECK_NARROW = 0;
-public static final int NECK_MID = 1;
-public static final int NECK_WIDE = 2;
-public static final int CURV_NONE = 0;
-public static final int CURV_SMALL = 1;
-public static final int CURV_BIG = 2;
+// TODO: this class should be abstract and have no fields! Implement CombinedPath and HalfEdge differently.
+// TODO: rename this abstract class "JigsawEdge". rename Segment class "SVG".
+
+//public static final int NECK_NARROW = 0;
+//public static final int NECK_MID = 1;
+//public static final int NECK_WIDE = 2;
+//public static final int CURV_NONE = 0;
+//public static final int CURV_SMALL = 1;
+//public static final int CURV_BIG = 2;
+
+public static final SVGPath NORTH_EDGE = new SVGPath();
+
+public static class CombinedPath extends SVGPath{
+private LinkedList<SVGPath> children;
+
+}
+
+public static class HalfEdge extends SVGPath{
+// these are the objects in the pool.
+}
+
+public static class DoubleEdge extends SVGPath{
+// two HalfEdges. can be combined into SinglePieceShapes and LargerPiece outlines, or stored in LargerPiece.innerEdges.
+}
+
+public static class SinglePieceShape extends SVGPath{
+// a combined path which can be made into a graphics.Path!
+}
+
+public static class StraightEdge extends SVGPath{
+ // TODO: remove WholeEdge class and getWholeEdge() method, replace with constructor here!
+}
 
 /**
  * Returns the pool from which to get paths with the selected neckWidth and curvature, like this:
@@ -268,13 +295,7 @@ private static class WholeEdge
 private final ArrayList<Segment> list;
 public float width = 0f;
 
-private SVGPath()
-{
-   list = new ArrayList<>(1);
-   list.add(new WholeEdge());
-}
-
-public static SVGPath getWholeEdge(AbstractPiece.Direction dir)
+public static SVGPath getWholeEdge(Direction dir)
 {
    SVGPath ret = new SVGPath();
    switch (dir) {
@@ -288,6 +309,12 @@ public static SVGPath getWholeEdge(AbstractPiece.Direction dir)
       ret.transform(Rotate.COUNTERCLOCKWISE);
    }
    return ret;
+}
+
+private SVGPath()
+{
+   list = new ArrayList<>(1);
+   list.add(new WholeEdge());
 }
 
 public SVGPath(SVGPath original)

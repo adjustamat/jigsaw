@@ -2,7 +2,6 @@ package github.adjustamat.jigsawpuzzlefloss.pieces;
 
 import android.graphics.Point;
 import android.graphics.PointF;
-import android.graphics.drawable.shapes.Shape;
 
 import java.util.ArrayList;
 
@@ -14,25 +13,23 @@ import github.adjustamat.jigsawpuzzlefloss.game.BgDrawable;
 public class LargerPiece
  extends AbstractPiece
 {
-
-public static final int BIT_NW = 0b1;
-public static final int BIT_SW = 0b10;
-public static final int BIT_SE = 0b100;
-public static final int BIT_NE = 0b1000;
-public static final int BITMASK_CORNERS = 0b1111;
-public static final int BIT_WEST = 0b10000;
-public static final int BIT_SOUTH = 0b100000;
-public static final int BIT_EAST = 0b1000000;
-public static final int BIT_NORTH = 0b10000000;
-public static final int BITS_BG = 0b111111111;
-
+//public static final int BIT_NW = 0b1;
+//public static final int BIT_SW = 0b10;
+//public static final int BIT_SE = 0b100;
+//public static final int BIT_NE = 0b1000;
+//public static final int BITMASK_CORNERS = 0b1111;
+//public static final int BIT_WEST = 0b10000;
+//public static final int BIT_SOUTH = 0b100000;
+//public static final int BIT_EAST = 0b1000000;
+//public static final int BIT_NORTH = 0b10000000;
+//public static final int BITS_BG = 0b111111111;
 
 ArrayList<Object> matrix;
 int matrixWidth;
 int matrixHeight;
 int pieceCount;
 
-Shape combinedImageMask;
+ArrayList<SVGPath> innerEdges;
 
 /*private LargerPiece(int width, int height, Container parent){
    super(parent);
@@ -51,7 +48,7 @@ private void init(int width, int height)
    matrixWidth = width;
    matrixHeight = height;
    
-   matrix = new ArrayList();
+   matrix = new ArrayList<>();
    int len = width * height;
    for (int i = 0; i < len; i++) {
       matrix.add(null);
@@ -61,10 +58,10 @@ private void init(int width, int height)
 private LargerPiece(SinglePiece p1, SinglePiece p2, Direction dir)
 {
    super(p1.containerParent);
-   init(dir.startWidth, dir.startHeight);
+   init(dir.initWidth, dir.initHeight);
    pieceCount = 2;
-   set(dir.startX1, dir.startY1, p1);
-   set(dir.startX2, dir.startY2, p2);
+   set(dir.initX1, dir.initY1, p1);
+   set(dir.initX2, dir.initY2, p2);
 }
 
 private LargerPiece(LargerPiece p1, LargerPiece p2, Point point1, Point point2, Direction dir)
@@ -78,22 +75,41 @@ private LargerPiece(LargerPiece p1, LargerPiece p2, Point point1, Point point2, 
 //    p1.containerParent
 //   );
    pieceCount = p1.pieceCount + p2.pieceCount;
-   int x1Offset = ; // TODO: make sure to care about Direction dir!
-   int x2Offset = ;
-   int y1Offset = ;
-   int y2Offset = ;
-   init(Math.max(), Math.max());
+   
+   int diffX = point1.x + dir.directionX - point2.x;
+   int diffY = point1.y + dir.directionY - point2.y;
+   int offsetX1 = diffX < 0 ?-diffX :0;
+   int offsetX2 = diffX > 0 ?diffX :0;
+   int offsetY1 = diffY < 0 ?-diffY :0;
+   int offsetY2 = diffY > 0 ?diffY :0;
+   
+   init(Math.max(offsetX1 + p1.matrixWidth, offsetX2 + p2.matrixWidth),
+    Math.max(offsetY1 + p1.matrixHeight, offsetY2 + p2.matrixHeight));
    
    // combine matrices
+   int matrixX = 0;
+   int matrixY = 0;
    for (Object obj: p1.matrix) {
-      set(p.positionInLargerPiece.x + x1Offset,
-       p.positionInLargerPiece.y + y1Offset,
-       p);
+      if (obj != null)
+         set(matrixX + offsetX1,
+          matrixY + offsetY1);
+      matrixX++;
+      if (matrixX == p1.matrixWidth) {
+         matrixY++;
+         matrixX = 0;
+      }
    }
+   matrixX = 0;
+   matrixY = 0;
    for (Object obj: p2.matrix) {
-      set(p.positionInLargerPiece.x + x2Offset,
-       p.positionInLargerPiece.y + y2Offset,
-       p);
+      if (obj != null)
+         set(matrixX + offsetX2,
+          matrixY + offsetY2);
+      matrixX++;
+      if (matrixX == p2.matrixWidth) {
+         matrixY++;
+         matrixX = 0;
+      }
    }
 }
 
