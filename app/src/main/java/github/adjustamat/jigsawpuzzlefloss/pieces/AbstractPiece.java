@@ -36,25 +36,18 @@ EdgeType rightEdge;
 EdgeType bottomEdge;
 
 /**
- * The mask of the ImagePuzzle image. Consists of {@link #outline} turned into a Shape.
+ * The mask of the ImagePuzzle image. Consists of the outline SVGPath turned into a graphics.Path.
  */
 Path imageMask;
-/**
- * The outline to draw when rotating or when drawing embossed 3D-effect.
- */
-SVGPath outline;
-RectF edgeWidths;
-
 Point correctPuzzlePosition;
 
 Group groupParent;
-Integer indexInGroup;
+Integer indexInGroup; // null when not in any Group.
 
 @NonNull Container containerParent;
 public int indexInContainer;
 PointF positionInContainer; // null when container is Box. (use indexInContainer instead)
 boolean lockedInPlace; // always false when container is Box.
-
 
 protected AbstractPiece(@NonNull Container containerParent)
 {
@@ -70,6 +63,8 @@ public @NonNull Container getContainer()
 {
    return containerParent;
 }
+
+public abstract RectF getEdgeWidths();
 
 public boolean isLockedInPlace()
 {

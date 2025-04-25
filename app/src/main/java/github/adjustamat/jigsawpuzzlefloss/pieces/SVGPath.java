@@ -5,39 +5,174 @@ import android.graphics.Path;
 import java.util.ArrayList;
 import java.util.LinkedList;
 
-public class SVGPath
+public abstract class SVGPath
 {
-// TODO: this class should be abstract and have no fields! Implement CombinedPath and HalfEdge differently.
-// TODO: rename this abstract class "JigsawEdge". rename Segment class "SVG".
-
-//public static final int NECK_NARROW = 0;
-//public static final int NECK_MID = 1;
-//public static final int NECK_WIDE = 2;
-//public static final int CURV_NONE = 0;
-//public static final int CURV_SMALL = 1;
-//public static final int CURV_BIG = 2;
-
-public static final SVGPath NORTH_EDGE = new SVGPath();
-
-public static class CombinedPath extends SVGPath{
-private LinkedList<SVGPath> children;
-
+public static class LargerPieceOutline
+ extends SVGPath
+{
+   private final LinkedList<WholeEdge> children = new LinkedList<>();
+   
+   public LargerPieceOutline()
+   {
+      // TODO: use a LinkedList internally, so that I can inset the path of a new piece into a LargerPiece shape.
+      //  keep a record of which piece (x,y) is where in the linked list! this is not needed for innerEdges.
+   }
+   
+   public void toPath(Path path)
+   {
+      for (WholeEdge child: children) {
+         child.toPath(path);
+      }
+   }
 }
 
-public static class HalfEdge extends SVGPath{
-// these are the objects in the pool.
+public static class SinglePieceOutline
+ extends SVGPath
+{
+   final WholeEdge north;
+   final WholeEdge east;
+   final WholeEdge south;
+   final WholeEdge west;
+   
+   public SinglePieceOutline(WholeEdge north, WholeEdge east, WholeEdge south, WholeEdge west)
+   {
+      this.north = north;
+      this.east = east;
+      this.south = south;
+      this.west = west;
+   }
+   
+   public void toPath(Path path)
+   {
+      north.toPath(path);
+      east.toPath(path);
+      south.toPath(path);
+      west.toPath(path);
+   }
 }
 
-public static class DoubleEdge extends SVGPath{
-// two HalfEdges. can be combined into SinglePieceShapes and LargerPiece outlines, or stored in LargerPiece.innerEdges.
+public static abstract class WholeEdge
+{
+   public abstract void toPath(Path path);
+   public abstract float getEdgeWidth();
 }
 
-public static class SinglePieceShape extends SVGPath{
-// a combined path which can be made into a graphics.Path!
+/**
+ * Two HalfEdges that makes a WholeEdge.
+ * Can be further combined into SinglePieceOutlines, LargerPieceOutlines, or stored in LargerPiece innerEdges.
+ */
+public static class DoubleEdge
+ extends WholeEdge
+{
+   //
+   final HalfEdge half1;
+   final HalfEdge half2;
+   
+   DoubleEdge(HalfEdge firstHalf, HalfEdge secondHalf)
+   {
+      half1 = firstHalf;
+      half2 = secondHalf;
+   }
+   
+   public void toPath(Path path)
+   {
+      half1.toPath(path);
+      half2.toPath(path);
+   }
+   
+   public float getEdgeWidth()
+   {
+      return Math.max(half1.edgeWidth, half2.edgeWidth);
+   }
 }
 
-public static class StraightEdge extends SVGPath{
- // TODO: remove WholeEdge class and getWholeEdge() method, replace with constructor here!
+public static class StraightEdge
+ extends WholeEdge
+{
+   public static final StraightEdge STRAIGHT_NORTH = new StraightEdge(new float[]{120f, 0f});
+   public static final StraightEdge STRAIGHT_EAST = new StraightEdge(new float[]{0f, 120f});
+   public static final StraightEdge STRAIGHT_SOUTH = new StraightEdge(new float[]{-120f, 0f});
+   public static final StraightEdge STRAIGHT_WEST = new StraightEdge(new float[]{0f, -120f});
+   
+   private final float[] data;
+   
+   private StraightEdge(float[] data)
+   {
+      this.data = data;
+   }
+   
+   public void toPath(Path path)
+   {
+      path.rLineTo(data[0], data[1]);
+   }
+   
+   public float getEdgeWidth()
+   {
+      return 0f;
+   }
+}
+
+/**
+ * HalfEdges are generated for the pool.
+ */
+public static class HalfEdge
+{
+   final ArrayList<Cubic> segments;
+   
+   float edgeWidth;
+   
+   /**
+    * Create a NORTH OUT HalfEdge.
+    * @param allData data for all Cubic segments of this SVGPath.
+    */
+   private HalfEdge(float[] allData)
+   {
+      segments = new ArrayList<>(4); // 4 segments
+      for (int i = 0; i < allData.length; i += 6) { // 6 float values per segment (rCubicTo)
+         segments.add(new Cubic(allData, i, true));
+      }
+   }
+   
+   private HalfEdge(ArrayList<Cubic> segments)
+   {
+      this.segments = segments;
+   }
+   
+   HalfEdge setEdgeWidth(float f)
+   {
+      edgeWidth = f;
+      return this;
+   }
+   
+   public void toPath(Path path)
+   {
+      for (Cubic segment: segments) {
+         segment.toPath(path);
+      }
+   }
+   
+   HalfEdge getTransformed(Direction dir)
+   {
+      ArrayList<Cubic> ret = new ArrayList<>(4);
+      for (Cubic segm: segments) {
+         Cubic newSegment;
+         switch (dir) {
+         case NORTH:
+            newSegment = new Cubic(segm.flipIn());
+            break;
+         case EAST:
+            newSegment = new Cubic(segm.rotateEAST());
+            break;
+         case WEST:
+            newSegment = new Cubic(segm.rotateWEST());
+            break;
+         default:// case SOUTH:
+            newSegment = new Cubic(segm.rotateSOUTH());
+         }
+         ret.add(newSegment);
+      }
+      return new HalfEdge(ret);
+   }
 }
 
 /**
@@ -45,9 +180,9 @@ public static class StraightEdge extends SVGPath{
  * pool [NECK*6 + CURV*2 + (secondHalf?1:0)] [(inward?4:0) + direction_ordinal]
  * @return the pool of pre-rotated paths
  */
-public static SVGPath[][] generateAllJigsaws()
+public static HalfEdge[][] generateAllJigsaws()
 {
-   SVGPath[][] ret = new SVGPath[3 * 3 * 2][];
+   HalfEdge[][] ret = new HalfEdge[3 * 3 * 2][];
    int reti = 0;
    for (float neckWidth = 0f; neckWidth < 13f; neckWidth += 5f) { // from narrow to wide
       for (float curvature = 0f; curvature < 6.25f; curvature += 2.5f) { // from straight to curved
@@ -86,85 +221,76 @@ public static SVGPath[][] generateAllJigsaws()
    return ret;
 }
 
-static SVGPath[] generateSecondHalf(float neckWidth, float curvature)
+static HalfEdge[] generateSecondHalf(float neckWidth, float curvature)
 {
-   SVGPath csecond_north_out = new SVGPath(new float[]{
+   HalfEdge csecond_north_out = new HalfEdge(new float[]{
     15f, 0f,/*<-cp1*/ 22.5f, 7.5f,/*<-cp2*/ 22.5f, 17.5f,//<-endPoint
     0f, -10f,/*<-cp1*/ -17.5f + neckWidth, -17.5f,/*<-cp2*/ -15 + neckWidth, 25,//<-endPoint
     2.5f, 7.5f,/*<-cp1*/ 32.5f - neckWidth, 7.5f + curvature,/*<-cp2*/ 47.5f - neckWidth, 7.5f + curvature,
     5f, 0f,/*<-cp1*/ 45f, -curvature,/*<-cp2*/ 45f, -curvature//<-endPoint
-   }).setEdgeWidth(0f);
-   SVGPath csecond_east_out = new SVGPath(csecond_north_out).transform(Rotate.CLOCKWISE)
-    .setEdgeWidth(0f);
-   SVGPath csecond_south_out = new SVGPath(csecond_north_out).transform(Rotate.TWICE)
-    .setEdgeWidth(0f);
-   SVGPath csecond_west_out = new SVGPath(csecond_north_out).transform(Rotate.COUNTERCLOCKWISE)
-    .setEdgeWidth(0f);
-   // TODO: edgeWidths depend on curvature and IN/OUT
-   SVGPath csecond_north_in = new SVGPath(csecond_north_out).transform(Rotate.FLIP)
-    .setEdgeWidth(0f);
-   SVGPath csecond_east_in = new SVGPath(csecond_north_in).transform(Rotate.CLOCKWISE)
-    .setEdgeWidth(0f);
-   SVGPath csecond_south_in = new SVGPath(csecond_north_in).transform(Rotate.TWICE)
-    .setEdgeWidth(0f);
-   SVGPath csecond_west_in = new SVGPath(csecond_north_in).transform(Rotate.COUNTERCLOCKWISE)
-    .setEdgeWidth(0f);
+   }).setEdgeWidth(25 + 7.5f + 17.5f);
+   HalfEdge csecond_east_out = csecond_north_out.getTransformed(Direction.EAST)
+    .setEdgeWidth(csecond_north_out.edgeWidth);
+   HalfEdge csecond_south_out = csecond_north_out.getTransformed(Direction.SOUTH)
+    .setEdgeWidth(csecond_north_out.edgeWidth);
+   HalfEdge csecond_west_out = csecond_north_out.getTransformed(Direction.WEST)
+    .setEdgeWidth(csecond_north_out.edgeWidth);
    
-   return new SVGPath[]{
+   HalfEdge csecond_north_in = csecond_north_out.getTransformed(Direction.NORTH)
+    .setEdgeWidth(curvature);
+   HalfEdge csecond_east_in = csecond_north_in.getTransformed(Direction.EAST)
+    .setEdgeWidth(curvature);
+   HalfEdge csecond_south_in = csecond_north_in.getTransformed(Direction.SOUTH)
+    .setEdgeWidth(curvature);
+   HalfEdge csecond_west_in = csecond_north_in.getTransformed(Direction.WEST)
+    .setEdgeWidth(curvature);
+   
+   return new HalfEdge[]{
     csecond_north_out, csecond_east_out, csecond_south_out, csecond_west_out,
     csecond_north_in, csecond_east_in, csecond_south_in, csecond_west_in
    };
 }
 
-static SVGPath[] generateFirstHalf(float neckWidth, float curvature)
+static HalfEdge[] generateFirstHalf(float neckWidth, float curvature)
 {
-   SVGPath cfirst_north_out = new SVGPath(new float[]{
+   HalfEdge cfirst_north_out = new HalfEdge(new float[]{
     0f, 0f,/*<-cp1*/ 40f, curvature,/*<-cp2*/ 45f, curvature,//<-endPoint
     15f, 0f,/*<-cp1*/ 45f - neckWidth, -curvature,/*<-cp2*/ 47.5f - neckWidth, -7.5f - curvature,
     2.5f, -7.5f,/*<-cp1*/ -15 + neckWidth, -15f,/*<-cp2*/ -15 + neckWidth, -25f,//<-endPoint
     0f, -10f,/*<-cp1*/ 7.5f, -17.5f,/*<-cp2*/ 22.5f, -17.5f//<-endPoint
-   }).setEdgeWidth(0f);
-   SVGPath cfirst_east_out = new SVGPath(cfirst_north_out).transform(Rotate.CLOCKWISE)
-    .setEdgeWidth(0f);
-   SVGPath cfirst_south_out = new SVGPath(cfirst_north_out).transform(Rotate.TWICE)
-    .setEdgeWidth(0f);
-   SVGPath cfirst_west_out = new SVGPath(cfirst_north_out).transform(Rotate.COUNTERCLOCKWISE)
-    .setEdgeWidth(0f);
-   // TODO: edgeWidths depend on curvature and IN/OUT
-   SVGPath cfirst_north_in = new SVGPath(cfirst_north_out).transform(Rotate.FLIP)
-    .setEdgeWidth(0f);
-   SVGPath cfirst_east_in = new SVGPath(cfirst_north_in).transform(Rotate.CLOCKWISE)
-    .setEdgeWidth(0f);
-   SVGPath cfirst_south_in = new SVGPath(cfirst_north_in).transform(Rotate.TWICE)
-    .setEdgeWidth(0f);
-   SVGPath cfirst_west_in = new SVGPath(cfirst_north_in).transform(Rotate.COUNTERCLOCKWISE)
-    .setEdgeWidth(0f);
+   }).setEdgeWidth(25 + 7.5f + 17.5f);
+   HalfEdge cfirst_east_out = cfirst_north_out.getTransformed(Direction.EAST)
+    .setEdgeWidth(cfirst_north_out.edgeWidth);
+   HalfEdge cfirst_south_out = cfirst_north_out.getTransformed(Direction.SOUTH)
+    .setEdgeWidth(cfirst_north_out.edgeWidth);
+   HalfEdge cfirst_west_out = cfirst_north_out.getTransformed(Direction.WEST)
+    .setEdgeWidth(cfirst_north_out.edgeWidth);
    
-   return new SVGPath[]{
+   HalfEdge cfirst_north_in = cfirst_north_out.getTransformed(Direction.NORTH)
+    .setEdgeWidth(curvature);
+   HalfEdge cfirst_east_in = cfirst_north_in.getTransformed(Direction.EAST)
+    .setEdgeWidth(curvature);
+   HalfEdge cfirst_south_in = cfirst_north_in.getTransformed(Direction.SOUTH)
+    .setEdgeWidth(curvature);
+   HalfEdge cfirst_west_in = cfirst_north_in.getTransformed(Direction.WEST)
+    .setEdgeWidth(curvature);
+   
+   return new HalfEdge[]{
     cfirst_north_out, cfirst_east_out, cfirst_south_out, cfirst_west_out,
     cfirst_north_in, cfirst_east_in, cfirst_south_in, cfirst_west_in
    };
 }
 
-private enum Rotate
-{
-   CLOCKWISE,
-   COUNTERCLOCKWISE,
-   TWICE,
-   FLIP
-   // , CW_FLIP, CCW_FLIP, TWICE_FLIP;
-}
-
-public static class Segment
+public static class Cubic
 {
    public final float[] data;
    
-   protected Segment(float[] data)
+   Cubic(float[] data)
    {
       this.data = data;
    }
    
-   Segment(float[] allData, int dataOffset, boolean from102to60)
+   Cubic(float[] allData, int dataOffset, boolean from102to60)
    {
       this.data = new float[6];
       for (int i = 0; i < data.length; i++) {
@@ -174,205 +300,49 @@ public static class Segment
       }
    }
    
-   Segment(Segment original)
-   {
-      this(original.data, 0, false);
-   }
-   
    public void toPath(Path path)
    {
-//            switch(verb){
-//            case LINE:
-//                path.rLineTo(data[0],data[1]);
-//                break;
-//            case CUBIC:
       path.rCubicTo(data[0], data[1], data[2], data[3], data[4], data[5]);
-//                break;
-//            }
    }
    
-   private void turn(int i1, int i2)
+   float[] rotateEAST()
    {
-      float tmp = data[i1];
-      data[i1] = data[i2];
-      data[i2] = tmp;
+      // rotate clockwise - exchange x and (inverted) y values:
+      return new float[]{-data[1], data[0], -data[3], data[2], -data[5], data[4]};
    }
    
-   /**
-    * Turn this Segment from NORTH to EAST
-    */
-   void rotateCW()
+   float[] rotateWEST()
    {
-      // exchange x and y values:
-      turn(0, 1);
-      turn(2, 3);
-      turn(4, 5);
-      // invert x-values (previously y-values):
-      data[0] = -data[0];
-      data[2] = -data[2];
-      data[4] = -data[4];
+      // rotate counterclockwise - exchange (inverted) x and y values:
+      return new float[]{-data[1], data[0], -data[3], data[2], -data[5], data[4]};
    }
    
-   
-   /**
-    * Turn this Segment from NORTH to WEST
-    */
-   void rotateCCW()
+   float[] rotateSOUTH()
    {
-      // exchange x and y values:
-      turn(0, 1);
-      turn(2, 3);
-      turn(4, 5);
-      // invert y-values (previously x-values):
-      data[1] = -data[1];
-      data[3] = -data[3];
-      data[5] = -data[5];
+      // rotate twice - invert x-values and y-values:
+      return new float[]{-data[0], -data[1], -data[2], -data[3], -data[4], -data[5]};
    }
    
-   /**
-    * Turn this Segment from NORTH to SOUTH
-    */
-   void rotateTwice()
+   float[] flipIn()
    {
-      // invert x-values:
-      data[0] = -data[0];
-      data[2] = -data[2];
-      data[4] = -data[4];
-      // invert y-values:
-      data[1] = -data[1];
-      data[3] = -data[3];
-      data[5] = -data[5];
+      // Mirror this Cubic segment, turning it from EdgeType OUT to IN - invert y-values:
+      return new float[]{data[0], -data[1], data[2], -data[3], data[4], -data[5]};
    }
-   
-   /**
-    * Mirror this Segment, turning it from EdgeType OUT to IN.
-    */
-   void flip()
-   {
-      // invert y-values:
-      data[1] = -data[1];
-      data[3] = -data[3];
-      data[5] = -data[5];
-   }
-} // class Segment
+} // class Cubic
 
-private static class WholeEdge
- extends Segment
-{
-   WholeEdge()
-   {
-      super(new float[]{120f, 0f});
-   }
-   
-   void rotateTwice()
-   {
-      data[0] = -data[0];
-   }
-   
-   void rotateCCW()
-   {
-      data[1] = -data[0];
-      data[0] = 0f;
-   }
-   
-   void rotateCW()
-   {
-      data[1] = data[0];
-      data[0] = 0f;
-   }
-   
-   void flip()
-   {
-      // do nothing.
-   }
-   
-   public void toPath(Path path)
-   {
-      path.rLineTo(data[0], data[1]);
-   }
-}
+public abstract void toPath(Path path);
 
-private final ArrayList<Segment> list;
-public float width = 0f;
-
-public static SVGPath getWholeEdge(Direction dir)
-{
-   SVGPath ret = new SVGPath();
-   switch (dir) {
-   case EAST:
-      ret.transform(Rotate.CLOCKWISE);
-      break;
-   case SOUTH:
-      ret.transform(Rotate.TWICE);
-      break;
-   case WEST:
-      ret.transform(Rotate.COUNTERCLOCKWISE);
-   }
-   return ret;
-}
-
-private SVGPath()
-{
-   list = new ArrayList<>(1);
-   list.add(new WholeEdge());
-}
-
-public SVGPath(SVGPath original)
-{
-   list = new ArrayList<>();
-   for (Segment segment: original.list) {
-      list.add(new Segment(segment));
-   }
-}
-
-private SVGPath(float[] allData)
-{
-   list = new ArrayList<>(4); // 4 segments
-   for (int i = 0; i < allData.length; i += 6) { // 6 float values per segment (rCubicTo)
-      list.add(new Segment(allData, i, true));
-   }
-}
-
-private SVGPath setEdgeWidth(float f)
-{
-   width = f;
-   return this;
-}
-
-public SVGPath transform(Rotate r)
-{
-   for (Segment segm: list) {
-      switch (r) {
-      case FLIP:
-         segm.flip();
-         break;
-      case CLOCKWISE:
-         segm.rotateCW();
-         break;
-      case COUNTERCLOCKWISE:
-         segm.rotateCCW();
-         break;
-      case TWICE:
-         segm.rotateTwice();
-      }
-   }
-   return this;
-}
-
-public SVGPath append(SVGPath nextPath)
-{
-   list.addAll(nextPath.list);
-   return this;
-}
-
-public Path toPath(float startX, float startY)
+/**
+ * Create a closed SVG Path with the supplied top-left corner.
+ * @param startX X of top-left corner
+ * @param startY Y of top-left corner
+ * @return a closed Path
+ */
+public Path toSVG(float startX, float startY)
 {
    Path ret = new Path();
    ret.moveTo(startX, startY);
-   //i = 0;
-   for (Segment segment: list) {
-      segment.toPath(ret);
-   }
+   this.toPath(ret);
    ret.close();
    return ret;
 }

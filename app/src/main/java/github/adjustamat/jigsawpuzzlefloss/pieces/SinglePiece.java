@@ -21,30 +21,34 @@ public class SinglePiece
 // LargerPiece largerPieceParent;
 // Point positionInLargerPiece;
 
-SVGPath north, west, south, east;
+SVGPath.WholeEdge north, west, south, east;
 
 // translate PathShape imageMask by coordinates to get the correct part of the image:
+
+/**
+ * The outline to draw when rotating or when drawing embossed 3D-effect.
+ */
+SVGPath.SinglePieceOutline outline;
+
+Path zeroOffsetOutline;
 PointF imageOffset;
 //    PointF shapeSize;
 //   this.shapeSize = new PointF(
 //    imageSize + edgeWidths.left + edgeWidths.right,
 //    imageSize + edgeWidths.top + edgeWidths.bottom);
 
-
-Path zeroOffsetOutline;
-
 Color edgesColor; // TODO: extract color from the imageMask part of the image.
 Color highContrastBgColor;
 
 public SinglePiece(Box box, Point coordinates,
  EdgeType top, EdgeType right, EdgeType bottom, EdgeType left,
- SVGPath[] rotatedPaths, RectF edgeWidths, float imageSize
+ SVGPath.WholeEdge[] northEastSouthWest, float imageSize
 )
 {
    super(box);
    this.correctPuzzlePosition = coordinates;
-   edgeWidths.top *= imageSize / SIDE_SIZE;
-   this.edgeWidths = edgeWidths;
+   
+   // TODO: edgeWidths *= imageSize / SIDE_SIZE;
    
    this.imageOffset = new PointF(coordinates.x * imageSize, coordinates.y * imageSize);
    
@@ -58,40 +62,20 @@ public SinglePiece(Box box, Point coordinates,
    // just draw top and right as light, and bottom left as dark. less opacity when pieces are put together into LargerPieces.
    
    // rotatedPaths array come from the pool, but is not the pool.
-   this.north = new SVGPath(rotatedPaths[0]).append(rotatedPaths[1]);
-   this.east = new SVGPath(rotatedPaths[2]).append(rotatedPaths[3]);
-   this.south = new SVGPath(rotatedPaths[4]).append(rotatedPaths[5]);
-   this.west = new SVGPath(rotatedPaths[6]).append(rotatedPaths[7]);
+   this.north = northEastSouthWest[0];
+   this.east = northEastSouthWest[1];
+   this.south = northEastSouthWest[2];
+   this.west = northEastSouthWest[3];
    
-   this.outline = // append in order NORTH, EAST, SOUTH, WEST:
-    // TODO: use CombinedPath class instead, to avoid copying values all the time. It could use a LinkedList internally, so that I can inset the path of a new piece into a LargerPiece shape.
-    new SVGPath(this.north).append(this.east).append(this.south).append(this.west);
+   this.outline = new SVGPath.SinglePieceOutline(this.north, this.east, this.south, this.west);
    
-   zeroOffsetOutline = outline.toPath(0f, 0f);
+   zeroOffsetOutline = outline.toSVG(0f, 0f);
    this.imageMask = new Path();
    zeroOffsetOutline.offset(imageSize * coordinates.x, imageSize * coordinates.y, imageMask);
-   
-   //this.imageMask = new PathShape(imageMaskPath,
-   
-   
 }
 
-//public boolean hasLarger(){
-//   return largerPieceParent != null;
-//}
-
-//void setLargerPiece(LargerPiece parent, Point position){
-//   largerPieceParent = parent;
-//   positionInLargerPiece = position;
-//}
-
-//void insertPieceLeft(){
-//   positionInLargerPiece.x++;
-//}
-//
-//void insertPieceTop(){
-//   positionInLargerPiece.y++;
-//}
-
-
+public RectF getEdgeWidths()
+{
+   return new RectF(west.getEdgeWidth(),north.getEdgeWidth(),east.getEdgeWidth(),south.getEdgeWidth());
+}
 }

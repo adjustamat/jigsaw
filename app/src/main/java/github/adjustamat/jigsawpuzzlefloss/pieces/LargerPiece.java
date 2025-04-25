@@ -2,6 +2,7 @@ package github.adjustamat.jigsawpuzzlefloss.pieces;
 
 import android.graphics.Point;
 import android.graphics.PointF;
+import android.graphics.RectF;
 
 import java.util.ArrayList;
 
@@ -24,6 +25,7 @@ public class LargerPiece
 //public static final int BIT_NORTH = 0b10000000;
 //public static final int BITS_BG = 0b111111111;
 
+SVGPath.LargerPieceOutline outline;
 ArrayList<Object> matrix;
 int matrixWidth;
 int matrixHeight;
@@ -578,4 +580,8 @@ public ArrayList<BgDrawable> getBgOutline()
    return ret;
 } // method: getOutline()
 
+public RectF getEdgeWidths()
+{
+   return new RectF(); // TODO! see SinglePiece.getEdgeWidths()!
+}
 }

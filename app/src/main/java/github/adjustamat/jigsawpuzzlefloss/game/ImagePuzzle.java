@@ -2,7 +2,6 @@ package github.adjustamat.jigsawpuzzlefloss.game;
 
 import android.graphics.Bitmap;
 import android.graphics.Point;
-import android.graphics.RectF;
 import android.graphics.drawable.shapes.Shape;
 
 import java.util.LinkedList;
@@ -83,8 +82,8 @@ public static ImagePuzzle generate(int pWidth, int pHeight, Bitmap image)
     singlePieces);
    
    Random rng = new Random();
-   SVGPath[][] pool = SVGPath.generateAllJigsaws();
-   SVGPath[] rotatedPaths = new SVGPath[8];
+   SVGPath.HalfEdge[][] pool = SVGPath.generateAllJigsaws();
+   SVGPath.WholeEdge[] northEastSouthWest = new SVGPath.WholeEdge[4];
    // TODO: pool [NECK*6 + CURV*2 + (secondHalf?1:0)] [(inward?4:0) + direction_ordinal]
    
    RandomEdge[] wests = new RandomEdge[pHeight];
@@ -92,8 +91,6 @@ public static ImagePuzzle generate(int pWidth, int pHeight, Bitmap image)
       RandomEdge north = null;
       for (int y = 0; y < pHeight; y++) {
          RandomEdge east, south;
-         
-         
          
          if (y == pHeight - 1) {
             south = null;
@@ -110,14 +107,14 @@ public static ImagePuzzle generate(int pWidth, int pHeight, Bitmap image)
          }
          
          // TODO: edgeWidth depends on curv1, curv2 and IN/OUT. see SVGPath.java
-         RectF edgeWidths = new RectF(0f, 0f, 0f, 0f);
+         //RectF edgeWidths = new RectF(0f, 0f, 0f, 0f);
          
-         singlePieces.add(new SinglePiece(box, new Point(x, y),
+         singlePieces.add(new SinglePiece(ret.box, new Point(x, y),
           north == null ?EdgeType.EDGE :north.type,
           east == null ?EdgeType.EDGE :east.type,
           south == null ?EdgeType.EDGE :south.type,
           wests[y] == null ?EdgeType.EDGE :wests[y].type,
-          rotatedPaths, edgeWidths));
+          northEastSouthWest, ret.pieceImageSize));
          
          if (south != null) {
             north = south;

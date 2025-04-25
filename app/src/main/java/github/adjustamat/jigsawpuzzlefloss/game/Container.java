@@ -26,7 +26,6 @@ public ImagePuzzle getImagePuzzle()
    return imagePuzzle;
 }
 
-
 /**
  * Make all pieces in a Group non-overlapping, if possible.
  * @return whether or not the Group could be spread out here.
