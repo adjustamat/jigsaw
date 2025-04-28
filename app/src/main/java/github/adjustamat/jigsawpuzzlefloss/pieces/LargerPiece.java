@@ -1,12 +1,15 @@
 package github.adjustamat.jigsawpuzzlefloss.pieces;
 
+import android.graphics.Path;
 import android.graphics.Point;
 import android.graphics.PointF;
 import android.graphics.RectF;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 
 import github.adjustamat.jigsawpuzzlefloss.game.BgDrawable;
+import github.adjustamat.jigsawpuzzlefloss.game.ImagePuzzle.RandomEdge;
 
 /**
  * Two or more {@link SinglePiece}s that fit together.
@@ -25,13 +28,36 @@ public class LargerPiece
 //public static final int BIT_NORTH = 0b10000000;
 //public static final int BITS_BG = 0b111111111;
 
-SVGPath.LargerPieceOutline outline;
+LargerPieceEdges svgEdges;
 ArrayList<Object> matrix;
 int matrixWidth;
 int matrixHeight;
 int pieceCount;
 
-ArrayList<SVGPath> innerEdges;
+boolean westEdge;
+boolean northEdge;
+boolean eastEdge;
+boolean southEdge;
+
+public static class LargerPieceEdges
+ extends SVGEdges
+{
+   private final LinkedList<WholeEdge> outerEdges = new LinkedList<>();
+   private ArrayList<WholeEdge> innerEdges;
+   
+   public LargerPieceEdges()
+   {
+      // TODO: use a LinkedList internally, so that I can inset the path of a new piece into a LargerPiece shape.
+      //  keep a record of which piece (x,y) is where in the linked list! this is not needed for innerEdges.
+   }
+   
+   public void toPath(Path path)
+   {
+      for (WholeEdge child: outerEdges) {
+         child.toSVG(path);
+      }
+   }
+}
 
 /*private LargerPiece(int width, int height, Container parent){
    super(parent);
@@ -202,14 +228,15 @@ private void set(int x, int y, SinglePiece p)
    set(x, y);
    // TODO: combine SVGPath outline (UNION) and check edgeWidths (positionInContainer is handled by Container)
    // TODO: SVGPath SinglePiece.left, right, top, bottom
+   // TODO: I've thought about this, and fix it in subclass LargerPiece.LargerPieceEdges!
    //p.setLargerPiece(this, new Point(x, y)); // no, remove all reference to a SinglePiece, once it is in a LargerPiece!
-   if (p.isLeftEdge())
-      leftEdge = EdgeType.EDGE;
-   if (p.isRightEdge())
+   if (p.isWestEdge())
+      westEdge = true;//leftEdge = EdgeType.EDGE;
+   if (p.isEastEdge()) // TODO!
       rightEdge = EdgeType.EDGE;
-   if (p.isTopEdge())
+   if (p.isNorthEdge())
       topEdge = EdgeType.EDGE;
-   if (p.isBottomEdge())
+   if (p.isSouthEdge())
       bottomEdge = EdgeType.EDGE;
 }
 
@@ -318,18 +345,18 @@ public ArrayList<BgDrawable> getBgOutline()
    int height = matrixHeight;
    int extraX = 0;
    int extraY = 0;
-   if (!isLeftEdge()) {
+   if (!isWestEdge()) {
       width++;
       extraX++;
    }
-   if (!isRightEdge()) {
+   if (!isEastEdge()) {
       width++;
    }
-   if (!isTopEdge()) {
+   if (!isNorthEdge()) {
       height++;
       extraY++;
    }
-   if (!isBottomEdge()) {
+   if (!isSouthEdge()) {
       height++;
    }
    //int[][] bits = new int[width][height];
@@ -337,11 +364,11 @@ public ArrayList<BgDrawable> getBgOutline()
    int x;
    int y;
    // check edges (do not outline EdgeType.EDGE!)
-   if (!isLeftEdge()) { // leftmost column (WEST) can be outlined
+   if (!isWestEdge()) { // leftmost column (WEST) can be outlined
       x = -1; // outside left edge
       
       // leftmost column: top left corner (NW)
-      if (!isTopEdge()) { // leftmost column: NW can be outlined
+      if (!isNorthEdge()) { // leftmost column: NW can be outlined
          y = -1; // outside top edge
          if (matrix.get(linear(x + 1, y + 1)) != null) { // x+1 == 0, y+1 == 0
             // outside left edge, outside top edge (-1, -1)
@@ -385,7 +412,7 @@ public ArrayList<BgDrawable> getBgOutline()
       }
       
       // leftmost column: bottom left corner (SW)
-      if (!isBottomEdge()) { // leftmost column: SW can be outlined
+      if (!isSouthEdge()) { // leftmost column: SW can be outlined
          // assert(y == matrixHeight - 1) // bottom row // matrixHeight: outside bottom edge
          if (matrix.get(linear(x + 1, y)) != null) { // x+1 == 0
             // outside left edge, bottom row (-1, matrixHeight - 1)
@@ -408,10 +435,10 @@ public ArrayList<BgDrawable> getBgOutline()
          }
       }
    } // leftmost column (WEST) can be outlined
-   if (!isRightEdge()) { // rightmost column (EAST) can be outlined
+   if (!isEastEdge()) { // rightmost column (EAST) can be outlined
       // TODO: copy leftEdge
    } // rightmost column (EAST) can be outlined
-   if (!isTopEdge()) { // top row (NORTH) can be outlined
+   if (!isNorthEdge()) { // top row (NORTH) can be outlined
       y = -1; // outside top edge
       
       x = 0;
@@ -433,7 +460,7 @@ public ArrayList<BgDrawable> getBgOutline()
       // assert(x == matrixWidth - 1) // rightmost column
       
    } // top row (NORTH) can be outlined
-   if (!isBottomEdge()) { // bottom row (SOUTH) can be outlined
+   if (!isSouthEdge()) { // bottom row (SOUTH) can be outlined
    
    } // bottom row (SOUTH) can be outlined
    
@@ -583,5 +610,25 @@ public ArrayList<BgDrawable> getBgOutline()
 public RectF getEdgeWidths()
 {
    return new RectF(); // TODO! see SinglePiece.getEdgeWidths()!
+}
+
+public boolean isWestEdge()
+{
+   return westEdge;
+}
+
+public boolean isNorthEdge()
+{
+   return northEdge;
+}
+
+public boolean isEastEdge()
+{
+   return eastEdge;
+}
+
+public boolean isSouthEdge()
+{
+   return southEdge;
 }
 }

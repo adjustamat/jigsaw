@@ -18,22 +18,24 @@ public abstract class AbstractPiece
 public static final float SIDE_SIZE = 120f;
 public static final float HALF_SIZE = 60f;
 
-/**
+/*
  * The type of jigsaw edge of a puzzle piece.
  */
-public enum EdgeType
+/*public enum EdgeType
 {
    EDGE,
    IN,
-   OUT
-}
-
-Direction currentRotation;
-
-EdgeType leftEdge;
-EdgeType topEdge;
-EdgeType rightEdge;
-EdgeType bottomEdge;
+   OUT;
+   
+   public EdgeType opposite()
+   {
+      switch (this) {
+      case IN: return OUT;
+      case OUT: return IN;
+      default: return EDGE;
+      }
+   }
+}*/
 
 /**
  * The mask of the ImagePuzzle image. Consists of the outline SVGPath turned into a graphics.Path.
@@ -49,6 +51,9 @@ public int indexInContainer;
 PointF positionInContainer; // null when container is Box. (use indexInContainer instead)
 boolean lockedInPlace; // always false when container is Box.
 
+
+Direction currentRotation;
+
 protected AbstractPiece(@NonNull Container containerParent)
 {
    this.containerParent = containerParent;
@@ -63,8 +68,6 @@ public @NonNull Container getContainer()
 {
    return containerParent;
 }
-
-public abstract RectF getEdgeWidths();
 
 public boolean isLockedInPlace()
 {
@@ -104,33 +107,20 @@ public boolean isGrouped()
    return groupParent != null && !groupParent.isLonelyPiece();
 }
 
-public boolean isLeftEdge()
-{
-   return leftEdge == EdgeType.EDGE;
-}
+public abstract RectF getEdgeWidths();
 
-public boolean isTopEdge()
-{
-   return topEdge == EdgeType.EDGE;
-}
-
-public boolean isRightEdge()
-{
-   return rightEdge == EdgeType.EDGE;
-}
-
-public boolean isBottomEdge()
-{
-   return bottomEdge == EdgeType.EDGE;
-}
+public abstract boolean isWestEdge();
+public abstract boolean isNorthEdge();
+public abstract boolean isEastEdge();
+public abstract boolean isSouthEdge();
 
 public boolean isEdgePiece()
 {
-   return isLeftEdge() || isTopEdge() || isRightEdge() || isBottomEdge();
+   return isWestEdge() || isNorthEdge() || isEastEdge() || isSouthEdge();
 }
 
 public boolean isCornerPiece()
 {
-   return (isLeftEdge() || isRightEdge()) && (isTopEdge() || isBottomEdge());
+   return (isWestEdge() || isEastEdge()) && (isNorthEdge() || isSouthEdge());
 }
 }

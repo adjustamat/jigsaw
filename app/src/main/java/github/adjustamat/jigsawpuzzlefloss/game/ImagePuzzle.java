@@ -7,8 +7,11 @@ import android.graphics.drawable.shapes.Shape;
 import java.util.LinkedList;
 import java.util.Random;
 
-import github.adjustamat.jigsawpuzzlefloss.pieces.AbstractPiece.EdgeType;
-import github.adjustamat.jigsawpuzzlefloss.pieces.SVGPath;
+import github.adjustamat.jigsawpuzzlefloss.pieces.Direction;
+import github.adjustamat.jigsawpuzzlefloss.pieces.SVGEdges;
+import github.adjustamat.jigsawpuzzlefloss.pieces.SVGEdges.DoubleEdge;
+import github.adjustamat.jigsawpuzzlefloss.pieces.SVGEdges.HalfEdge;
+import github.adjustamat.jigsawpuzzlefloss.pieces.SVGEdges.WholeEdge;
 import github.adjustamat.jigsawpuzzlefloss.pieces.SinglePiece;
 
 /**
@@ -29,21 +32,26 @@ public static class Area
    
 } // class Area
 
-private static class RandomEdge
+public static class RandomEdge
 {
-   EdgeType type;
-   final int curv1;
-   final int curv2;
-   final int neck1;
-   final int neck2;
+   public final boolean in;
+   public final int curv1;
+   public final int curv2;
+   public final int neck1;
+   public final int neck2;
    
-   public RandomEdge(Random rng)
+   RandomEdge(Random rng)
    {
-      type = rng.nextBoolean() ?EdgeType.OUT :EdgeType.IN;
+      in = rng.nextBoolean();// ?EdgeType.OUT :EdgeType.IN;
       curv1 = rng.nextInt(3);
       curv2 = rng.nextInt(3);
       neck1 = rng.nextInt(3);
       neck2 = rng.nextInt(3);
+   }
+   
+   public DoubleEdge getWholeEdge(HalfEdge[][] pool, Direction dir)
+   {
+      return dir.getDoubleEdge(pool, in, curv1, curv2, neck1, neck2);
    }
 } // class RandomEdge
 
@@ -82,9 +90,8 @@ public static ImagePuzzle generate(int pWidth, int pHeight, Bitmap image)
     singlePieces);
    
    Random rng = new Random();
-   SVGPath.HalfEdge[][] pool = SVGPath.generateAllJigsaws();
-   SVGPath.WholeEdge[] northEastSouthWest = new SVGPath.WholeEdge[4];
-   // TODO: pool [NECK*6 + CURV*2 + (secondHalf?1:0)] [(inward?4:0) + direction_ordinal]
+   HalfEdge[][] pool = SVGEdges.generateAllJigsaws();
+   WholeEdge[] northEastSouthWest = new WholeEdge[4];
    
    RandomEdge[] wests = new RandomEdge[pHeight];
    for (int x = 0; x < pWidth; x++) {
@@ -92,64 +99,26 @@ public static ImagePuzzle generate(int pWidth, int pHeight, Bitmap image)
       for (int y = 0; y < pHeight; y++) {
          RandomEdge east, south;
          
-         if (y == pHeight - 1) {
-            south = null;
-         }
-         else {
-            south = new RandomEdge(rng);
-         }
-         
-         if (x == pWidth - 1) {
+         if (x == pWidth - 1)
             east = null;
-         }
-         else {
+         else
             east = new RandomEdge(rng);
-         }
          
-         // TODO: edgeWidth depends on curv1, curv2 and IN/OUT. see SVGPath.java
-         //RectF edgeWidths = new RectF(0f, 0f, 0f, 0f);
+         if (y == pHeight - 1)
+            south = null;
+         else
+            south = new RandomEdge(rng);
          
-         singlePieces.add(new SinglePiece(ret.box, new Point(x, y),
-          north == null ?EdgeType.EDGE :north.type,
-          east == null ?EdgeType.EDGE :east.type,
-          south == null ?EdgeType.EDGE :south.type,
-          wests[y] == null ?EdgeType.EDGE :wests[y].type,
-          northEastSouthWest, ret.pieceImageSize));
+         singlePieces.add(new SinglePiece(
+          ret, new Point(x, y), north, east, south, wests[y]
+         ));
          
-         if (south != null) {
-            north = south;
-            north.type = north.type == EdgeType.IN ?EdgeType.OUT :EdgeType.IN;
-         }
-         if (east != null) {
-            wests[y] = east;
-            wests[y].type = wests[y].type == EdgeType.IN ?EdgeType.OUT :EdgeType.IN;
-         }
-      }
-   }
-   
-   for (int i = 0; i < verticalEdges; i++) {
-      boolean edgeTypeIn = rng.nextBoolean();
-      int curv1 = rng.nextInt(3);
-      int curv2 = rng.nextInt(3);
-      int neck1 = rng.nextInt(3);
-      int neck2 = rng.nextInt(3);
-      
-   }
-   
-   for (int i = 0; i < horizontalEdges; i++) {
-      boolean edgeTypeIn = rng.nextBoolean();
-      int curv1 = rng.nextInt(3);
-      int curv2 = rng.nextInt(3);
-      int neck1 = rng.nextInt(3);
-      int neck2 = rng.nextInt(3);
-      
-      
-   }
-   
-   
-   
-   
-   
+         //if (south != null)
+         north = south;
+         //if (east != null)
+         wests[y] = east;
+      } // for(y)
+   } // for(x)
    return ret;
 }
 }

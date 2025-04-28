@@ -1,5 +1,8 @@
 package github.adjustamat.jigsawpuzzlefloss.pieces;
 
+import github.adjustamat.jigsawpuzzlefloss.pieces.SVGEdges.DoubleEdge;
+import github.adjustamat.jigsawpuzzlefloss.pieces.SVGEdges.HalfEdge;
+
 public enum Direction
 {
    NORTH(1, 2, 0, 0, 1, 0, 0, -1),
@@ -32,6 +35,29 @@ Direction(int initWidth, int initHeight,
    this.directionY = directionY;
 }
 
+public DoubleEdge getDoubleEdge(HalfEdge[][] pool,
+ boolean in, int curv1, int curv2, int neck1, int neck2)
+{
+   int poolIndex;
+   switch (this) {
+   case EAST: case SOUTH:
+      poolIndex = (in ?4 :0) + ordinal();
+      return new DoubleEdge(
+       // pool [ NECK*6 + CURV*2 + (secondHalf?1:0) ]  [ (inward ?4 :0) + direction_ordinal ]
+       pool[neck1 * 6 + curv1 * 2][poolIndex],
+       pool[neck2 * 6 + curv2 * 2 + 1][poolIndex]
+      );
+   default: // WEST: NORTH:
+      // in/out is flipped:
+      poolIndex = (in ?0 :4) + ordinal();
+      return new DoubleEdge(
+       // first/second is flipped:
+       pool[neck2 * 6 + curv2 * 2][poolIndex],
+       pool[neck1 * 6 + curv1 * 2 + 1][poolIndex]
+      );
+   }
+}
+
 public Direction opposite()
 {
    switch (this) {
@@ -41,8 +67,8 @@ public Direction opposite()
       return NORTH;
    case EAST:
       return WEST;
-   default:
+   default: // WEST:
       return EAST;
    }
 }
-} // enum Direction
+}
