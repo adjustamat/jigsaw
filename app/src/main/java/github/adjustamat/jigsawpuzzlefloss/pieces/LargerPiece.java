@@ -6,10 +6,9 @@ import android.graphics.PointF;
 import android.graphics.RectF;
 
 import java.util.ArrayList;
-import java.util.LinkedList;
 
 import github.adjustamat.jigsawpuzzlefloss.game.BgDrawable;
-import github.adjustamat.jigsawpuzzlefloss.game.ImagePuzzle.RandomEdge;
+import github.adjustamat.jigsawpuzzlefloss.pieces.SinglePiece.SinglePieceEdges;
 
 /**
  * Two or more {@link SinglePiece}s that fit together.
@@ -28,8 +27,8 @@ public class LargerPiece
 //public static final int BIT_NORTH = 0b10000000;
 //public static final int BITS_BG = 0b111111111;
 
-LargerPieceEdges svgEdges;
-ArrayList<Object> matrix;
+private final LargerPieceEdges svgEdges;
+private ArrayList<OuterEdgesIndices> matrix; // remove all reference to a SinglePiece, once it is in a LargerPiece!
 int matrixWidth;
 int matrixHeight;
 int pieceCount;
@@ -39,24 +38,217 @@ boolean northEdge;
 boolean eastEdge;
 boolean southEdge;
 
-public static class LargerPieceEdges
+static class OuterEdgesIndices
+{
+   Integer n, e, s, w; // TODO: delete these fields!
+   final Integer[] nesw = new Integer[4];
+   //Point pointInMatrix;
+   
+   void set (int direction, Integer value){
+      nesw[direction] = value;
+   }
+   
+   Integer get (int direction){
+      return nesw[direction];
+   }
+   
+}
+
+class LargerPieceEdges
  extends SVGEdges
 {
-   private final LinkedList<WholeEdge> outerEdges = new LinkedList<>();
-   private ArrayList<WholeEdge> innerEdges;
+   private final ArrayList<WholeEdge> outerEdges = new ArrayList<>();
+   private final ArrayList<Point> outerPieces = new ArrayList<>();
+   private final ArrayList<Direction> pieceEdges = new ArrayList<>();
    
-   public LargerPieceEdges()
-   {
-      // TODO: use a LinkedList internally, so that I can inset the path of a new piece into a LargerPiece shape.
-      //  keep a record of which piece (x,y) is where in the linked list! this is not needed for innerEdges.
+   private final ArrayList<WholeEdge> innerEdges = new ArrayList<>();
+   
+   LargerPieceEdges (LargerPiece p1, LargerPiece p2,
+    Point point1, Point point2, Direction dir, int offsetX1, int offsetX2, int offsetY1, int offsetY2
+   ){
+      // TODO: combine SVGPath outline (my own UNION) - indexes in matrix need to change too
+      // TODO: the new piece may be attached to more than just "attachedTo"!
+
+//      LargerPieceEdges edges1 = p1.svgEdges;
+//      LargerPieceEdges edges2 = p2.svgEdges;
+      
+      //     TODO:      outerPieces.add(); // Point
+      //     TODO:      pieceEdges.add(); // Direction
+      
+      { // combine matrices
+         int matrixX = 0;
+         int matrixY = 0;
+         for (OuterEdgesIndices value: p1.matrix) {
+            if (value != null)
+               set(matrixX + offsetX1, matrixY + offsetY1, value); // TODO: combine outlines (value should change)
+            matrixX++;
+            if (matrixX == p1.matrixWidth) {
+               matrixY++;
+               matrixX = 0;
+            }
+         }
+         matrixX = 0;
+         matrixY = 0;
+         for (OuterEdgesIndices value: p2.matrix) {
+            if (value != null)
+               set(matrixX + offsetX2, matrixY + offsetY2, value); // TODO: combine outline (value should change)
+            matrixX++;
+            if (matrixX == p2.matrixWidth) {
+               matrixY++;
+               matrixX = 0;
+            }
+         }
+      } // combine matrices
+      
+      
    }
    
-   public void toPath(Path path)
-   {
-      for (WholeEdge child: outerEdges) {
-         child.toSVG(path);
+   LargerPieceEdges (SinglePieceEdges p1, SinglePieceEdges p2, Direction dir){
+      // TODO: use a List internally, so that I can insert the path of a new piece into a LargerPiece shape.
+      //  keep a record of which piece (x,y) is where in the linked list! (not needed for innerEdges.)
+      
+      Point point1 = new Point(dir.initX1, dir.initY1);
+      Point point2 = new Point(dir.initX2, dir.initY2);
+      OuterEdgesIndices indices1 = new OuterEdgesIndices();
+      OuterEdgesIndices indices2 = new OuterEdgesIndices();
+      
+      WholeEdge first1, first2;
+      Direction dirFirst1, dirFirst2;
+      switch (dir) {
+      case NORTH:
+         innerEdges.add(p1.n.resetInnerEdge()); // only need one! innerEdges.add(p2.s.resetInnerEdge());
+         first1 = p1.e;
+         first2 = p2.w;
+         dirFirst1 = Direction.EAST;
+         dirFirst2 = Direction.WEST;
+         break;
+      case EAST:
+         innerEdges.add(p1.e.resetInnerEdge()); // only need one! innerEdges.add(p2.w.resetInnerEdge());
+         first1 = p1.s;
+         first2 = p2.n;
+         dirFirst1 =;
+         dirFirst2 =;
+         break;
+      case SOUTH:
+         innerEdges.add(p1.s.resetInnerEdge()); // only need one! innerEdges.add(p2.n.resetInnerEdge());
+         first1 = p1.w;
+         first2 = p2.e;
+         dirFirst1 =;
+         dirFirst2 =;
+         break;
+      default://case WEST:
+         innerEdges.add(p1.w.resetInnerEdge()); // only need one! innerEdges.add(p2.e.resetInnerEdge());
+         first1 = p1.n;
+         first2 = p2.s;
+         dirFirst1 =;
+         dirFirst2 =;
+      }
+      
+      WholeEdge next;
+      
+      outerEdges.add(next = first1);
+      outerEdges.add(next = next.getNext());
+      outerEdges.add(next = next.getNext());
+      next.setNext(first2);
+      outerPieces.add(point1);
+      outerPieces.add(point1);
+      outerPieces.add(point1);
+      int i = dirFirst1.ordinal();
+      pieceEdges.add(dirFirst1);
+      pieceEdges.add(dirFirst1.next());
+      pieceEdges.add(dirFirst1.opposite());
+      indices1.set(i, 0);
+      indices1.set(Direction.cycle(++i), 1);
+      indices1.set(Direction.cycle(++i), 2);
+      set(dir.initX1, dir.initY1, indices1);
+      
+      
+      outerEdges.add(next = first2);
+      outerEdges.add(next = next.getNext());
+      outerEdges.add(next = next.getNext());
+      next.setNext(first1);
+      outerPieces.add(point2);
+      outerPieces.add(point2);
+      outerPieces.add(point2);
+      i = dirFirst2.ordinal();
+      pieceEdges.add(dirFirst2);
+      pieceEdges.add(dirFirst2.next());
+      pieceEdges.add(dirFirst2.opposite());
+      indices2.set();
+      indices2.set();
+      indices2.set();
+//      indices1.set(i, 0);
+//      indices1.set(Direction.cycle(++i), 1);
+//      indices1.set(Direction.cycle(++i), 2);
+      set(dir.initX2, dir.initY2, indices2);
+      
+   }
+   
+   void addEdges (SinglePieceEdges newEdges, Point attachedTo, Direction dir){
+      // TODO: increase index with 1 for all that are >= the index of newPiece's outline.
+      
+      OuterEdgesIndices newMatrixValue;// = null;//new OuterEdges();
+      
+      WholeEdge first1, first2;
+      OuterEdgesIndices[] neswValues = new OuterEdgesIndices[4];
+      switch (dir) {
+      case NORTH:
+         // TODO:  attachedTo.x + dir.directionX,   attachedTo.y + dir.directionY
+         //neswValues[dir.ordinal()]
+         OuterEdgesIndices sMe = get(attachedTo);
+         
+         //neswValues[dir.opposite().ordinal()]
+         // attachedTo.x + 2 * directionX, attachedTo.y + 2 * directionY
+         OuterEdgesIndices n = getOrNull(attachedTo.x, attachedTo.y - 2);
+         //neswValues[dir.next().positive().ordinal()] // or dir.next()
+         // attachedTo.x + directionX + perpendicularX, attachedTo.y + directionY + perpendicularY
+         OuterEdgesIndices e = getOrNull(attachedTo.x + 1, attachedTo.y - 1);
+         //neswValues[dir.next().positive().opposite().ordinal()] // or dir.prev()
+         // attachedTo.x + directionX - perpendicularX, attachedTo.y + directionY - perpendicularY
+         OuterEdgesIndices w = getOrNull(attachedTo.x - 1, attachedTo.y - 1);
+         
+         
+         // TODO: the new piece may be attached to more than just "attachedTo"!
+         WholeEdge wholeEdge = outerEdges.get(get(attachedTo).n);
+         
+         //     TODO:      outerPieces.add(); // Point
+         //     TODO:      pieceEdges.add(); // Direction
+
+//    TODO:     innerEdges.add(p1.n.resetInnerEdge()); // only need one! innerEdges.add(p2.s.resetInnerEdge());
+//         first1 = p1.e;
+//         first2 = p2.w;
+         break;
+      case EAST:
+         innerEdges.add(p1.e.resetInnerEdge()); // only need one! innerEdges.add(p2.w.resetInnerEdge());
+         first1 = p1.s;
+         first2 = p2.n;
+         break;
+      case SOUTH:
+         innerEdges.add(p1.s.resetInnerEdge()); // only need one! innerEdges.add(p2.n.resetInnerEdge());
+         first1 = p1.w;
+         first2 = p2.e;
+         break;
+      default://case WEST:
+         innerEdges.add(p1.w.resetInnerEdge()); // only need one! innerEdges.add(p2.e.resetInnerEdge());
+         first1 = p1.n;
+         first2 = p2.s;
+      }
+      WholeEdge next;
+      
+      // TODO: newMatrixValue
+      set(attachedTo.x + dir.directionX, attachedTo.y + dir.directionY, newMatrixValue);
+   }
+   
+   public void appendToOutline (Path path){
+      for (WholeEdge wholeEdge: outerEdges) {
+         wholeEdge.appendSegmentsTo(path);
       }
    }
+   
+   public ArrayList<WholeEdge> getInnerEdges (){
+      return innerEdges;
+   }
+   
 }
 
 /*private LargerPiece(int width, int height, Container parent){
@@ -71,207 +263,152 @@ public static class LargerPieceEdges
    }
 }*/
 
-private void init(int width, int height)
-{
-   matrixWidth = width;
-   matrixHeight = height;
-   
-   matrix = new ArrayList<>();
-   int len = width * height;
-   for (int i = 0; i < len; i++) {
-      matrix.add(null);
-   }
-}
-
-private LargerPiece(SinglePiece p1, SinglePiece p2, Direction dir)
-{
-   super(p1.containerParent);
-   init(dir.initWidth, dir.initHeight);
-   pieceCount = 2;
-   set(dir.initX1, dir.initY1, p1);
-   set(dir.initX2, dir.initY2, p2);
-}
-
-private LargerPiece(LargerPiece p1, LargerPiece p2, Point point1, Point point2, Direction dir)
-{
-   super(p1.containerParent);
-
-//   this(
-//      Math.max()
-//    p1.matrixWidth + p2.matrixWidth - point2.x - point1.x/* TDO! */,
-//    /*TDO! */,
-//    p1.containerParent
-//   );
-   pieceCount = p1.pieceCount + p2.pieceCount;
+private LargerPiece (LargerPiece p1, LargerPiece p2, Point point1, Point point2, Direction dir){
+   super(p1.containerParent, p1.currentRotationNorthDirection);
    
    int diffX = point1.x + dir.directionX - point2.x;
-   int diffY = point1.y + dir.directionY - point2.y;
    int offsetX1 = diffX < 0 ?-diffX :0;
    int offsetX2 = diffX > 0 ?diffX :0;
+   int diffY = point1.y + dir.directionY - point2.y;
    int offsetY1 = diffY < 0 ?-diffY :0;
    int offsetY2 = diffY > 0 ?diffY :0;
    
    init(Math.max(offsetX1 + p1.matrixWidth, offsetX2 + p2.matrixWidth),
     Math.max(offsetY1 + p1.matrixHeight, offsetY2 + p2.matrixHeight));
    
-   // combine matrices
-   int matrixX = 0;
-   int matrixY = 0;
-   for (Object obj: p1.matrix) {
-      if (obj != null)
-         set(matrixX + offsetX1,
-          matrixY + offsetY1);
-      matrixX++;
-      if (matrixX == p1.matrixWidth) {
-         matrixY++;
-         matrixX = 0;
-      }
+   pieceCount = p1.pieceCount + p2.pieceCount;
+   westEdge = p1.isWestEdge() || p2.isWestEdge();
+   eastEdge = p1.isEastEdge() || p2.isEastEdge();
+   northEdge = p1.isNorthEdge() || p2.isNorthEdge();
+   southEdge = p1.isSouthEdge() || p2.isSouthEdge();
+   
+   // svgEdges also combines the matrices!
+   svgEdges = new LargerPieceEdges(p1, p2, point1, point2, dir, offsetX1, offsetX2, offsetY1, offsetY2);
+   
+   // TODO: check edgeWidths (positionInContainer is handled by Container)
+   
+}
+
+private LargerPiece (SinglePiece p1, SinglePiece p2, Direction dir){
+   super(p1.containerParent, p1.currentRotationNorthDirection);
+   init(dir.initWidth, dir.initHeight);
+   
+   pieceCount = 2;
+   setIsEdge(p1);
+   setIsEdge(p2);
+   
+   // the matrix is filled in LargerPieceEdges constructor!
+   svgEdges = new LargerPieceEdges(p1.svgEdges, p2.svgEdges, dir);
+   
+   // TODO: check edgeWidths (positionInContainer is handled by Container)
+}
+
+public void add (SinglePiece newPiece, Point attachedTo, Direction dir){
+   // TODO: check edgeWidths (positionInContainer is handled by Container)
+   pieceCount++;
+   if (attachedTo.x == 0 && dir == Direction.WEST) {
+      correctPuzzlePosition.x -= 1;
+      expandX(0);
+      attachedTo.x = 1; // update to the coordinates in the expanded matrix
    }
-   matrixX = 0;
-   matrixY = 0;
-   for (Object obj: p2.matrix) {
-      if (obj != null)
-         set(matrixX + offsetX2,
-          matrixY + offsetY2);
-      matrixX++;
-      if (matrixX == p2.matrixWidth) {
-         matrixY++;
-         matrixX = 0;
-      }
+   else if (attachedTo.y == 0 && dir == Direction.NORTH) {
+      correctPuzzlePosition.y -= 1;
+      expandY(0);
+      attachedTo.y = 1; // update to the coordinates in the expanded matrix
+   }
+   else if (attachedTo.x == matrixWidth - 1 && dir == Direction.EAST) {
+      expandX(matrixWidth);
+   }
+   else if (attachedTo.y == matrixHeight - 1 && dir == Direction.SOUTH) {
+      expandY(matrix.size());
+   }
+   // TODO: svgEdges also sets matrix value.
+   svgEdges.addEdges(newPiece.svgEdges, attachedTo, dir);
+   setIsEdge(newPiece);
+}
+
+private void init (int width, int height){
+   matrixWidth = width;
+   matrixHeight = height;
+   
+   matrix = new ArrayList<>();
+   int len = width * height;
+   for (int i = 0; i < len; i++) {
+      matrix.add(null/*new OuterEdges()*/);
    }
 }
 
-/*public static LargerPiece combine(AbstractPiece p1, AbstractPiece p2, Direction dir){
-   if(p1 instanceof LargerPiece){
-      if(p2 instanceof LargerPiece){
-
-      }
-      else{
-         p1.largerPieceParent.add(p2, p1.positionInLargerPiece, dir);
-         return p1.largerPieceParent;
-      }
-   }
-   else if(p2 instanceof LargerPiece){
-      p2.largerPieceParent.add(p1, p2.positionInLargerPiece, dir);
-      return p2.largerPieceParent;
-   }
-   else{
-      return new LargerPiece(p1, p2, dir);
-   }
-}*/
-
-/*public static LargerPiece combine(SinglePiece p1, SinglePiece p2, Direction dir){
-   if(p1.hasLarger()){
-      if(p2.hasLarger()){
-         return new LargerPiece(p1.largerPieceParent, p2.largerPieceParent,
-          p1.positionInLargerPiece, p2.positionInLargerPiece, dir);
-      }
-      else{
-         p1.largerPieceParent.add(p2, p1.positionInLargerPiece, dir);
-         return p1.largerPieceParent;
-      }
-   }
-   else if(p2.hasLarger()){
-      p2.largerPieceParent.add(p1, p2.positionInLargerPiece, dir);
-      return p2.largerPieceParent;
-   }
-   else{
-      return new LargerPiece(p1, p2, dir);
-   }
-}*/
-
-private int linear(int x, int y)
-{
+private int linear (int x, int y){
    return y * matrixWidth + x;
 }
 
-public Point getPuzzlePiece(PointF mouseOffset)
-{
+private Integer checkBounds (int x, int y){
+   int ret = y * matrixWidth + x;
+   if (ret < 0 || ret >= matrix.size())
+      return null;
+   return ret;
+}
+
+//private int xFromLinear (int linear){
+//   return linear % matrixWidth;
+//}
+//
+//private int yFromLinear (int linear){
+//   return linear / matrixWidth;
+//}
+
+public Point getPuzzlePiece (PointF mouseOffset){
    Point ret = new Point(correctPuzzlePosition);
    ret.x += getX(mouseOffset.x);
    ret.y += getY(mouseOffset.y);
    return ret;
 }
 
-public Point getMatrixPiece(PointF offset)
-{
-   return new Point(getX(offset.x), getY(offset.y));
+public Point getMatrixPiece (PointF mouseOffset){
+   return new Point(getX(mouseOffset.x), getY(mouseOffset.y));
 }
 
-public int getX(float mouseOffsetX)
-{
+public int getX (float mouseOffsetX){
    return (int) (mouseOffsetX / (SIDE_SIZE * matrixWidth));
 }
 
-public int getY(float mouseOffsetY)
-{
+public int getY (float mouseOffsetY){
    return (int) (mouseOffsetY / (SIDE_SIZE * matrixHeight));
 }
 
-public Object get(int x, int y)
-{
-   return matrix.get(linear(x, y));
+private OuterEdgesIndices getOrNull (int x, int y){
+   Integer linear = checkBounds(x, y);
+   if (linear == null)
+      return null;
+   return matrix.get(linear);
 }
 
-public Object get(Point p)
-{
+private OuterEdgesIndices get (Point p){
    return matrix.get(linear(p.x, p.y));
 }
 
-private void set(int x, int y)
-{
-   matrix.set(linear(x, y), Boolean.TRUE);
+private void set (int x, int y, OuterEdgesIndices value){
+   matrix.set(linear(x, y), value);
 }
 
-private void set(int x, int y, SinglePiece p)
-{
-   set(x, y);
-   // TODO: combine SVGPath outline (UNION) and check edgeWidths (positionInContainer is handled by Container)
-   // TODO: SVGPath SinglePiece.left, right, top, bottom
-   // TODO: I've thought about this, and fix it in subclass LargerPiece.LargerPieceEdges!
-   //p.setLargerPiece(this, new Point(x, y)); // no, remove all reference to a SinglePiece, once it is in a LargerPiece!
+private void setIsEdge (SinglePiece p){
    if (p.isWestEdge())
       westEdge = true;//leftEdge = EdgeType.EDGE;
-   if (p.isEastEdge()) // TODO!
-      rightEdge = EdgeType.EDGE;
+   if (p.isEastEdge())
+      eastEdge = true;//rightEdge = EdgeType.EDGE;
    if (p.isNorthEdge())
-      topEdge = EdgeType.EDGE;
+      northEdge = true;//topEdge = EdgeType.EDGE;
    if (p.isSouthEdge())
-      bottomEdge = EdgeType.EDGE;
+      southEdge = true;//bottomEdge = EdgeType.EDGE;
 }
 
-public void add(SinglePiece newPiece, Point attachedToPiece, Direction dir)
-{
-   // the new piece may be attached to more than just attachedToPiece!
+private void set (int x, int y, OuterEdgesIndices value, SinglePiece p){
+   set(x, y, value);
+   //p.setLargerPiece(this, new Point(x, y));
    
-   pieceCount++;
-   
-   if (attachedToPiece.x == matrixWidth - 1 && dir == Direction.EAST) {
-      expandX(matrixWidth);
-   }
-   else if (attachedToPiece.x == 0 && dir == Direction.WEST) {
-      correctPuzzlePosition.x -= 1;
-//      for(Object obj: matrix){
-//         p.insertPieceLeft();
-//      }
-      expandX(0);
-   }
-   else if (attachedToPiece.y == matrixHeight - 1 && dir == Direction.SOUTH) {
-      expandY(matrix.size());
-   }
-   else if (attachedToPiece.y == 0 && dir == Direction.NORTH) {
-      correctPuzzlePosition.y -= 1;
-//      for(Object obj: matrix){
-//         p.insertPieceTop();
-//      }
-      expandY(0);
-   }
-   
-   set(attachedToPiece.x + dir.directionX, attachedToPiece.y + dir.directionY, newPiece);
 }
 
-private void expandX(int i)
-{
+private void expandX (int i){
    matrixWidth++;
    // expand matrix right or left by inserting null items into matrix list.
    for (int j = 0; j < matrixHeight; j++) {
@@ -280,8 +417,7 @@ private void expandX(int i)
    }
 }
 
-private void expandY(int i)
-{
+private void expandY (int i){
    matrixHeight++;
    // expand matrix up or down by inserting null items into matrix list.
    for (int j = 0; j < matrixWidth; j++) {
@@ -289,9 +425,7 @@ private void expandY(int i)
    }
 }
 
-
-public ArrayList<BgDrawable> getBgOutline()
-{
+public ArrayList<BgDrawable> getBgOutline (){
    ArrayList<BgDrawable> ret = new ArrayList<>(matrix.size());//+2*matrixWidth+2*matrixHeight+4);
 
    /*for(int y=0;y < matrixHeight; y++){
@@ -607,28 +741,23 @@ public ArrayList<BgDrawable> getBgOutline()
    return ret;
 } // method: getOutline()
 
-public RectF getEdgeWidths()
-{
+public RectF getEdgeWidths (){
    return new RectF(); // TODO! see SinglePiece.getEdgeWidths()!
 }
 
-public boolean isWestEdge()
-{
+public boolean isWestEdge (){
    return westEdge;
 }
 
-public boolean isNorthEdge()
-{
+public boolean isNorthEdge (){
    return northEdge;
 }
 
-public boolean isEastEdge()
-{
+public boolean isEastEdge (){
    return eastEdge;
 }
 
-public boolean isSouthEdge()
-{
+public boolean isSouthEdge (){
    return southEdge;
 }
 }

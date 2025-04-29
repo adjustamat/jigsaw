@@ -7,11 +7,9 @@ import android.graphics.drawable.shapes.Shape;
 import java.util.LinkedList;
 import java.util.Random;
 
-import github.adjustamat.jigsawpuzzlefloss.pieces.Direction;
 import github.adjustamat.jigsawpuzzlefloss.pieces.SVGEdges;
-import github.adjustamat.jigsawpuzzlefloss.pieces.SVGEdges.DoubleEdge;
 import github.adjustamat.jigsawpuzzlefloss.pieces.SVGEdges.HalfEdge;
-import github.adjustamat.jigsawpuzzlefloss.pieces.SVGEdges.WholeEdge;
+import github.adjustamat.jigsawpuzzlefloss.pieces.SVGEdges.RandomEdge;
 import github.adjustamat.jigsawpuzzlefloss.pieces.SinglePiece;
 
 /**
@@ -32,66 +30,35 @@ public static class Area
    
 } // class Area
 
-public static class RandomEdge
-{
-   public final boolean in;
-   public final int curv1;
-   public final int curv2;
-   public final int neck1;
-   public final int neck2;
-   
-   RandomEdge(Random rng)
-   {
-      in = rng.nextBoolean();// ?EdgeType.OUT :EdgeType.IN;
-      curv1 = rng.nextInt(3);
-      curv2 = rng.nextInt(3);
-      neck1 = rng.nextInt(3);
-      neck2 = rng.nextInt(3);
-   }
-   
-   public DoubleEdge getWholeEdge(HalfEdge[][] pool, Direction dir)
-   {
-      return dir.getDoubleEdge(pool, in, curv1, curv2, neck1, neck2);
-   }
-} // class RandomEdge
-
 public final int width;
 public final int height;
 public final int totalPieces;
+
 public final Bitmap image;
 public final float pieceImageSize;
-public final Box box;
 
-public final PlayField playingField;
+public final Box singlePiecesContainer;
+public final PlayField playingFieldContainer;
 
-private ImagePuzzle(int width, int height, int totalPieces, Bitmap image, float pieceImageSize,
- LinkedList<SinglePiece> pieceLinkedList)
-{
+private ImagePuzzle (int width, int height, Bitmap image,
+ LinkedList<SinglePiece> pieceLinkedList
+){
    this.width = width;
    this.height = height;
-   this.totalPieces = totalPieces;
+   this.totalPieces = width * height;
+   
    this.image = image;
-   this.pieceImageSize = pieceImageSize;
-   this.box = new Box(pieceLinkedList, this);
-   this.playingField = new PlayField();
+   this.pieceImageSize = (float) image.getHeight() / height;
+   
+   this.singlePiecesContainer = new Box(pieceLinkedList, this);
+   this.playingFieldContainer = new PlayField();
 }
 
-public static ImagePuzzle generate(int pWidth, int pHeight, Bitmap image)
-{
+public static ImagePuzzle generate (int pWidth, int pHeight, Bitmap image){
    LinkedList<SinglePiece> singlePieces = new LinkedList<>();
-   
-   int verticalEdges = pHeight * (pWidth - 1);
-   int horizontalEdges = (pHeight - 1) * pWidth;
-   // int totalEdges = verticalEdges + horizontalEdges;
-   // boolean[] edgeTypeIn = new boolean[totalEdges];
-   
-   ImagePuzzle ret = new ImagePuzzle(pWidth, pHeight, pHeight * pWidth,
-    image, (float) image.getHeight() / pHeight,
-    singlePieces);
-   
-   Random rng = new Random();
+   ImagePuzzle ret = new ImagePuzzle(pWidth, pHeight, image, singlePieces);
    HalfEdge[][] pool = SVGEdges.generateAllJigsaws();
-   WholeEdge[] northEastSouthWest = new WholeEdge[4];
+   Random rng = new Random();
    
    RandomEdge[] wests = new RandomEdge[pHeight];
    for (int x = 0; x < pWidth; x++) {
@@ -109,9 +76,8 @@ public static ImagePuzzle generate(int pWidth, int pHeight, Bitmap image)
          else
             south = new RandomEdge(rng);
          
-         singlePieces.add(new SinglePiece(
-          ret, new Point(x, y), north, east, south, wests[y]
-         ));
+         singlePieces.add(new SinglePiece(ret, new Point(x, y),
+          north, east, south, wests[y], pool, rng.nextInt(4)));
          
          //if (south != null)
          north = south;

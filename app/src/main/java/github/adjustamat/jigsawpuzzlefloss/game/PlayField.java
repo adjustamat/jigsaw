@@ -9,7 +9,8 @@ import github.adjustamat.jigsawpuzzlefloss.pieces.Group;
 public class PlayField
  extends Container
 {
-
+float usableMargin;
+//float visibleOuterMargin;
 public void add(AbstractPiece p)
 {
 

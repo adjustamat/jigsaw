@@ -6,8 +6,11 @@ import android.graphics.Point;
 import android.graphics.PointF;
 import android.graphics.RectF;
 
+import androidx.annotation.Nullable;
+
 import github.adjustamat.jigsawpuzzlefloss.game.ImagePuzzle;
-import github.adjustamat.jigsawpuzzlefloss.game.ImagePuzzle.RandomEdge;
+import github.adjustamat.jigsawpuzzlefloss.pieces.SVGEdges.RandomEdge;
+import github.adjustamat.jigsawpuzzlefloss.pieces.SVGEdges.HalfEdge;
 
 /**
  * A piece of an {@link ImagePuzzle}. Has four edges that are either jigsaw-shaped or flat (at the
@@ -16,12 +19,10 @@ import github.adjustamat.jigsawpuzzlefloss.game.ImagePuzzle.RandomEdge;
 public class SinglePiece
  extends AbstractPiece
 {
-
 final RandomEdge/*EdgeType*/ westEdge;
 final RandomEdge northEdge;
 final RandomEdge eastEdge;
 final RandomEdge southEdge;
-
 
 /**
  * The outline to draw when rotating or when drawing embossed 3D-effect.
@@ -36,140 +37,86 @@ PointF imageOffset;
 //    imageSize + edgeWidths.left + edgeWidths.right,
 //    imageSize + edgeWidths.top + edgeWidths.bottom);
 
-// ImagePuzzle.Area areaParent; // can be calculated when needed, instead of stored in memory.
+// ImagePuzzle.Area areaParent // can be calculated when needed, instead of stored in memory.
 
 
 // LargerPiece largerPieceParent;
 // Point positionInLargerPiece;
 
-Color edgesColor; // TODO: extract color from the imageMask part of the image.
+Color edgesColor; // TODO: extract color from the super.imageMask part of the image.
 Color highContrastBgColor;
 
-public static class SinglePieceEdges
+static class SinglePieceEdges
  extends SVGEdges
 {
-   final WholeEdge north, east, south, west;
+   final WholeEdge n, e, s, w;
+//   final WholeEdge[] nesw = new WholeEdge[4];
    
-   public SinglePieceEdges(WholeEdge[] northEastSouthWest)
-   {
-      this.north = northEastSouthWest[0];
-      this.east = northEastSouthWest[1];
-      this.south = northEastSouthWest[2];
-      this.west = northEastSouthWest[3];
+   public SinglePieceEdges (HalfEdge[][] pool,
+    @Nullable RandomEdge north, @Nullable RandomEdge east, @Nullable RandomEdge south, @Nullable RandomEdge west
+   ){
+//      for(Direction d:Direction.values()){
+//         int i= d.ordinal();
+//         nesw[i] = randomEdges[i]==null?SVGEdges.getStraightEdge(i):randomEdges[i].getWholeEdge(pool,d);
+//      }
+      this.n = north == null ?SVGEdges.getNorthOuterEdge() :north.getWholeEdge(pool, Direction.NORTH);
+      this.e = east == null ?SVGEdges.getEastOuterEdge() :east.getWholeEdge(pool, Direction.EAST);
+      this.s = south == null ?SVGEdges.getSouthOuterEdge() :south.getWholeEdge(pool, Direction.SOUTH);
+      this.w = west == null ?SVGEdges.getWestOuterEdge() :west.getWholeEdge(pool, Direction.WEST);
+      n.setNext(e.setNext(s.setNext(w.setNext(n))));
    }
    
-   public RectF getEdgeWidths()
-   {
-      return new RectF(west.getEdgeWidth(), north.getEdgeWidth(), east.getEdgeWidth(), south.getEdgeWidth());
+   public RectF getEdgeWidths (){
+      return new RectF(w.getEdgeWidth(), n.getEdgeWidth(), e.getEdgeWidth(), s.getEdgeWidth());
    }
    
-   public void toPath(Path path)
-   {
-      north.toSVG(path);
-      east.toSVG(path);
-      south.toSVG(path);
-      west.toSVG(path);
+   public void appendToOutline (Path path){
+      n.appendSegmentsTo(path);
+      e.appendSegmentsTo(path);
+      s.appendSegmentsTo(path);
+      w.appendSegmentsTo(path);
    }
 } // class SinglePieceEdges
 
-public SinglePiece(ImagePuzzle imagePuzzle, Point coordinates,
- RandomEdge north, RandomEdge east, RandomEdge south, RandomEdge west
- /* EdgeType top, EdgeType right, EdgeType bottom, EdgeType left,
- WholeEdge[] northEastSouthWest, float imageSize*/
-)
-{
-   super(imagePuzzle.box);
+public SinglePiece (ImagePuzzle imagePuzzle, Point coordinates,
+ @Nullable RandomEdge north, @Nullable RandomEdge east, @Nullable RandomEdge south, @Nullable RandomEdge west,
+ HalfEdge[][] pool, int randomRotation
+){
+   super(imagePuzzle.singlePiecesContainer, Direction.values()[randomRotation]);
    this.correctPuzzlePosition = coordinates;
+   
+   final float imageSize = imagePuzzle.pieceImageSize;
+   this.imageOffset = new PointF(coordinates.x * imageSize, coordinates.y * imageSize);
    
    northEdge = north;
    eastEdge = east;
    southEdge = south;
    westEdge = west;
+   svgEdges = new SinglePieceEdges(pool, north, east, south, west);
    
-   this.svgEdges =new SinglePieceEdges(northEastSouthWest); // TODO: fix!
-   
-   /*
-   TODO: EdgeType class is removed, so replace!
-north == null ?EdgeType.EDGE :north.type.opposite(),
-          east == null ?EdgeType.EDGE :east.type,
-          south == null ?EdgeType.EDGE :south.type,
-          wests[y] == null ?EdgeType.EDGE :wests[y].type.opposite(),
-   
-// NORTH edge is previous piece's south edge, but :
-         if (north == null) {
-            northEastSouthWest[0] = SVGEdges.STRAIGHT_NORTH;
-         }
-         else {
-            northEastSouthWest[0] = north.getWholeEdge(pool, Direction.NORTH);
-         }
-         
-         // EAST edge:
-         if (x == pWidth - 1) {
-            east = null;
-            northEastSouthWest[1] = SVGEdges.STRAIGHT_EAST;
-         }
-         else {
-            east = new RandomEdge(rng);
-            northEastSouthWest[1] = east.getWholeEdge(pool, Direction.EAST);
-         }
-         // SOUTH edge:
-         if (y == pHeight - 1) {
-            south = null;
-            northEastSouthWest[2] = SVGEdges.STRAIGHT_SOUTH;
-         }
-         else {
-            south = new RandomEdge(rng);
-            northEastSouthWest[2] = south.getWholeEdge(pool, Direction.SOUTH);
-         }
-         // WEST edge:
-         if (wests[y] == null) {
-            northEastSouthWest[3] = SVGEdges.STRAIGHT_WEST;
-         }
-         else {
-            northEastSouthWest[3] = wests[y].getWholeEdge(pool, Direction.WEST);
-         }
-    */
-
-   
-   
-   
-   final float imageSize = imagePuzzle.pieceImageSize;
-   this.imageOffset = new PointF(coordinates.x * imageSize, coordinates.y * imageSize);
-   
-   // LATER: don't worry about drawing and lighting of animation-rotated pieces yet!
-   // just draw top and right as light, and bottom left as dark. less opacity when pieces are put together into LargerPieces.
-   
-   // rotatedPaths array come from the pool, but is not the pool.
-   
-   
-   zeroOffsetOutline = svgEdges.toSVG(0f, 0f);
+   zeroOffsetOutline = svgEdges.getOutline(0f, 0f);
    this.imageMask = new Path();
    zeroOffsetOutline.offset(imageSize * coordinates.x, imageSize * coordinates.y, imageMask);
 }
 
-public RectF getEdgeWidths()
-{
+public RectF getEdgeWidths (){
    // TODO: edgeWidths *= imageSize / SIDE_SIZE;
    return svgEdges.getEdgeWidths();
 }
 
-public boolean isWestEdge()
-{
+public boolean isWestEdge (){
    return westEdge == null;//EdgeType.EDGE;
 }
 
-public boolean isNorthEdge()
-{
+public boolean isNorthEdge (){
    return northEdge == null;//EdgeType.EDGE;
 }
 
-public boolean isEastEdge()
-{
+public boolean isEastEdge (){
    return eastEdge == null;//EdgeType.EDGE;
 }
 
-public boolean isSouthEdge()
-{
+public boolean isSouthEdge (){
    return southEdge == null;//EdgeType.EDGE;
 }
 }

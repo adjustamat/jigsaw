@@ -1,14 +1,27 @@
 package github.adjustamat.jigsawpuzzlefloss.pieces;
 
-import github.adjustamat.jigsawpuzzlefloss.pieces.SVGEdges.DoubleEdge;
-import github.adjustamat.jigsawpuzzlefloss.pieces.SVGEdges.HalfEdge;
-
 public enum Direction
 {
-   NORTH(1, 2, 0, 0, 1, 0, 0, -1),
-   EAST(2, 1, 0, 1, 0, 0, 1, 0),
-   SOUTH(1, 2, 0, 0, 0, 1, 0, 1),
-   WEST(2, 1, 1, 0, 0, 0, -1, 0);
+   NORTH(1, 2, 0, 0, 1, 0) {
+      public Direction next (){
+         return EAST;
+      }
+   },
+   EAST(2, 1, 0, 1, 0, 0) {
+      public Direction next (){
+         return SOUTH;
+      }
+   },
+   SOUTH(1, 2, 0, 0, 0, 1) {
+      public Direction next (){
+         return WEST;
+      }
+   },
+   WEST(2, 1, 1, 0, 0, 0) {
+      public Direction next (){
+         return NORTH;
+      }
+   };
 public final int initWidth;
 public final int initHeight;
 public final int initX1;
@@ -17,49 +30,33 @@ public final int initY1;
 public final int initY2;
 public final int directionX;
 public final int directionY;
-//public final int ;
-//public final int ;
-//public final int ;
+public final int perpendicularX;
+public final int perpendicularY;
 
-Direction(int initWidth, int initHeight,
- int initX1, int initX2, int initY1, int initY2,
- int directionX, int directionY)
-{
+Direction (int initWidth, int initHeight,
+ int initX1, int initX2, int initY1, int initY2
+){
    this.initWidth = initWidth;
    this.initHeight = initHeight;
    this.initX1 = initX1;
    this.initX2 = initX2;
    this.initY1 = initY1;
    this.initY2 = initY2;
-   this.directionX = directionX;
-   this.directionY = directionY;
+   this.directionX = initX2 - initX1;
+   this.directionY = initY2 - initY1;
+   this.perpendicularX = initY1 + initY2;
+   this.perpendicularY = initX1 + initX2;
 }
 
-public DoubleEdge getDoubleEdge(HalfEdge[][] pool,
- boolean in, int curv1, int curv2, int neck1, int neck2)
-{
-   int poolIndex;
-   switch (this) {
-   case EAST: case SOUTH:
-      poolIndex = (in ?4 :0) + ordinal();
-      return new DoubleEdge(
-       // pool [ NECK*6 + CURV*2 + (secondHalf?1:0) ]  [ (inward ?4 :0) + direction_ordinal ]
-       pool[neck1 * 6 + curv1 * 2][poolIndex],
-       pool[neck2 * 6 + curv2 * 2 + 1][poolIndex]
-      );
-   default: // WEST: NORTH:
-      // in/out is flipped:
-      poolIndex = (in ?0 :4) + ordinal();
-      return new DoubleEdge(
-       // first/second is flipped:
-       pool[neck2 * 6 + curv2 * 2][poolIndex],
-       pool[neck1 * 6 + curv1 * 2 + 1][poolIndex]
-      );
-   }
+public abstract Direction next ();
+
+public Direction prev (){
+   if (this == NORTH)
+      return WEST;
+   return values()[ordinal() - 1];
 }
 
-public Direction opposite()
-{
+public Direction opposite (){
    switch (this) {
    case NORTH:
       return SOUTH;
@@ -70,5 +67,18 @@ public Direction opposite()
    default: // WEST:
       return EAST;
    }
+}
+
+public Direction positive (){
+   switch (this) {
+   case NORTH: case SOUTH:
+      return SOUTH;
+   default: // case EAST: WEST:
+      return EAST;
+   }
+}
+
+public static int cycle(int i){
+   return i % 4;
 }
 }

@@ -18,83 +18,56 @@ public abstract class AbstractPiece
 public static final float SIDE_SIZE = 120f;
 public static final float HALF_SIZE = 60f;
 
-/*
- * The type of jigsaw edge of a puzzle piece.
- */
-/*public enum EdgeType
-{
-   EDGE,
-   IN,
-   OUT;
-   
-   public EdgeType opposite()
-   {
-      switch (this) {
-      case IN: return OUT;
-      case OUT: return IN;
-      default: return EDGE;
-      }
-   }
-}*/
-
 /**
  * The mask of the ImagePuzzle image. Consists of the outline SVGPath turned into a graphics.Path.
  */
-Path imageMask;
-Point correctPuzzlePosition;
+protected Path imageMask;
+protected Point correctPuzzlePosition;
 
-Group groupParent;
-Integer indexInGroup; // null when not in any Group.
+protected Group groupParent;
+protected Integer indexInGroup; // null when not in any Group.
 
-@NonNull Container containerParent;
-public int indexInContainer;
-PointF positionInContainer; // null when container is Box. (use indexInContainer instead)
-boolean lockedInPlace; // always false when container is Box.
+protected @NonNull Container containerParent;
+protected int indexInContainer;
+protected PointF positionInContainer; // null when container is Box. (use indexInContainer instead)
+protected boolean lockedInPlace; // always false when container is Box.
 
+protected @NonNull Direction currentRotationNorthDirection;
 
-Direction currentRotation;
-
-protected AbstractPiece(@NonNull Container containerParent)
-{
+protected AbstractPiece (@NonNull Container containerParent, @NonNull Direction rotation){
    this.containerParent = containerParent;
+   currentRotationNorthDirection = rotation;
 }
 
-public void setContainer(Container newParent)
-{
+public void setContainer (Container newParent){
    this.containerParent = newParent;
 }
 
-public @NonNull Container getContainer()
-{
+public @NonNull Container getContainer (){
    return containerParent;
 }
 
-public boolean isLockedInPlace()
-{
+public boolean isLockedInPlace (){
    return lockedInPlace;
 }
 
-public void setLockedInPlace(boolean locked)
-{
+public void setLockedInPlace (boolean locked){
    lockedInPlace = locked;
 }
 
-void removeFromGroup()
-{
+void removeFromGroup (){
    if (groupParent != null) {
       groupParent.removeMe(indexInGroup);
       setNullGroup();
    }
 }
 
-private void setNullGroup()
-{
+private void setNullGroup (){
    groupParent = null;
    indexInGroup = null;
 }
 
-void setGroup(@NonNull Group group, int index)
-{
+void setGroup (@NonNull Group group, int index){
    if (groupParent != null) {
       groupParent.removeMe(indexInGroup);
    }
@@ -102,25 +75,22 @@ void setGroup(@NonNull Group group, int index)
    indexInGroup = index;
 }
 
-public boolean isGrouped()
-{
+public boolean isGrouped (){
    return groupParent != null && !groupParent.isLonelyPiece();
 }
 
-public abstract RectF getEdgeWidths();
+public abstract RectF getEdgeWidths ();
 
-public abstract boolean isWestEdge();
-public abstract boolean isNorthEdge();
-public abstract boolean isEastEdge();
-public abstract boolean isSouthEdge();
+public abstract boolean isWestEdge ();
+public abstract boolean isNorthEdge ();
+public abstract boolean isEastEdge ();
+public abstract boolean isSouthEdge ();
 
-public boolean isEdgePiece()
-{
+public boolean isEdgePiece (){
    return isWestEdge() || isNorthEdge() || isEastEdge() || isSouthEdge();
 }
 
-public boolean isCornerPiece()
-{
+public boolean isCornerPiece (){
    return (isWestEdge() || isEastEdge()) && (isNorthEdge() || isSouthEdge());
 }
 }
