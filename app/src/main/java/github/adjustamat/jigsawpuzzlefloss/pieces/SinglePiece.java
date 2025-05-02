@@ -49,8 +49,7 @@ Color highContrastBgColor;
 static class SinglePieceEdges
  extends SVGEdges
 {
-   final WholeEdge n, e, s, w;
-//   final WholeEdge[] nesw = new WholeEdge[4];
+   final WholeEdge[] nesw = new WholeEdge[4];
    
    public SinglePieceEdges (HalfEdge[][] pool,
     @Nullable RandomEdge north, @Nullable RandomEdge east, @Nullable RandomEdge south, @Nullable RandomEdge west
@@ -59,22 +58,26 @@ static class SinglePieceEdges
 //         int i= d.ordinal();
 //         nesw[i] = randomEdges[i]==null?SVGEdges.getStraightEdge(i):randomEdges[i].getWholeEdge(pool,d);
 //      }
-      this.n = north == null ?SVGEdges.getNorthOuterEdge() :north.getWholeEdge(pool, Direction.NORTH);
-      this.e = east == null ?SVGEdges.getEastOuterEdge() :east.getWholeEdge(pool, Direction.EAST);
-      this.s = south == null ?SVGEdges.getSouthOuterEdge() :south.getWholeEdge(pool, Direction.SOUTH);
-      this.w = west == null ?SVGEdges.getWestOuterEdge() :west.getWholeEdge(pool, Direction.WEST);
-      n.setNext(e.setNext(s.setNext(w.setNext(n))));
+      this.nesw[0] = north == null ?SVGEdges.getNorthOuterEdge() :north.getWholeEdge(pool, Direction.NORTH);
+      this.nesw[1] = east == null ?SVGEdges.getEastOuterEdge() :east.getWholeEdge(pool, Direction.EAST);
+      this.nesw[2] = south == null ?SVGEdges.getSouthOuterEdge() :south.getWholeEdge(pool, Direction.SOUTH);
+      this.nesw[3] = west == null ?SVGEdges.getWestOuterEdge() :west.getWholeEdge(pool, Direction.WEST);
+      nesw[0].setNext(nesw[1].setNext(nesw[2].setNext(nesw[3].setNext(nesw[0]))));
    }
    
    public RectF getEdgeWidths (){
-      return new RectF(w.getEdgeWidth(), n.getEdgeWidth(), e.getEdgeWidth(), s.getEdgeWidth());
+      return new RectF(
+       nesw[3].getEdgeWidth(),
+       nesw[0].getEdgeWidth(),
+       nesw[1].getEdgeWidth(),
+       nesw[2].getEdgeWidth()
+      );
    }
    
    public void appendToOutline (Path path){
-      n.appendSegmentsTo(path);
-      e.appendSegmentsTo(path);
-      s.appendSegmentsTo(path);
-      w.appendSegmentsTo(path);
+      for (WholeEdge edge: nesw) {
+         edge.appendSegmentsTo(path);
+      }
    }
 } // class SinglePieceEdges
 
