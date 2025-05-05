@@ -93,4 +93,25 @@ public boolean isEdgePiece (){
 public boolean isCornerPiece (){
    return (isWestEdge() || isEastEdge()) && (isNorthEdge() || isSouthEdge());
 }
+
+public abstract static class VectorEdges
+{
+
+/**
+ * Create a vector graphics closed Path with the supplied top-left corner.
+ * @param startX X of top-left corner
+ * @param startY Y of top-left corner
+ * @return a closed Path
+ */
+public Path getPath (float startX, float startY){
+   Path ret = new Path();
+   ret.moveTo(startX, startY);
+   this.appendToPath(ret);
+   ret.close();
+   return ret;
+}
+
+public abstract void appendToPath (Path path);
+
+}
 }

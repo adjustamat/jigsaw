@@ -9,8 +9,8 @@ import android.graphics.RectF;
 import androidx.annotation.Nullable;
 
 import github.adjustamat.jigsawpuzzlefloss.game.ImagePuzzle;
-import github.adjustamat.jigsawpuzzlefloss.pieces.SVGEdges.RandomEdge;
-import github.adjustamat.jigsawpuzzlefloss.pieces.SVGEdges.HalfEdge;
+import github.adjustamat.jigsawpuzzlefloss.pieces.WholeEdge.RandomEdge;
+import github.adjustamat.jigsawpuzzlefloss.pieces.WholeEdge.HalfEdge;
 
 /**
  * A piece of an {@link ImagePuzzle}. Has four edges that are either jigsaw-shaped or flat (at the
@@ -47,7 +47,7 @@ Color edgesColor; // TODO: extract color from the super.imageMask part of the im
 Color highContrastBgColor;
 
 static class SinglePieceEdges
- extends SVGEdges
+ extends VectorEdges
 {
    final WholeEdge[] nesw = new WholeEdge[4];
    
@@ -58,11 +58,11 @@ static class SinglePieceEdges
 //         int i= d.ordinal();
 //         nesw[i] = randomEdges[i]==null?SVGEdges.getStraightEdge(i):randomEdges[i].getWholeEdge(pool,d);
 //      }
-      this.nesw[0] = north == null ?SVGEdges.getNorthOuterEdge() :north.getWholeEdge(pool, Direction.NORTH);
-      this.nesw[1] = east == null ?SVGEdges.getEastOuterEdge() :east.getWholeEdge(pool, Direction.EAST);
-      this.nesw[2] = south == null ?SVGEdges.getSouthOuterEdge() :south.getWholeEdge(pool, Direction.SOUTH);
-      this.nesw[3] = west == null ?SVGEdges.getWestOuterEdge() :west.getWholeEdge(pool, Direction.WEST);
-      nesw[0].setNext(nesw[1].setNext(nesw[2].setNext(nesw[3].setNext(nesw[0]))));
+      this.nesw[0] = north == null ?WholeEdge.getNorthOuterEdge() :north.getWholeEdge(pool, Direction.NORTH);
+      this.nesw[1] = east == null ?WholeEdge.getEastOuterEdge() :east.getWholeEdge(pool, Direction.EAST);
+      this.nesw[2] = south == null ?WholeEdge.getSouthOuterEdge() :south.getWholeEdge(pool, Direction.SOUTH);
+      this.nesw[3] = west == null ?WholeEdge.getWestOuterEdge() :west.getWholeEdge(pool, Direction.WEST);
+      nesw[0].linkNext(nesw[1].linkNext(nesw[2].linkNext(nesw[3].linkNext(nesw[0]))));
    }
    
    public RectF getEdgeWidths (){
@@ -74,7 +74,7 @@ static class SinglePieceEdges
       );
    }
    
-   public void appendToOutline (Path path){
+   public void appendToPath (Path path){
       for (WholeEdge edge: nesw) {
          edge.appendSegmentsTo(path);
       }
@@ -97,7 +97,7 @@ public SinglePiece (ImagePuzzle imagePuzzle, Point coordinates,
    westEdge = west;
    svgEdges = new SinglePieceEdges(pool, north, east, south, west);
    
-   zeroOffsetOutline = svgEdges.getOutline(0f, 0f);
+   zeroOffsetOutline = svgEdges.getPath(0f, 0f);
    this.imageMask = new Path();
    zeroOffsetOutline.offset(imageSize * coordinates.x, imageSize * coordinates.y, imageMask);
 }

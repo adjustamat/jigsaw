@@ -7,9 +7,9 @@ import android.graphics.drawable.shapes.Shape;
 import java.util.LinkedList;
 import java.util.Random;
 
-import github.adjustamat.jigsawpuzzlefloss.pieces.SVGEdges;
-import github.adjustamat.jigsawpuzzlefloss.pieces.SVGEdges.HalfEdge;
-import github.adjustamat.jigsawpuzzlefloss.pieces.SVGEdges.RandomEdge;
+import github.adjustamat.jigsawpuzzlefloss.pieces.WholeEdge;
+import github.adjustamat.jigsawpuzzlefloss.pieces.WholeEdge.HalfEdge;
+import github.adjustamat.jigsawpuzzlefloss.pieces.WholeEdge.RandomEdge;
 import github.adjustamat.jigsawpuzzlefloss.pieces.SinglePiece;
 
 /**
@@ -57,7 +57,7 @@ private ImagePuzzle (int width, int height, Bitmap image,
 public static ImagePuzzle generate (int pWidth, int pHeight, Bitmap image){
    LinkedList<SinglePiece> singlePieces = new LinkedList<>();
    ImagePuzzle ret = new ImagePuzzle(pWidth, pHeight, image, singlePieces);
-   HalfEdge[][] pool = SVGEdges.generateAllJigsaws();
+   HalfEdge[][] pool = WholeEdge.generateAllJigsaws();
    Random rng = new Random();
    
    RandomEdge[] wests = new RandomEdge[pHeight];
