@@ -27,7 +27,7 @@ final RandomEdge southEdge;
 /**
  * The outline to draw when rotating or when drawing embossed 3D-effect.
  */
-final SinglePieceEdges svgEdges;
+final SinglePieceEdges vectorEdges;
 
 // translate PathShape imageMask by coordinates to get the correct part of the image
 Path zeroOffsetOutline;
@@ -95,16 +95,16 @@ public SinglePiece (ImagePuzzle imagePuzzle, Point coordinates,
    eastEdge = east;
    southEdge = south;
    westEdge = west;
-   svgEdges = new SinglePieceEdges(pool, north, east, south, west);
+   vectorEdges = new SinglePieceEdges(pool, north, east, south, west);
    
-   zeroOffsetOutline = svgEdges.getPath(0f, 0f);
+   zeroOffsetOutline = vectorEdges.getPath(0f, 0f);
    this.imageMask = new Path();
    zeroOffsetOutline.offset(imageSize * coordinates.x, imageSize * coordinates.y, imageMask);
 }
 
 public RectF getEdgeWidths (){
    // TODO: edgeWidths *= imageSize / SIDE_SIZE;
-   return svgEdges.getEdgeWidths();
+   return vectorEdges.getEdgeWidths();
 }
 
 public boolean isWestEdge (){

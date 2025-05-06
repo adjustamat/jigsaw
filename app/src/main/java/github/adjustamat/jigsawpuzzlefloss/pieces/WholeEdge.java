@@ -120,11 +120,11 @@ public WholeEdge getPrev (){
    return prev;
 }
 
-public WholeEdge unlinkInnerEdge (){
-   next = null;
-   prev = null;
-   return this;
-}
+//public WholeEdge unlinkInnerEdge (){
+//   next = null;
+//   prev = null;
+//   return this;
+//}
 
 public WholeEdge linkNext (WholeEdge next){
    this.next = next;
