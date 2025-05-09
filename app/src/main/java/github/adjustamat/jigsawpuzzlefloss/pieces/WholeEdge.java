@@ -13,19 +13,23 @@ private static final StraightLine STRAIGHT_EAST = new StraightLine(new float[]{0
 private static final StraightLine STRAIGHT_SOUTH = new StraightLine(new float[]{-120f, 0f});
 private static final StraightLine STRAIGHT_WEST = new StraightLine(new float[]{0f, -120f});
 
-public static StraightEdge getNorthOuterEdge (){
+public static StraightEdge getNorthOuterEdge()
+{
    return new StraightEdge(STRAIGHT_NORTH);
 }
 
-public static StraightEdge getEastOuterEdge (){
+public static StraightEdge getEastOuterEdge()
+{
    return new StraightEdge(STRAIGHT_EAST);
 }
 
-public static StraightEdge getSouthOuterEdge (){
+public static StraightEdge getSouthOuterEdge()
+{
    return new StraightEdge(STRAIGHT_SOUTH);
 }
 
-public static StraightEdge getWestOuterEdge (){
+public static StraightEdge getWestOuterEdge()
+{
    return new StraightEdge(STRAIGHT_WEST);
 }
 
@@ -34,7 +38,8 @@ public static StraightEdge getWestOuterEdge (){
  * pool [NECK*6 + CURV*2 + (secondHalf?1:0)] [(inward?4:0) + direction_ordinal]
  * @return the pool of pre-rotated paths
  */
-public static HalfEdge[][] generateAllJigsaws (){
+public static HalfEdge[][] generateAllJigsaws()
+{
    HalfEdge[][] ret = new HalfEdge[3 * 3 * 2][];
    int reti = 0;
    for (float neckWidth = 0f; neckWidth < 13f; neckWidth += 5f) { // from narrow to wide
@@ -46,12 +51,21 @@ public static HalfEdge[][] generateAllJigsaws (){
    return ret;
 }
 
-static HalfEdge[] generateFirstHalf (float neckWidth, float curvature){
+static HalfEdge[] generateFirstHalf(float neckWidth, float curvature)
+{
    HalfEdge cfirst_north_out = new HalfEdge(
-    new float[]{0f, 0f,/*<-cp1*/ 40f, curvature,/*<-cp2*/ 45f, curvature,//<-endPoint
-     15f, 0f,/*<-cp1*/ 45f - neckWidth, -curvature,/*<-cp2*/ 47.5f - neckWidth, -7.5f - curvature, 2.5f, -7.5f,/*<-cp1*/
-     -15 + neckWidth, -15f,/*<-cp2*/ -15 + neckWidth, -25f,//<-endPoint
-     0f, -10f,/*<-cp1*/ 7.5f, -17.5f,/*<-cp2*/ 22.5f, -17.5f//<-endPoint
+    new float[]{0f, 0f, // <- control from
+     40f, curvature, // <- control to
+     45f, curvature, // <- endPoint 1
+     15f, 0f, // <- control from
+     45f - neckWidth, -curvature, // <- control to
+     47.5f - neckWidth, -7.5f - curvature, // <- endPoint 2
+     2.5f, -7.5f,// <- control from
+     -15 + neckWidth, -15f,// <- control to
+     -15 + neckWidth, -25f, // <- endPoint 3
+     0f, -10f, // <- control from
+     7.5f, -17.5f, // <- control to
+     22.5f, -17.5f // <- endPoint 4
     }).setEdgeWidth(25 + 7.5f + 17.5f);
    HalfEdge cfirst_east_out = cfirst_north_out.getTransformed(Direction.EAST)
     .setEdgeWidth(cfirst_north_out.edgeWidth);
@@ -69,12 +83,21 @@ static HalfEdge[] generateFirstHalf (float neckWidth, float curvature){
     cfirst_east_in, cfirst_south_in, cfirst_west_in};
 }
 
-static HalfEdge[] generateSecondHalf (float neckWidth, float curvature){
+static HalfEdge[] generateSecondHalf(float neckWidth, float curvature)
+{
    HalfEdge csecond_north_out = new HalfEdge(
-    new float[]{15f, 0f,/*<-cp1*/ 22.5f, 7.5f,/*<-cp2*/ 22.5f, 17.5f,//<-endPoint
-     0f, -10f,/*<-cp1*/ -17.5f + neckWidth, -17.5f,/*<-cp2*/ -15 + neckWidth, 25,//<-endPoint
-     2.5f, 7.5f,/*<-cp1*/ 32.5f - neckWidth, 7.5f + curvature,/*<-cp2*/ 47.5f - neckWidth, 7.5f + curvature, 5f, 0f,
-/*<-cp1*/ 45f, -curvature,/*<-cp2*/ 45f, -curvature//<-endPoint
+    new float[]{15f, 0f, // <- control from
+     22.5f, 7.5f, // <- control to
+     22.5f, 17.5f, // <- endPoint 1
+     0f, -10f, // <- control from
+     -17.5f + neckWidth, -17.5f, // <- control to
+     -15 + neckWidth, 25, // <- endPoint 2
+     2.5f, 7.5f, // <- control from
+     32.5f - neckWidth, 7.5f + curvature, // <- control to
+     47.5f - neckWidth, 7.5f + curvature, // <- endPoint 3
+     5f, 0f, // <- control from
+     45f, -curvature, // <- control to
+     45f, -curvature // <- endPoint 4
     }).setEdgeWidth(25 + 7.5f + 17.5f);
    HalfEdge csecond_east_out = csecond_north_out.getTransformed(Direction.EAST)
     .setEdgeWidth(csecond_north_out.edgeWidth);
@@ -95,15 +118,18 @@ static HalfEdge[] generateSecondHalf (float neckWidth, float curvature){
 private Point subPiece;
 private Direction subPieceDir;
 
-public Point getSubPiece (){
+public Point getSubPiece()
+{
    return subPiece;
 }
 
-public Direction getSubPieceDir (){
+public Direction getSubPieceDir()
+{
    return subPieceDir;
 }
 
-public WholeEdge setSubPiece (Point subPiece, Direction dir){
+public WholeEdge setSubPiece(Point subPiece, Direction dir)
+{
    this.subPiece = subPiece;
    this.subPieceDir = dir;
    return this;
@@ -112,11 +138,13 @@ public WholeEdge setSubPiece (Point subPiece, Direction dir){
 private WholeEdge next;
 private WholeEdge prev;
 
-public WholeEdge getNext (){
+public WholeEdge getNext()
+{
    return next;
 }
 
-public WholeEdge getPrev (){
+public WholeEdge getPrev()
+{
    return prev;
 }
 
@@ -126,14 +154,15 @@ public WholeEdge getPrev (){
 //   return this;
 //}
 
-public WholeEdge linkNext (WholeEdge next){
+public WholeEdge linkNext(WholeEdge next)
+{
    this.next = next;
    next.prev = this;
    return this;
 }
 
-public abstract void appendSegmentsTo (Path path);
-public abstract float getEdgeWidth ();
+public abstract void appendSegmentsTo(Path path);
+public abstract float getEdgeWidth();
 
 /**
  * Two HalfEdges that makes a WholeEdge.
@@ -144,17 +173,20 @@ public static class DoubleEdge
 {
    private final HalfEdge half1, half2;
    
-   public DoubleEdge (HalfEdge firstHalf, HalfEdge secondHalf){
+   public DoubleEdge(HalfEdge firstHalf, HalfEdge secondHalf)
+   {
       half1 = firstHalf;
       half2 = secondHalf;
    }
    
-   public void appendSegmentsTo (Path path){
+   public void appendSegmentsTo(Path path)
+   {
       half1.appendHalfEdgeTo(path);
       half2.appendHalfEdgeTo(path);
    }
    
-   public float getEdgeWidth (){
+   public float getEdgeWidth()
+   {
       return Math.max(half1.edgeWidth, half2.edgeWidth);
    }
 }
@@ -164,15 +196,18 @@ public static class StraightEdge
 {
    StraightLine impl;
    
-   private StraightEdge (StraightLine data){
+   private StraightEdge(StraightLine data)
+   {
       this.impl = data;
    }
    
-   public void appendSegmentsTo (Path path){
+   public void appendSegmentsTo(Path path)
+   {
       path.rLineTo(impl.data[0], impl.data[1]);
    }
    
-   public float getEdgeWidth (){
+   public float getEdgeWidth()
+   {
       return 0f;
    }
 }
@@ -181,7 +216,8 @@ private static class StraightLine
 {
    private final float[] data;
    
-   private StraightLine (float[] data){
+   private StraightLine(float[] data)
+   {
       this.data = data;
    }
 }
@@ -199,29 +235,34 @@ public static class HalfEdge
     * Create a NORTH OUT HalfEdge.
     * @param allData data for all Cubic segments of this SVG HalfEdge.
     */
-   private HalfEdge (float[] allData){
+   private HalfEdge(float[] allData)
+   {
       segments = new ArrayList<>(4); // 4 segments
       for (int i = 0; i < allData.length; i += 6) { // 6 float values per segment (rCubicTo)
          segments.add(new Cubic(allData, i/*, true*/));
       }
    }
    
-   private HalfEdge (ArrayList<Cubic> segments){
+   private HalfEdge(ArrayList<Cubic> segments)
+   {
       this.segments = segments;
    }
    
-   HalfEdge setEdgeWidth (float f){
+   HalfEdge setEdgeWidth(float f)
+   {
       edgeWidth = f;
       return this;
    }
    
-   public void appendHalfEdgeTo (Path path){
+   public void appendHalfEdgeTo(Path path)
+   {
       for (Cubic segm: segments) {
          segm.appendSegmentTo(path);
       }
    }
    
-   private HalfEdge getTransformed (Direction dir){
+   private HalfEdge getTransformed(Direction dir)
+   {
       ArrayList<Cubic> ret = new ArrayList<>(4);
       for (Cubic segm: segments) {
          Cubic newSegment;
@@ -248,11 +289,13 @@ private static class Cubic
 {
    final float[] data;
    
-   Cubic (float[] data){
+   Cubic(float[] data)
+   {
       this.data = data;
    }
    
-   Cubic (float[] allData, int dataOffset/*, boolean from102to60*/){
+   Cubic(float[] allData, int dataOffset/*, boolean from102to60*/)
+   {
       this.data = new float[6];
       for (int i = 0; i < data.length; i++) {
          data[i] = allData[dataOffset + i];
@@ -261,26 +304,31 @@ private static class Cubic
       }
    }
    
-   void appendSegmentTo (Path path){
+   void appendSegmentTo(Path path)
+   {
       path.rCubicTo(data[0], data[1], data[2], data[3], data[4], data[5]);
    }
    
-   Cubic rotateToEast (){
+   Cubic rotateToEast()
+   {
       // rotate clockwise - exchange x and (inverted) y values:
       return new Cubic(new float[]{-data[1], data[0], -data[3], data[2], -data[5], data[4]});
    }
    
-   Cubic rotateToWest (){
+   Cubic rotateToWest()
+   {
       // rotate counterclockwise - exchange (inverted) x and y values:
       return new Cubic(new float[]{-data[1], data[0], -data[3], data[2], -data[5], data[4]});
    }
    
-   Cubic rotateToSouth (){
+   Cubic rotateToSouth()
+   {
       // rotate twice (or flip both ways) - invert x-values and y-values:
       return new Cubic(new float[]{-data[0], -data[1], -data[2], -data[3], -data[4], -data[5]});
    }
    
-   Cubic flipToIn (){
+   Cubic flipToIn()
+   {
       // flip (mirror) upside-down - invert y-values:
       return new Cubic(new float[]{data[0], -data[1], data[2], -data[3], data[4], -data[5]});
    }
@@ -292,7 +340,8 @@ public static class RandomEdge
    public final int curv1, curv2;
    public final int neck1, neck2;
    
-   public RandomEdge (Random rng){
+   public RandomEdge(Random rng)
+   {
       in = rng.nextBoolean();
       curv1 = rng.nextInt(3);
       curv2 = rng.nextInt(3);
@@ -300,7 +349,8 @@ public static class RandomEdge
       neck2 = rng.nextInt(3);
    }
    
-   public DoubleEdge getWholeEdge (HalfEdge[][] pool, Direction dir){
+   public DoubleEdge getWholeEdge(HalfEdge[][] pool, Direction dir)
+   {
       int poolIndex;
       switch (dir) {
       case EAST: case SOUTH:

@@ -10,6 +10,7 @@ import androidx.annotation.NonNull;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import LargerPiece.OuterEdgesIndices;
 import github.adjustamat.jigsawpuzzlefloss.game.BgDrawable;
 import github.adjustamat.jigsawpuzzlefloss.pieces.SinglePiece.SinglePieceEdges;
 
@@ -70,7 +71,7 @@ static class OuterEdgesIndices
       nesw.add(null);
    }
    
-   OuterEdgeIndex get(int direction)
+   OuterEdgeIndex getIndex(int direction)
    {
       return nesw.get(direction);
    }
@@ -79,40 +80,42 @@ static class OuterEdgesIndices
    {
       nesw.set(direction, new OuterEdgeIndex(hole, index));
    }
+
+//   void remove(int direction)
+//   {
+//      nesw.set(direction, null);
+//   }
    
-   void remove(int direction)
+   OuterEdgeIndex getIndex(Direction direction)
    {
-      nesw.set(direction, null);
-   }
-   
-   OuterEdgeIndex get(Direction direction)
-   {
-      return get(direction.ordinal());
+      return getIndex(direction.ordinal());
    }
    
    void set(Direction direction, int hole, @NonNull Integer index)
    {
       set(direction.ordinal(), hole, index);
    }
-   
-   void remove(Direction direction)
-   {
-      remove(direction.ordinal());
-   }
+
+//   void remove(Direction direction)
+//   {
+//      remove(direction.ordinal());
+//   }
 } // class OuterEdgeIndices
 
 class LargerPieceEdges
  extends VectorEdges
 {
    private final ArrayList<WholeEdge> innerEdges = new ArrayList<>();
-   private final ArrayList<WholeEdge> outerEdges = new ArrayList<>();
-   private final ArrayList<ArrayList<WholeEdge>> holes = new ArrayList<>(1);
+   //   private final ArrayList<WholeEdge> outerEdges = new ArrayList<>();
+   private final ArrayList<ArrayList<WholeEdge>> outerEdgeHoles = new ArrayList<>(2);
+   private int[] removed = new int[1];
    
    LargerPieceEdges(LargerPiece p1, LargerPiece p2,
     Point point1, Point point2, Direction dir, int offsetX1, int offsetX2, int offsetY1, int offsetY2)
    {
       // TODO: combine SVGPath outline (my own UNION) - indexes in matrix need to change too
-      // TODO: the new piece may be attached to more than just "attachedTo"!
+      // TODO: outerEdgeHoles is empty, only its CAPACITY is two! Add at least one list to it!
+      // TODO: make sure when combining two LargerPieces that I know there can be nulls in both outerEdgeHoles lists!
       
       LargerPieceEdges edges1 = p1.vectorEdges;
       LargerPieceEdges edges2 = p2.vectorEdges;
@@ -152,10 +155,13 @@ class LargerPieceEdges
       } // combine matrices
       
       
-   }
+   } // LargerPieceEdges(LargerPiece, LargerPiece, Point, Point, Direction, int, int, int, int)
    
    LargerPieceEdges(SinglePieceEdges p1, SinglePieceEdges p2, Direction dir)
    {
+      // TODO: outerEdgeHoles is empty, only its CAPACITY is two! Add at least one list to it!
+      ArrayList<WholeEdge> outerEdges = new ArrayList<>();
+      outerEdgeHoles.add(outerEdges);
       // only need one innerEdge! skip the same one from p2.
       innerEdges.add(p1.nesw[dir.ordinal()]);
       
@@ -172,27 +178,38 @@ class LargerPieceEdges
       
       WholeEdge firstEdge = p1.nesw[dir1.ordinal()];
       WholeEdge nextEdge = firstEdge;
-      outerEdges.add(nextEdge.setSubPiece(point1, currentDir = dir1));
-      indices1.set(currentDir, -1, 0);
-      outerEdges.add(nextEdge = nextEdge.getNext().setSubPiece(point1, currentDir = dir1.next()));
-      indices1.set(currentDir, -1, 1);
-      outerEdges.add(nextEdge = nextEdge.getNext().setSubPiece(point1, currentDir = dir1.opposite()));
-      indices1.set(currentDir, -1, 2);
+      addOuterEdge(0, indices1, outerEdges, point1, nextEdge, dir1);
+//      indices1.set(currentDir = dir1, 0, 0);
+//      outerEdges.add(nextEdge.setSubPiece(point1, currentDir));
+      addOuterEdge(0, indices1, outerEdges, point1,
+       nextEdge = nextEdge.getNext(), dir1.next());
+//      indices1.set(currentDir = dir1.next(), 0, 1);
+//      outerEdges.add(nextEdge = nextEdge.getNext().setSubPiece(point1, currentDir));
+      addOuterEdge(0, indices1, outerEdges, point1,
+       nextEdge = nextEdge.getNext(), dir1.opposite());
+//      indices1.set(currentDir = dir1.opposite(), 0, 2);
+//      outerEdges.add(nextEdge = nextEdge.getNext().setSubPiece(point1, currentDir));
       
       // link together the edges from p1 and p2
-      nextEdge.linkNext(nextEdge = p2.nesw[dir2.ordinal()]);
+      nextEdge.linkNext(
+       nextEdge = p2.nesw[dir2.ordinal()]);
       
       // the point in the LargerPiece matrix that corresponds to the next 3 edges in the list
       Point point2 = new Point(dir.initX2, dir.initY2);
       // the index references to store at this point
       OuterEdgesIndices indices2 = new OuterEdgesIndices();
       
-      outerEdges.add(nextEdge.setSubPiece(point2, currentDir = dir2));
-      indices2.set(currentDir, -1, 3);
-      outerEdges.add(nextEdge = nextEdge.getNext().setSubPiece(point2, currentDir = dir2.next()));
-      indices2.set(currentDir, -1, 4);
-      outerEdges.add(nextEdge = nextEdge.getNext().setSubPiece(point2, currentDir = dir2.opposite()));
-      indices2.set(currentDir, -1, 5);
+      addOuterEdge(0, indices2, outerEdges, point2, nextEdge, dir2);
+      addOuterEdge(0, indices2, outerEdges, point2,
+       nextEdge = nextEdge.getNext(), dir2.next());
+      addOuterEdge(0, indices2, outerEdges, point2,
+       nextEdge = nextEdge.getNext(), dir2.opposite());
+//      indices2.set(currentDir, 0, 3);
+//      outerEdges.add(nextEdge.setSubPiece(point2, currentDir = dir2));
+//      indices2.set(currentDir, 0, 4); = dir2.next()
+//      outerEdges.add(nextEdge = nextEdge.getNext().setSubPiece(point2, currentDir));
+//      indices2.set(currentDir, 0, 5); currentDir = dir2.opposite()
+//      outerEdges.add(nextEdge = nextEdge.getNext().setSubPiece(point2,));
       
       // link together the edges from p1 and p2 a second time
       nextEdge.linkNext(firstEdge);
@@ -204,11 +221,11 @@ class LargerPieceEdges
    
    /**
     * Add the edges of a SinglePiece attaching to at least one subPiece.
-    * @param newEdges the edges of the new piece
+    * @param singlePieceEdges the edges of the new piece
     * @param subPiece the subPiece attaching to the new piece
     * @param dir the direction of attachment
     */
-   void addPieceEdges(SinglePieceEdges newEdges, Point subPiece, Direction dir)
+   void addPieceEdges(SinglePieceEdges singlePieceEdges, Point subPiece, Direction dir)
    {
       // check all around the new piece if we already have pieces there:
       
@@ -237,7 +254,7 @@ class LargerPieceEdges
       // we know the new piece is attaching to "subPiece", but check if it is attaching to more pieces:
       int sum = 1;
       // the direction of the attaching edge is the opposite of the direction of attachment
-      OuterEdgeIndex attachingIndex = opposite.get(dir);
+      OuterEdgeIndex attachingIndex = opposite.getIndex(dir);
       // the attaching edge is now an inner edge. detach:
       WholeEdge attachingEdge = removeOuterEdge(attachingIndex);
       innerEdges.add(attachingEdge);
@@ -246,7 +263,7 @@ class LargerPieceEdges
       if (!behindNull) {
          sum++;
          // the direction of the attaching edge is the opposite of the direction of attachment
-         attachingIndex = behind.get(dir.opposite());
+         attachingIndex = behind.getIndex(dir.opposite());
          // the attaching edge is now an inner edge. detach:
          attachingEdge = removeOuterEdge(attachingIndex);
          innerEdges.add(attachingEdge);
@@ -256,7 +273,7 @@ class LargerPieceEdges
       if (!nextNull) {
          sum++;
          // the direction of the attaching edge is the opposite of the direction of attachment
-         attachingIndex = next.get(dirPrev);
+         attachingIndex = next.getIndex(dirPrev);
          // the attaching edge is now an inner edge. detach:
          attachingEdge = removeOuterEdge(attachingIndex);
          innerEdges.add(attachingEdge);
@@ -266,7 +283,7 @@ class LargerPieceEdges
       if (!prevNull) {
          sum++;
          // the direction of the attaching edge is the opposite of the direction of attachment
-         attachingIndex = prev.get(dirNext);
+         attachingIndex = prev.getIndex(dirNext);
          // the attaching edge is now an inner edge. detach:
          attachingEdge = removeOuterEdge(attachingIndex);
          innerEdges.add(attachingEdge);
@@ -297,109 +314,110 @@ class LargerPieceEdges
          }
          
          // the direction of the attaching edge is the opposite of the direction of attachment
-         attachingIndex = opposite.get(dir);
+         attachingIndex = opposite.getIndex(dir);
          attachingEdge = innerEdges.get(innerEdges.size() - 1);
-         ArrayList<WholeEdge> holeEdges = getOuterEdges(attachingIndex);
+         ArrayList<WholeEdge> outerEdges = getOuterEdges(attachingIndex);
          
          // link (attach) the first new edge
-         WholeEdge firstNewEdge = newEdges.nesw[dir.prev().ordinal()];
+         WholeEdge firstNewEdge = singlePieceEdges.nesw[dir.prev().ordinal()];
          attachingEdge.getPrev().linkNext(firstNewEdge);
          
          // add the first new edge so it gets an index
-         newIndices.set(dir.prev(), attachingIndex.hole, holeEdges.size());
-         holeEdges.add(firstNewEdge.setSubPiece(newSubPiece, dir.prev()));
+         addOuterEdge(attachingIndex.hole, newIndices, outerEdges, newSubPiece, firstNewEdge, dir.prev());
+//         newIndices.set(dir.prev(), attachingIndex.hole, outerEdges.size());
+//         outerEdges.add(firstNewEdge.setSubPiece(newSubPiece, dir.prev()));
          
          // add the second new edge so it gets an index
-         newIndices.set(dir, attachingIndex.hole, holeEdges.size());
-         holeEdges.add(firstNewEdge.getNext().setSubPiece(newSubPiece, dir));
+         addOuterEdge(attachingIndex.hole, newIndices, outerEdges, newSubPiece, firstNewEdge.getNext(), dir);
+//         newIndices.set(dir, attachingIndex.hole, outerEdges.size());
+//         outerEdges.add(firstNewEdge.getNext().setSubPiece(newSubPiece, dir));
          
          // link (attach) the third new edge
-         WholeEdge lastNewEdge = newEdges.nesw[dir.next().ordinal()].linkNext(attachingEdge.getNext());
+         WholeEdge lastNewEdge = singlePieceEdges.nesw[dir.next().ordinal()].linkNext(attachingEdge.getNext());
          
          // add the third new edge so it gets an index
-         newIndices.set(dir.next(), attachingIndex.hole, holeEdges.size());
-         holeEdges.add(lastNewEdge.setSubPiece(newSubPiece, dir.next()));
+         addOuterEdge(attachingIndex.hole, newIndices, outerEdges, newSubPiece, lastNewEdge, dir.next());
+//         newIndices.set(dir.next(), attachingIndex.hole, outerEdges.size());
+//         outerEdges.add(lastNewEdge.setSubPiece(newSubPiece, dir.next()));
          
          break; // case sum == 1
       }
       case 2: { // the attached directions are the opposites of emptyDir1 and emptyDir2
          
          if (behindNull) { // if(emptyDir1 == dir || emptyDir2 == dir) { // corner
-            if (prevNull) { //  (corner: dir and dirNext)
-               OuterEdgesIndices behindPrev = getSubPieceIndicesOrNull(
-                subPiece.x + 2 * dir.directionX + dirPrev.directionX,//- dir.perpendicularX,
-                subPiece.y + 2 * dir.directionY + dirPrev.directionY//- dir.perpendicularY
-               ); // subPiece.x - 1, subPiece.y - 1
-               if (behindPrev != null) {
-                  
-                  // TODO: corner case can also add a new hole - make "removed" array longer!
-                  
+            if (nextNull) { // nextNull (corner: dir.opposite() and dirPrev)
+               // switch directions so that // TODO: getPrev() and getNext() also need to be switched I think? and linkNext switched?
+               dirPrev = dirNext;
+               dirNext = dir.prev();
+//               OuterEdgesIndices behindNext = getSubPieceIndicesOrNull(
+//                subPiece.x + 2 * dir.directionX + dirNext.directionX, //dir.perpendicularX,
+//                subPiece.y + 2 * dir.directionY + dirNext.directionY //dir.perpendicularY
+//               ); // subPiece.x + 1, subPiece.y - 1
+//               if (behindNext != null) {
+//
+//                  // TOD: copy from other corner case with new hole
+//
+//               }
+//               else {
+//
+//                  // TOD: corner: dir.opposite() and dirPrev  (not new hole)
+//
+//               }
+            } // nextNull (corner: dir.opposite() and dirPrev)
+            //if (prevNull) { //  (corner: dir.opposite() and dirNext)
+            OuterEdgesIndices behindPrev = getSubPieceIndicesOrNull(
+             subPiece.x + 2 * dir.directionX + dirPrev.directionX,//- dir.perpendicularX,
+             subPiece.y + 2 * dir.directionY + dirPrev.directionY//- dir.perpendicularY
+            ); // subPiece.x - 1, subPiece.y - 1
+            if (behindPrev != null) { // creates new hole:
+               
+               attachingIndex = opposite.getIndex(dir);
+               ArrayList<WholeEdge> outerEdges = getOuterEdges(attachingIndex);
+               // the attaching edge is already moved to innerEdges (see detach above).
+               // attachingEdge is the "prev" edge, for linking.
+               attachingEdge = outerEdges.get(attachingIndex.index).getPrev();
+               // get the "next" edge, for linking.
+               WholeEdge attachingCornerNext = outerEdges.get(next.getIndex(dirPrev).index).getNext();
+               // get the edges of behindPrev, for linking.
+               OuterEdgeIndex behindPrevNextIndex = behindPrev.getIndex(dirNext);
+               OuterEdgeIndex behindPrevOppositeIndex = behindPrev.getIndex(dir.opposite());
+               WholeEdge attachBehindPrevNext = outerEdges.get(behindPrevNextIndex.index);
+               WholeEdge nextEdge = outerEdges.get(behindPrevOppositeIndex.index);
+               
+               // link one of the new edges
+               WholeEdge newEdge = singlePieceEdges.nesw[dir.ordinal()];
+               attachBehindPrevNext.linkNext(newEdge);
+               newEdge.linkNext(attachingCornerNext.getNext());
+               // add the new edge to outerEdges
+               addOuterEdge(attachingIndex.hole, newIndices, outerEdges, newSubPiece, newEdge, dir);
+               
+               // link the other edge:
+               newEdge = singlePieceEdges.nesw[dirPrev.ordinal()];
+               newEdge.linkNext(nextEdge);
+               attachingEdge.linkNext(newEdge);
+               // create the new hole
+               ArrayList<WholeEdge> newHole = new ArrayList<>();
+               int hole2 = outerEdgeHoles.size();
+               addHole(newHole);
+               // add lastEdge to the new hole and update the index
+               OuterEdgesIndices indices = getSubPieceIndices(attachingEdge.getSubPiece());
+               indices.set(attachingEdge.getSubPieceDir(), hole2, 0);
+               newHole.add(attachingEdge);
+               // add newEdge to the new hole
+               addOuterEdge(hole2, newIndices, newHole, newSubPiece, newEdge, dirPrev);
+               // add the rest of the linked edges to the new hole and update the indices
+               while (nextEdge != attachingEdge) {
+                  indices = getSubPieceIndices(nextEdge.getSubPiece());
+                  indices.set(nextEdge.getSubPieceDir(), hole2, newHole.size());
+                  newHole.add(nextEdge);
+                  nextEdge = nextEdge.getNext();
                }
+            } // behindPrev!=null (creates new hole)
+            else { // not new hole
                
-               // TODO: corner - dir and dirNext (not new hole)
+               attachingIndex = opposite.getIndex(dir);
                
-            } // prevNull (corner: dir and dirNext)
-            else { // nextNull (corner: dir and dirPrev)
-               OuterEdgesIndices behindNext = getSubPieceIndicesOrNull(
-                subPiece.x + 2 * dir.directionX + dirNext.directionX, //dir.perpendicularX,
-                subPiece.y + 2 * dir.directionY + dirNext.directionY //dir.perpendicularY
-               ); // subPiece.x + 1, subPiece.y - 1
-               if (behindNext != null) {
-                  
-                  // TODO: corner case can also add a new hole - make "removed" array longer!
-                  
-               }
-               
-               // TODO: corner - dir and dirPrev (not new hole)
-               
-            } // nextNull (corner: dir and dirPrev)
-            
-         } // corner
-         else { // dir and dir.opposite() - this always divides a hole in two or creates a new hole!
-            
-            attachingIndex = opposite.get(dir);
-            ArrayList<WholeEdge> holeEdges = getOuterEdges(attachingIndex);
-            attachingEdge = holeEdges.get(attachingIndex.index);
-            WholeEdge attachingEdge2 = holeEdges.get(behind.get(dir.opposite()).index);
-            ArrayList<WholeEdge> newHole = new ArrayList<>();
-            int hole2 = holes.size();
-            addHole(newHole);
-            
-            // link together one of the new edges
-            WholeEdge newEdge = newEdges.nesw[dirNext.ordinal()];
-            attachingEdge2.getPrev().linkNext(newEdge);
-            newEdge.linkNext(attachingEdge.getNext());
-            newIndices.set(dirNext, attachingIndex.hole, holeEdges.size());
-            holeEdges.add(newEdge.setSubPiece(newSubPiece, dirNext));
-            
-            // link together the other edge, and create a new hole
-            newEdge = newEdges.nesw[dirPrev.ordinal()];
-            WholeEdge nextEdge = attachingEdge2.getNext();
-            newEdge.linkNext(nextEdge);
-            WholeEdge lastEdge = attachingEdge.getPrev();
-            lastEdge.linkNext(newEdge);
-            // add lastEdge to newHole and update the index
-            OuterEdgesIndices indices = getSubPieceIndices(lastEdge.getSubPiece());
-            indices.set(lastEdge.getSubPieceDir(), hole2, 0);
-            newHole.add(lastEdge);
-            // add newEdge to newHole
-            newIndices.set(dirPrev, hole2, 1);
-            newHole.add(newEdge.setSubPiece(newSubPiece, dirPrev));
-            // add the rest of the linked edges to newHole and update the indices
-            while (nextEdge != lastEdge) {
-               indices = getSubPieceIndices(nextEdge.getSubPiece());
-               indices.set(nextEdge.getSubPieceDir(), hole2, newHole.size());
-               newHole.add(nextEdge);
-               nextEdge = nextEdge.getNext();
-            }
-         } // dir and dir.opposite()
-         
-         break; // case sum == 2
-      }
-      case 3: { // the attached directions are all but emptyDir1
-         
-         // the direction of the attaching edge is the opposite of the direction of attachment
-         OuterEdgeIndex attachIndex = opposite.get(dir);
+               /*
          
          WholeEdge attachingEdge3;
          if (behindNull) {
@@ -420,16 +438,103 @@ class LargerPieceEdges
             dir = dirPrev;
          }
          
-         ArrayList<WholeEdge> holeEdges = getOuterEdges(attachIndex);
+         ArrayList<WholeEdge> outerEdges = getOuterEdges(attachingIndex);
          
          // link (attach) the new edge
-         WholeEdge newEdge = newEdges.nesw[dir.ordinal()];
+         WholeEdge newEdge = singlePieceEdges.nesw[dir.ordinal()];
          attachingEdge.getPrev().linkNext(newEdge);
          newEdge.linkNext(attachingEdge3.getNext());
          
          // add the new edge so it gets an index
-         newIndices.set(dir, attachIndex.hole, holeEdges.size());
-         holeEdges.add(newEdge.setSubPiece(newSubPiece, dir));
+         addOuterEdge(attachingIndex.hole, newIndices, outerEdges, newSubPiece, newEdge, dir);*/
+               
+               // TODO: corner: dir.opposite() and dirNext  (not new hole)
+               
+            } // not new hole
+            //} // prevNull (corner: dir.opposite() and dirNext)
+            
+            
+         } // corner
+         else { // dir and dir.opposite() - this always creates a new hole! (or divides a hole in two)
+            
+            attachingIndex = opposite.getIndex(dir);
+            ArrayList<WholeEdge> outerEdges = getOuterEdges(attachingIndex);
+            attachingEdge = outerEdges.get(attachingIndex.index);
+            WholeEdge attachingEdge2 = outerEdges.get(behind.getIndex(dir.opposite()).index);
+            
+            // link one of the new edges
+            WholeEdge newEdge = singlePieceEdges.nesw[dirNext.ordinal()];
+            attachingEdge2.getPrev().linkNext(newEdge);
+            newEdge.linkNext(attachingEdge.getNext());
+            // add the new edge to outerEdges
+            addOuterEdge(attachingIndex.hole, newIndices, outerEdges, newSubPiece, newEdge, dirNext);
+//            newIndices.set(dirNext, attachingIndex.hole, outerEdges.size());
+//            outerEdges.add(newEdge.setSubPiece(newSubPiece, dirNext));
+            
+            // link the other edge:
+            newEdge = singlePieceEdges.nesw[dirPrev.ordinal()];
+            WholeEdge nextEdge = attachingEdge2.getNext();
+            newEdge.linkNext(nextEdge);
+            attachingEdge = attachingEdge.getPrev();//WholeEdge lastEdge = attachingEdge.getPrev();
+            attachingEdge.linkNext(newEdge);
+            // create the new hole
+            ArrayList<WholeEdge> newHole = new ArrayList<>();
+            int hole2 = outerEdgeHoles.size();
+            addHole(newHole);
+            // add lastEdge to the new hole and update the index
+            OuterEdgesIndices indices = getSubPieceIndices(attachingEdge.getSubPiece());
+            indices.set(attachingEdge.getSubPieceDir(), hole2, 0);
+            newHole.add(attachingEdge);
+            // add newEdge to the new hole
+            addOuterEdge(hole2, newIndices, newHole, newSubPiece, newEdge, dirPrev);
+//            newIndices.set(dirPrev, hole2, 1);
+//            newHole.add(newEdge.setSubPiece(newSubPiece, dirPrev));
+            // add the rest of the linked edges to the new hole and update the indices
+            while (nextEdge != attachingEdge) {
+               indices = getSubPieceIndices(nextEdge.getSubPiece());
+               indices.set(nextEdge.getSubPieceDir(), hole2, newHole.size());
+               newHole.add(nextEdge);
+               nextEdge = nextEdge.getNext();
+            }
+         } // dir and dir.opposite()
+         
+         break; // case sum == 2
+      }
+      case 3: { // the attached directions are all but emptyDir1
+         
+         // the direction of the attaching edge is the opposite of the direction of attachment
+         attachingIndex = opposite.getIndex(dir);
+         
+         WholeEdge attachingEdge3;
+         if (behindNull) {
+            // -1 is prev => 1, -2 is next => 3, -3 is opposite => 2
+            attachingEdge = innerEdges.get(innerEdges.size() - 1);
+            attachingEdge3 = innerEdges.get(innerEdges.size() - 2);
+         }
+         else if (nextNull) {
+            // -1 is prev => 2, -2 is dir => 1, -3 is opposite => 3
+            attachingEdge = innerEdges.get(innerEdges.size() - 2);
+            attachingEdge3 = innerEdges.get(innerEdges.size() - 3);
+            dir = dirNext;
+         }
+         else { // prevNull
+            // -1 is next => 2, -2 is dir => 3, -3 is opposite => 1
+            attachingEdge = innerEdges.get(innerEdges.size() - 3);
+            attachingEdge3 = innerEdges.get(innerEdges.size() - 2);
+            dir = dirPrev;
+         }
+         
+         ArrayList<WholeEdge> outerEdges = getOuterEdges(attachingIndex);
+         
+         // link (attach) the new edge
+         WholeEdge newEdge = singlePieceEdges.nesw[dir.ordinal()];
+         attachingEdge.getPrev().linkNext(newEdge);
+         newEdge.linkNext(attachingEdge3.getNext());
+         
+         // add the new edge so it gets an index
+         addOuterEdge(attachingIndex.hole, newIndices, outerEdges, newSubPiece, newEdge, dir);
+//         newIndices.set(dir, attachingIndex.hole, outerEdges.size());
+//         outerEdges.add(newEdge.setSubPiece(newSubPiece, dir));
          
          break; // case sum == 3
       }
@@ -437,20 +542,42 @@ class LargerPieceEdges
          
          // the new piece filled a hole which was 4 edges that all became innerEdges.
          // delete the hole, but keep the null in the list of holes so that hole indexes don't need to change.
-         attachingIndex = opposite.get(dir);
-         holes.set(attachingIndex.hole, null);
+         attachingIndex = opposite.getIndex(dir);
+         outerEdgeHoles.set(attachingIndex.hole, null);
          
       } // switch(sum)
       
-      
+      // store newIndices in the matrix
       setSubPieceIndices(newSubPiece.x, newSubPiece.y, newIndices);
+   } // void addPieceEdges(SinglePieceEdges, Point, Direction)
+   
+   private /*static*/ void addOuterEdge(int hole, OuterEdgesIndices newIndices,
+    ArrayList<WholeEdge> outerEdges, Point newSubPiece, WholeEdge newEdge, Direction dir)
+   {
+      newIndices.set(dir, hole, outerEdges.size());
+      outerEdges.add(newEdge.setSubPiece(newSubPiece, dir));
    }
    
-   public void appendToPath(Path path)
+   public int toOuterEdgePath(Path path)
    {
-      for (WholeEdge wholeEdge: outerEdges) {
-         wholeEdge.appendSegmentsTo(path);
-      }
+      // loop through getNext(), not index in the list!
+      WholeEdge firstEdge = outerEdgeHoles.get(0).get(0);
+      WholeEdge nextEdge = firstEdge;
+      do {
+         nextEdge.appendSegmentsTo(path);
+         nextEdge = nextEdge.getNext();
+      }while (nextEdge != firstEdge);
+      return outerEdgeHoles.size();
+   }
+   
+   public Path getInnerEdgesPath(float startX, float startY)
+   {
+      return getPath(startX, startY, innerEdges);
+   }
+   
+   public Path getOuterEdgesPath(float startX, float startY, int hole)
+   {
+      return getPath(startX, startY, outerEdgeHoles.get(hole));
    }
    
    public ArrayList<WholeEdge> getInnerEdges()
@@ -458,51 +585,55 @@ class LargerPieceEdges
       return innerEdges;
    }
    
-   private ArrayList<WholeEdge> getOuterEdges(OuterEdgeIndex index)
+   private ArrayList<WholeEdge> getOuterEdges(@NonNull OuterEdgeIndex index)
    {
-      return index.hole == -1 ?outerEdges :holes.get(index.hole);
+      return outerEdgeHoles.get(index.hole);//index.hole == -1 ?outerEdges :holes.get(index.hole);
    }
    
    private WholeEdge getOuterEdge(OuterEdgeIndex index)
    {
       if (index == null)
          return null;
-      // return getHole(index).get(index.index);
-      if (index.hole == -1)
-         return outerEdges.get(index.index);
-      return holes.get(index.hole).get(index.index);
+      return getOuterEdges(index).get(index.index);
+//      if (index.hole == -1)
+//         return outerEdges.get(index.index);
+//      return holes.get(index.hole).get(index.index);
    }
    
    private void addHole(ArrayList<WholeEdge> newHole)
    {
-      holes.add(newHole);
-      removed = Arrays.copyOf(removed, holes.size() + 1);
+      outerEdgeHoles.add(newHole);
+      removed = Arrays.copyOf(removed, outerEdgeHoles.size());
    }
-   
-   private int[] removed = new int[1];
    
    private WholeEdge removeOuterEdge(OuterEdgeIndex removeIndex)
    {
       if (removeIndex == null)
          return null;
-      ArrayList<WholeEdge> hole = getOuterEdges(removeIndex);
+      ArrayList<WholeEdge> outerEdges = getOuterEdges(removeIndex);
       
-      // TODO: make sure when combining two LargerPieces that I know there can be nulls in outerEdges and holes!
+      // TODO: make sure when combining two LargerPieces that I know there can be nulls in outerEdgeHoles lists!
       
-      WholeEdge ret = hole.set(removeIndex.index, null); // hole.remove(removeIndex.index)
-      removed[removeIndex.hole + 1]++;
+      WholeEdge ret = outerEdges.set(removeIndex.index, null); // hole.remove(removeIndex.index)
+      removed[removeIndex.hole]++;
       
-      if (removed[removeIndex.hole + 1] > 15) {
-         removed[removeIndex.hole + 1] = 0;
-         for (int i = 0, removed = 0; i < hole.size(); i++) {
-            WholeEdge edge = hole.get(i);
+      if (removed[removeIndex.hole] > 15) { // wait until 16 have been removed until actually shortening the list
+         removed[removeIndex.hole] = 0;
+         int remove = 0;
+         for (int i = 0; i < outerEdges.size(); i++) {
+            WholeEdge edge = outerEdges.get(i);
             if (edge == null) {
-               removed++;
+               remove++;
                continue;
             }
             OuterEdgesIndices indices = getSubPieceIndices(edge.getSubPiece());
-            OuterEdgeIndex index = indices.get(edge.getSubPieceDir());
-            index.index -= removed;
+            OuterEdgeIndex index = indices.getIndex(edge.getSubPieceDir());
+            index.index -= remove;
+            outerEdges.set(i - remove, edge);
+         }
+         
+         for (; remove > 0; remove--) {
+            outerEdges.remove(outerEdges.size() - 1);
          }
       }
 //      for (int i = removeIndex.index; i < hole.size(); i++) {
@@ -564,7 +695,7 @@ private LargerPiece(SinglePiece p1, SinglePiece p2, Direction dir)
    copyIsEdge(p2);
    
    // the matrix is filled in LargerPieceEdges constructor!
-   vectorEdges = new LargerPieceEdges(p1.vectorEdges, p2.vectorEdges, dir);
+   vectorEdges = new LargerPiece.LargerPieceEdges(p1.vectorEdges, p2.vectorEdges, dir);
    
    // TODO: check edgeWidths (positionInContainer is handled by Container)
 }
@@ -635,7 +766,7 @@ private LargerPiece.OuterEdgesIndices getSubPieceIndicesOrNull(int x, int y)
    return matrix.get(linear);
 }
 
-private OuterEdgesIndices getSubPieceIndices(Point p)
+private LargerPiece.OuterEdgesIndices getSubPieceIndices(Point p)
 {
    return matrix.get(linear(p.x, p.y));
 }
@@ -822,8 +953,8 @@ public ArrayList<BgDrawable> getBgOutline()
       
       // leftmost column: bottom left corner (SW)
       if (!isSouthEdge()) { // leftmost column: SW can be outlined
-         // assert(y == matrixHeight - 1) // bottom row // matrixHeight: outside bottom edge
-         if (matrix.get(linear(x + 1, y)) != null) { // x+1 == 0
+         // TODO: matrixHeight: outside bottom edge
+         if (matrix.get(linear(x + 1, y)) != null) { // x+1 == 0, y == matrixHeight - 1
             // outside left edge, bottom row (-1, matrixHeight - 1)
             ret.add(BgDrawable.edge(x, y, Direction.EAST));
             // outside left edge, outside bottom edge (-1, matrixHeight)
@@ -834,21 +965,22 @@ public ArrayList<BgDrawable> getBgOutline()
             ret.add(BgDrawable.cornerNE(x, y));
          }
       }
-      else { // leftmost column: isBottomEdge (SW)
-         // assert(y == matrixHeight - 1);
-         if (matrix.get(linear(0, matrixHeight - 1)) != null) {
-            ret.add(BgDrawable.edgeShapeLeft(-1, matrixHeight - 1, Direction.EAST));
+      else { // leftmost column: isSouthEdge (SW)
+         // TODO: bottom row (NOT OUTSIDE)
+         if (matrix.get(linear(x + 1, y)) != null) { // x+1 == 0, y == matrixHeight - 1
+            ret.add(BgDrawable.edgeShapeLeft(x, y, Direction.EAST));
          }
-         else if (matrix.get(linear(0, matrixHeight - 2)) != null) {
-            ret.add(BgDrawable.cornerNE(-1, matrixHeight - 1));
+         else if (matrix.get(linear(x + 1, y - 1)) != null) { // x+1 == 0, y-1 == matrixHeight - 2
+            
+            ret.add(BgDrawable.cornerNE(x, y));
          }
       }
-   } // leftmost column (WEST) can be outlined
-   if (!isEastEdge()) { // rightmost column (EAST) can be outlined
-      // TODO: copy leftEdge
-   } // rightmost column (EAST) can be outlined
-   if (!isNorthEdge()) { // top row (NORTH) can be outlined
-      y = -1; // outside top edge
+   } // west column can be outlined
+   if (!isEastEdge()) { // east column can be outlined
+      // TODO: copy westEdge
+   } // east column can be outlined
+   if (!isNorthEdge()) { // north row can be outlined
+      y = -1; // outside north edge
       
       x = 0;
       
@@ -868,12 +1000,12 @@ public ArrayList<BgDrawable> getBgOutline()
       
       // assert(x == matrixWidth - 1) // rightmost column
       
-   } // top row (NORTH) can be outlined
-   if (!isSouthEdge()) { // bottom row (SOUTH) can be outlined
+   } // north row can be outlined
+   if (!isSouthEdge()) { // south row can be outlined
    
-   } // bottom row (SOUTH) can be outlined
+   } // south row can be outlined
    
-   // loop through the middle of the matrix
+   // loop through the middle of the matrix - TODO: only one loop with if(x==0) and such!
    for (y = 2; y < matrixHeight - 2; y++) {
       for (x = 2; x < matrixWidth - 2; x++) {
    /*for(int y=1 + extraY;y < height-1; y++){

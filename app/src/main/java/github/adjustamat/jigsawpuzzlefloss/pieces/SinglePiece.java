@@ -9,8 +9,8 @@ import android.graphics.RectF;
 import androidx.annotation.Nullable;
 
 import github.adjustamat.jigsawpuzzlefloss.game.ImagePuzzle;
-import github.adjustamat.jigsawpuzzlefloss.pieces.WholeEdge.RandomEdge;
 import github.adjustamat.jigsawpuzzlefloss.pieces.WholeEdge.HalfEdge;
+import github.adjustamat.jigsawpuzzlefloss.pieces.WholeEdge.RandomEdge;
 
 /**
  * A piece of an {@link ImagePuzzle}. Has four edges that are either jigsaw-shaped or flat (at the
@@ -51,9 +51,10 @@ static class SinglePieceEdges
 {
    final WholeEdge[] nesw = new WholeEdge[4];
    
-   public SinglePieceEdges (HalfEdge[][] pool,
+   public SinglePieceEdges(HalfEdge[][] pool,
     @Nullable RandomEdge north, @Nullable RandomEdge east, @Nullable RandomEdge south, @Nullable RandomEdge west
-   ){
+   )
+   {
 //      for(Direction d:Direction.values()){
 //         int i= d.ordinal();
 //         nesw[i] = randomEdges[i]==null?SVGEdges.getStraightEdge(i):randomEdges[i].getWholeEdge(pool,d);
@@ -65,7 +66,8 @@ static class SinglePieceEdges
       nesw[0].linkNext(nesw[1].linkNext(nesw[2].linkNext(nesw[3].linkNext(nesw[0]))));
    }
    
-   public RectF getEdgeWidths (){
+   public RectF getEdgeWidths()
+   {
       return new RectF(
        nesw[3].getEdgeWidth(),
        nesw[0].getEdgeWidth(),
@@ -74,17 +76,20 @@ static class SinglePieceEdges
       );
    }
    
-   public void appendToPath (Path path){
+   public int toOuterEdgePath(Path path)
+   {
       for (WholeEdge edge: nesw) {
          edge.appendSegmentsTo(path);
       }
+      return 1;
    }
 } // class SinglePieceEdges
 
-public SinglePiece (ImagePuzzle imagePuzzle, Point coordinates,
+public SinglePiece(ImagePuzzle imagePuzzle, Point coordinates,
  @Nullable RandomEdge north, @Nullable RandomEdge east, @Nullable RandomEdge south, @Nullable RandomEdge west,
  HalfEdge[][] pool, int randomRotation
-){
+)
+{
    super(imagePuzzle.singlePiecesContainer, Direction.values()[randomRotation]);
    this.correctPuzzlePosition = coordinates;
    
@@ -97,29 +102,35 @@ public SinglePiece (ImagePuzzle imagePuzzle, Point coordinates,
    westEdge = west;
    vectorEdges = new SinglePieceEdges(pool, north, east, south, west);
    
-   zeroOffsetOutline = vectorEdges.getPath(0f, 0f);
+   zeroOffsetOutline = vectorEdges.getOuterEdgePath(0f, 0f).first;
+   
    this.imageMask = new Path();
    zeroOffsetOutline.offset(imageSize * coordinates.x, imageSize * coordinates.y, imageMask);
 }
 
-public RectF getEdgeWidths (){
+public RectF getEdgeWidths()
+{
    // TODO: edgeWidths *= imageSize / SIDE_SIZE;
    return vectorEdges.getEdgeWidths();
 }
 
-public boolean isWestEdge (){
+public boolean isWestEdge()
+{
    return westEdge == null;//EdgeType.EDGE;
 }
 
-public boolean isNorthEdge (){
+public boolean isNorthEdge()
+{
    return northEdge == null;//EdgeType.EDGE;
 }
 
-public boolean isEastEdge (){
+public boolean isEastEdge()
+{
    return eastEdge == null;//EdgeType.EDGE;
 }
 
-public boolean isSouthEdge (){
+public boolean isSouthEdge()
+{
    return southEdge == null;//EdgeType.EDGE;
 }
 }
