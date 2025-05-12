@@ -28,8 +28,8 @@ public final int initX1;
 public final int initX2;
 public final int initY1;
 public final int initY2;
-public final int directionX;
-public final int directionY;
+public final int x;
+public final int y;
 //public final int perpendicularX;
 //public final int perpendicularY;
 
@@ -43,12 +43,12 @@ Direction (int initWidth, int initHeight,
    this.initX2 = initX2;
    this.initY2 = initY2;
    
-   this.directionX = initX2 - initX1;
+   this.x = initX2 - initX1;
    // North, South: 0
    // East: 1, if flipped to y, would be south (cw)
    // West: -1, if flipped to y, would be north (cw)
    
-   this.directionY = initY2 - initY1;
+   this.y = initY2 - initY1;
    // North: -1, if flipped to x, would be west (ccw)
    // South: 1, if flipped to x, would be east (ccw)
    // East, West: 0
