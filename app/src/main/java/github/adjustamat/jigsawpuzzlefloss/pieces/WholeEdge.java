@@ -12,6 +12,7 @@ private static final StraightLine STRAIGHT_NORTH = new StraightLine(new float[]{
 private static final StraightLine STRAIGHT_EAST = new StraightLine(new float[]{0f, 120f});
 private static final StraightLine STRAIGHT_SOUTH = new StraightLine(new float[]{-120f, 0f});
 private static final StraightLine STRAIGHT_WEST = new StraightLine(new float[]{0f, -120f});
+public static final float STRAIGHT_EDGE_WIDTH = 0f;
 
 public static StraightEdge getNorthOuterEdge()
 {
@@ -208,7 +209,7 @@ public static class StraightEdge
    
    public float getEdgeWidth()
    {
-      return 0f;
+      return STRAIGHT_EDGE_WIDTH;
    }
 }
 

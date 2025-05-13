@@ -7,10 +7,11 @@ import android.graphics.drawable.shapes.Shape;
 import java.util.LinkedList;
 import java.util.Random;
 
+import github.adjustamat.jigsawpuzzlefloss.game.Box.GroupOrSinglePiece;
+import github.adjustamat.jigsawpuzzlefloss.pieces.SinglePiece;
 import github.adjustamat.jigsawpuzzlefloss.pieces.WholeEdge;
 import github.adjustamat.jigsawpuzzlefloss.pieces.WholeEdge.HalfEdge;
 import github.adjustamat.jigsawpuzzlefloss.pieces.WholeEdge.RandomEdge;
-import github.adjustamat.jigsawpuzzlefloss.pieces.SinglePiece;
 
 /**
  * An instance of an image turned into many jigsaw puzzle pieces ({@link SinglePiece}s).
@@ -40,9 +41,10 @@ public final float pieceImageSize;
 public final Box singlePiecesContainer;
 public final PlayField playingFieldContainer;
 
-private ImagePuzzle (int width, int height, Bitmap image,
- LinkedList<SinglePiece> pieceLinkedList
-){
+private ImagePuzzle(int width, int height, Bitmap image,
+ LinkedList<GroupOrSinglePiece> pieceLinkedList
+)
+{
    this.width = width;
    this.height = height;
    this.totalPieces = width * height;
@@ -51,11 +53,12 @@ private ImagePuzzle (int width, int height, Bitmap image,
    this.pieceImageSize = (float) image.getHeight() / height;
    
    this.singlePiecesContainer = new Box(pieceLinkedList, this);
-   this.playingFieldContainer = new PlayField();
+   this.playingFieldContainer = new PlayField(this);
 }
 
-public static ImagePuzzle generate (int pWidth, int pHeight, Bitmap image){
-   LinkedList<SinglePiece> singlePieces = new LinkedList<>();
+public static ImagePuzzle generate(int pWidth, int pHeight, Bitmap image)
+{
+   LinkedList<GroupOrSinglePiece> singlePieces = new LinkedList<>();
    ImagePuzzle ret = new ImagePuzzle(pWidth, pHeight, image, singlePieces);
    HalfEdge[][] pool = WholeEdge.generateAllJigsaws();
    Random rng = new Random();

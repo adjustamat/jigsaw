@@ -2,13 +2,10 @@ package github.adjustamat.jigsawpuzzlefloss.pieces;
 
 import android.graphics.Path;
 import android.graphics.Point;
-import android.graphics.PointF;
 import android.graphics.RectF;
 import android.util.Pair;
 
 import androidx.annotation.NonNull;
-
-import java.util.List;
 
 import github.adjustamat.jigsawpuzzlefloss.game.Container;
 
@@ -28,12 +25,15 @@ protected Path imageMask;
 protected Point correctPuzzlePosition;
 
 protected Group groupParent;
-protected Integer indexInGroup; // null when not in any Group.
+protected Integer indexInGroup; // TODO: null when not in any Group. or -1?
 
 protected @NonNull Container containerParent;
-protected int indexInContainer;
-protected PointF positionInContainer; // null when container is Box. (use indexInContainer instead)
-protected boolean lockedInPlace; // always false when container is Box.
+int indexInContainer;
+
+public int getIndexInContainer()
+{
+   return indexInContainer;
+}
 
 protected @NonNull Direction currentRotationNorthDirection;
 
@@ -43,9 +43,10 @@ protected AbstractPiece(@NonNull Container containerParent, @NonNull Direction r
    currentRotationNorthDirection = rotation;
 }
 
-public void setContainer(Container newParent)
+public void setContainer(Container newParent, int indexInContainer)
 {
    this.containerParent = newParent;
+   this.indexInContainer = indexInContainer;
 }
 
 public @NonNull Container getContainer()
@@ -53,17 +54,16 @@ public @NonNull Container getContainer()
    return containerParent;
 }
 
-public boolean isLockedInPlace()
+void setGroup(@NonNull Group group, int index)
 {
-   return lockedInPlace;
+   if (groupParent != null) {
+      groupParent.removeMe(indexInGroup);
+   }
+   groupParent = group;
+   indexInGroup = index;
 }
 
-public void setLockedInPlace(boolean locked)
-{
-   lockedInPlace = locked;
-}
-
-void removeFromGroup()
+public void removeFromGroup()
 {
    if (groupParent != null) {
       groupParent.removeMe(indexInGroup);
@@ -75,15 +75,6 @@ private void setNullGroup()
 {
    groupParent = null;
    indexInGroup = null;
-}
-
-void setGroup(@NonNull Group group, int index)
-{
-   if (groupParent != null) {
-      groupParent.removeMe(indexInGroup);
-   }
-   groupParent = group;
-   indexInGroup = index;
 }
 
 public boolean isGrouped()
@@ -108,16 +99,13 @@ public boolean isCornerPiece()
    return (isWestEdge() || isEastEdge()) && (isNorthEdge() || isSouthEdge());
 }
 
-//public interface PathLambda{
-//   void toPath(Path path);
-//}
 public abstract static class VectorEdges
 {
    
    /**
-    * Create a vector graphics closed Path with the supplied top-left corner.
-    * @param startX X of top-left corner
-    * @param startY Y of top-left corner
+    * Create a closed vector graphics Path of the outer edge of this AbstractPiece, with the supplied top-left corner.
+    * @param startX X of the top-left corner
+    * @param startY Y of the top-left corner
     * @return a closed Path
     */
    public Pair<Path, Integer> getOuterEdgePath(float startX, float startY)
@@ -129,33 +117,25 @@ public abstract static class VectorEdges
       return new Pair<>(ret, num);
    }
    
-   //   public Path getPath(float startX, float startY,PathLambda lambda )
-//   {
-//      Path ret = new Path();
-//      ret.moveTo(startX, startY);
-//      lambda.toPath(ret);
-//      ret.close();
-//      return ret;
-//   }
-   public Path getPath(float startX, float startY, List<WholeEdge> wholeEdges)
+   public Path getPath(float startX, float startY, WholeEdge firstEdge)
    {
       Path ret = new Path();
       ret.moveTo(startX, startY);
-      // loop through getNext(), not index in the list!
-      WholeEdge firstEdge = wholeEdges.get(0);
       WholeEdge nextEdge = firstEdge;
       do {
          nextEdge.appendSegmentsTo(ret);
          nextEdge = nextEdge.getNext();
       }while (nextEdge != firstEdge);
-//      for (WholeEdge wholeEdge: wholeEdges) { ABSOLUTELY DO NOT DO THIS!
-//         wholeEdge.appendSegmentsTo(ret);
-//      }
       ret.close();
       return ret;
    }
    
+   /**
+    * Append all Path segments of the outer edge to {@code path}. If there is more than one outer edge (holes),
+    * append all segments of the "first hole" and return the number of "holes".
+    * @param path the Path
+    * @return the number of outer edges of this AbstractPiece
+    */
    public abstract int toOuterEdgePath(Path path);
-   
 }
 }

@@ -3,22 +3,26 @@ package github.adjustamat.jigsawpuzzlefloss.pieces;
 public enum Direction
 {
    NORTH(1, 2, 0, 1, 0, 0) {
-      public Direction next (){
+      public Direction next()
+      {
          return EAST;
       }
    },
    EAST(2, 1, 0, 0, 1, 0) {
-      public Direction next (){
+      public Direction next()
+      {
          return SOUTH;
       }
    },
    SOUTH(1, 2, 0, 0, 0, 1) {
-      public Direction next (){
+      public Direction next()
+      {
          return WEST;
       }
    },
    WEST(2, 1, 1, 0, 0, 0) {
-      public Direction next (){
+      public Direction next()
+      {
          return NORTH;
       }
    };
@@ -33,9 +37,10 @@ public final int y;
 //public final int perpendicularX;
 //public final int perpendicularY;
 
-Direction (int initWidth, int initHeight,
+Direction(int initWidth, int initHeight,
  int initX1, int initY1, int initX2, int initY2
-){
+)
+{
    this.initWidth = initWidth;
    this.initHeight = initHeight;
    this.initX1 = initX1;
@@ -52,12 +57,12 @@ Direction (int initWidth, int initHeight,
    // North: -1, if flipped to x, would be west (ccw)
    // South: 1, if flipped to x, would be east (ccw)
    // East, West: 0
-   
+
 //   this.perpendicularX = initY2 + initY1;
    // North: 1 (east) (cw)
    // South: 1 (east) (ccw)
    // East, West: 0
-   
+
 //   this.perpendicularY = initX2 + initX1;
    // North, South: 0
    // East: 1 (south) (cw)
@@ -65,15 +70,17 @@ Direction (int initWidth, int initHeight,
    
 }
 
-public abstract Direction next ();
+public abstract Direction next();
 
-public Direction prev (){
+public Direction prev()
+{
    if (this == NORTH)
       return WEST;
    return values()[ordinal() - 1];
 }
 
-public Direction opposite (){
+public Direction opposite()
+{
    switch (this) {
    case NORTH:
       return SOUTH;
@@ -86,7 +93,8 @@ public Direction opposite (){
    }
 }
 
-public Direction positive (){
+public Direction positive()
+{
    switch (this) {
    case NORTH: case SOUTH:
       return SOUTH;
@@ -95,7 +103,8 @@ public Direction positive (){
    }
 }
 
-public static int cycle (int i){
+public static int cycle(int i)
+{
    return i % 4;
 }
 }

@@ -3,4 +3,5 @@
    <string name="hello_blank_fragment">DUMMY\nCONTENT</string>
    <string name="dummy_button">Dummy Button</string>
    <string name="imgBoxCover">Box Cover</string>
+    <string name="group_default_name">Group %d</string>
 </resources>

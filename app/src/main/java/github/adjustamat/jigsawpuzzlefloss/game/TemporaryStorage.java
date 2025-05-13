@@ -1,7 +1,10 @@
 package github.adjustamat.jigsawpuzzlefloss.game;
 
+import android.content.Context;
+
 import androidx.annotation.NonNull;
-import github.adjustamat.jigsawpuzzlefloss.pieces.AbstractPieces;
+
+import github.adjustamat.jigsawpuzzlefloss.pieces.AbstractPiece;
 import github.adjustamat.jigsawpuzzlefloss.pieces.Group;
 import github.adjustamat.jigsawpuzzlefloss.pieces.LargerPiece;
 
@@ -13,49 +16,66 @@ public class TemporaryStorage
 {
 @NonNull Group group;
 
-public TemporaryStorage createEmptyGroup(){
-   return new TemporaryStorage();
+TemporaryStorage(ImagePuzzle imagePuzzle)
+{
+   super(imagePuzzle);
+   group = new Group(this);
 }
 
-public TemporaryStorage createLargerPieceStorage(LargerPiece piece){
-TemporaryStorage ret=new TemporaryStorage();
-ret.moveHere(piece);
+TemporaryStorage(ImagePuzzle imagePuzzle, @NonNull Group group)
+{
+   super(imagePuzzle);
+   this.group = group;
+   group.setContainer(this);
 }
 
-private TemporaryStorage(){
-   group=new Group(this);
+public void remove(AbstractPiece p)
+{
+
 }
 
-//public TemporaryStorage(AbstractPieces piece, Container from){
-//   group = piece instanceof Group;
-//   add(piece,from);
-//}
+public void removeGroup(Group group)
+{
 
-//private void add(AbstractPieces piece, Container from){
+}
+
+public boolean movePieceFrom(Container other, AbstractPiece p)
+{
+   other.remove(p);
+   
+   p.setContainer(this, group.size());
+   group.add(p);
+//   if (other instanceof Box) {
+//      Box box = (Box) other;
 //
-//}
+//   }
+//   else {
+//      PlayField playField = (PlayField) other;
 //
-//@Override
-//public boolean moveHere(AbstractPieces piece, Container from)
-//{
-//   if(from == this)
+//   }
+   return true;
+}
+
+public boolean moveGroupFrom(Context ctx, Container other, Group group)
+{
+   // TODO: combine groups, but ask first!
+//   if (ANSWER_IS_CANCEL) {
 //      return false;
-//   //if()
-//     add(piece,from);
-//     return true;
-//}
+//   }
+   other.removeGroup(group);
+   //group.setContainer(this);
+   this.group.add(group.getAll());
+   
 
-@Override
-public boolean spreadOutGroup(Group group)
-{
-   // TODO!
+//   if (other instanceof Box) {
+//      Box box = (Box) other;
+//
+//   }
+//   else {
+//      PlayField playField = (PlayField) other;
+//
+//   }
    return true;
 }
 
-@Override
-public boolean pileUpGroup(Group group)
-{
-   // TODO!
-   return true;
-}
 }

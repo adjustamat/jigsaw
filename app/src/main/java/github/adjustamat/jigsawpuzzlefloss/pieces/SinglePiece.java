@@ -8,6 +8,7 @@ import android.graphics.RectF;
 
 import androidx.annotation.Nullable;
 
+import github.adjustamat.jigsawpuzzlefloss.game.Box.GroupOrSinglePiece;
 import github.adjustamat.jigsawpuzzlefloss.game.ImagePuzzle;
 import github.adjustamat.jigsawpuzzlefloss.pieces.WholeEdge.HalfEdge;
 import github.adjustamat.jigsawpuzzlefloss.pieces.WholeEdge.RandomEdge;
@@ -18,6 +19,7 @@ import github.adjustamat.jigsawpuzzlefloss.pieces.WholeEdge.RandomEdge;
  */
 public class SinglePiece
  extends AbstractPiece
+ implements GroupOrSinglePiece
 {
 final RandomEdge/*EdgeType*/ westEdge;
 final RandomEdge northEdge;
