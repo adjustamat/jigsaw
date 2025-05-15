@@ -44,40 +44,34 @@ public abstract boolean moveGroupFrom(Context ctx, Container other, Group group)
 //      return true;
 //
 //   if (to instanceof Box) {
-//
-//
-////         if(pieces instanceof Group) {
+//         if(pieces instanceof Group) {
 //      Group group = (Group) pieces;
 //      if (group.hasLargerPieces())
 //         return false;
 //      LinkedList<AbstractPiece> all = group.getAll();
 //      for (AbstractPiece piece: all) {
-//
 //      }
-//
 //      return true;
-////         }
-////         else if (pieces instanceof LargerPiece)
-////            return false;
-////         else { // pieces instanceof SinglePiece
-////            SinglePiece singlePiece = (SinglePiece) pieces;
-////            if(singlePiece.isGrouped())
-////               return false;
-////            to.add(singlePiece);
-////            return true;
-////         }
+//         }
+//         else if (pieces instanceof LargerPiece)
+//            return false;
+//         else { // pieces instanceof SinglePiece
+//            SinglePiece singlePiece = (SinglePiece) pieces;
+//            if(singlePiece.isGrouped())
+//               return false;
+//            to.add(singlePiece);
+//            return true;
+//         }
 //   }
 //   else if (to instanceof TemporaryStorage) {
-//
 //   }
 //   else { // to instanceof PlayField
 //      //   if(containerParent instanceof Box){
-////
-////   }else if(containerParent instanceof TemporaryStorage){
-////
-////   }else{
-////
-////   }
+//   }else if(containerParent instanceof TemporaryStorage){
+//
+//   }else{
+//
+//   }
 //   }
 //
 //}

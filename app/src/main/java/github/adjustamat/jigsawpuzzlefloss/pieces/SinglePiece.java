@@ -10,8 +10,8 @@ import androidx.annotation.Nullable;
 
 import github.adjustamat.jigsawpuzzlefloss.game.Box.GroupOrSinglePiece;
 import github.adjustamat.jigsawpuzzlefloss.game.ImagePuzzle;
-import github.adjustamat.jigsawpuzzlefloss.pieces.WholeEdge.HalfEdge;
-import github.adjustamat.jigsawpuzzlefloss.pieces.WholeEdge.RandomEdge;
+import github.adjustamat.jigsawpuzzlefloss.pieces.PieceEdge.HalfEdge;
+import github.adjustamat.jigsawpuzzlefloss.pieces.PieceEdge.RandomEdge;
 
 /**
  * A piece of an {@link ImagePuzzle}. Has four edges that are either jigsaw-shaped or flat (at the
@@ -21,10 +21,11 @@ public class SinglePiece
  extends AbstractPiece
  implements GroupOrSinglePiece
 {
-final RandomEdge/*EdgeType*/ westEdge;
+final RandomEdge westEdge;
 final RandomEdge northEdge;
 final RandomEdge eastEdge;
 final RandomEdge southEdge;
+final RandomEdge[] randomEdgesNesw = new RandomEdge[4];
 
 /**
  * The outline to draw when rotating or when drawing embossed 3D-effect.
@@ -48,24 +49,20 @@ PointF imageOffset;
 Color edgesColor; // TODO: extract color from the super.imageMask part of the image.
 Color highContrastBgColor;
 
-static class SinglePieceEdges
+class SinglePieceEdges
  extends VectorEdges
 {
-   final WholeEdge[] nesw = new WholeEdge[4];
+   final PieceEdge[] nesw = new PieceEdge[4];
    
-   public SinglePieceEdges(HalfEdge[][] pool,
-    @Nullable RandomEdge north, @Nullable RandomEdge east, @Nullable RandomEdge south, @Nullable RandomEdge west
-   )
+   public SinglePieceEdges(HalfEdge[][] pool)
    {
-//      for(Direction d:Direction.values()){
-//         int i= d.ordinal();
-//         nesw[i] = randomEdges[i]==null?SVGEdges.getStraightEdge(i):randomEdges[i].getWholeEdge(pool,d);
-//      }
-      this.nesw[0] = north == null ?WholeEdge.getNorthOuterEdge() :north.getWholeEdge(pool, Direction.NORTH);
-      this.nesw[1] = east == null ?WholeEdge.getEastOuterEdge() :east.getWholeEdge(pool, Direction.EAST);
-      this.nesw[2] = south == null ?WholeEdge.getSouthOuterEdge() :south.getWholeEdge(pool, Direction.SOUTH);
-      this.nesw[3] = west == null ?WholeEdge.getWestOuterEdge() :west.getWholeEdge(pool, Direction.WEST);
-      nesw[0].linkNext(nesw[1].linkNext(nesw[2].linkNext(nesw[3].linkNext(nesw[0]))));
+      for (Direction d: Direction.values()) {
+         int i = d.ordinal();
+         nesw[i] = randomEdgesNesw[i] == null
+          ?PieceEdge.getStraightEdge(d)
+          :randomEdgesNesw[i].getPieceEdge(pool, d);
+      }
+      nesw[3].linkNext(nesw[0].linkNext(nesw[1].linkNext(nesw[2].linkNext(nesw[3]))));
    }
    
    public RectF getEdgeWidths()
@@ -80,7 +77,7 @@ static class SinglePieceEdges
    
    public int toOuterEdgePath(Path path)
    {
-      for (WholeEdge edge: nesw) {
+      for (PieceEdge edge: nesw) {
          edge.appendSegmentsTo(path);
       }
       return 1;
@@ -102,7 +99,7 @@ public SinglePiece(ImagePuzzle imagePuzzle, Point coordinates,
    eastEdge = east;
    southEdge = south;
    westEdge = west;
-   vectorEdges = new SinglePieceEdges(pool, north, east, south, west);
+   vectorEdges = new SinglePieceEdges(pool);
    
    zeroOffsetOutline = vectorEdges.getOuterEdgePath(0f, 0f).first;
    
@@ -116,23 +113,24 @@ public RectF getEdgeWidths()
    return vectorEdges.getEdgeWidths();
 }
 
-public boolean isWestEdge()
-{
-   return westEdge == null;//EdgeType.EDGE;
-}
-
 public boolean isNorthEdge()
 {
-   return northEdge == null;//EdgeType.EDGE;
+   return randomEdgesNesw[0] == null;
 }
 
 public boolean isEastEdge()
 {
-   return eastEdge == null;//EdgeType.EDGE;
+   return randomEdgesNesw[1] == null;
 }
 
 public boolean isSouthEdge()
 {
-   return southEdge == null;//EdgeType.EDGE;
+   return randomEdgesNesw[2] == null;
 }
+
+public boolean isWestEdge()
+{
+   return randomEdgesNesw[3] == null;
+}
+
 }

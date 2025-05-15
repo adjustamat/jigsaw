@@ -6,13 +6,27 @@ import android.graphics.Point;
 import java.util.ArrayList;
 import java.util.Random;
 
-public abstract class WholeEdge
+public abstract class PieceEdge
 {
 private static final StraightLine STRAIGHT_NORTH = new StraightLine(new float[]{120f, 0f});
 private static final StraightLine STRAIGHT_EAST = new StraightLine(new float[]{0f, 120f});
 private static final StraightLine STRAIGHT_SOUTH = new StraightLine(new float[]{-120f, 0f});
 private static final StraightLine STRAIGHT_WEST = new StraightLine(new float[]{0f, -120f});
 public static final float STRAIGHT_EDGE_WIDTH = 0f;
+
+public static StraightEdge getStraightEdge(Direction d)
+{
+   switch (d) {
+   case NORTH:
+      return new StraightEdge(STRAIGHT_NORTH);
+   case EAST:
+      return new StraightEdge(STRAIGHT_EAST);
+   case SOUTH:
+      return new StraightEdge(STRAIGHT_SOUTH);
+   default: // case WEST:
+      return new StraightEdge(STRAIGHT_WEST);
+   }
+}
 
 public static StraightEdge getNorthOuterEdge()
 {
@@ -59,7 +73,7 @@ static HalfEdge[] generateFirstHalf(float neckWidth, float curvature)
      40f, curvature, // <- control to
      45f, curvature, // <- endPoint 1
      15f, 0f, // <- control from
-     45f - neckWidth, -curvature, // <- control to
+     45 - neckWidth, -curvature, // <- control to
      47.5f - neckWidth, -7.5f - curvature, // <- endPoint 2
      2.5f, -7.5f,// <- control from
      -15 + neckWidth, -15f,// <- control to
@@ -92,7 +106,7 @@ static HalfEdge[] generateSecondHalf(float neckWidth, float curvature)
      22.5f, 17.5f, // <- endPoint 1
      0f, -10f, // <- control from
      -17.5f + neckWidth, -17.5f, // <- control to
-     -15 + neckWidth, 25, // <- endPoint 2
+     -15 + neckWidth, 25f, // <- endPoint 2
      2.5f, 7.5f, // <- control from
      32.5f - neckWidth, 7.5f + curvature, // <- control to
      47.5f - neckWidth, 7.5f + curvature, // <- endPoint 3
@@ -129,22 +143,22 @@ public Direction getSubPieceDir()
    return subPieceDir;
 }
 
-public WholeEdge setSubPiece(Point subPiece, Direction dir)
+public PieceEdge setSubPiece(Point subPiece, Direction dir)
 {
    this.subPiece = subPiece;
    this.subPieceDir = dir;
    return this;
 }
 
-private WholeEdge next;
-private WholeEdge prev;
+private PieceEdge next;
+private PieceEdge prev;
 
-public WholeEdge getNext()
+public PieceEdge getNext()
 {
    return next;
 }
 
-public WholeEdge getPrev()
+public PieceEdge getPrev()
 {
    return prev;
 }
@@ -155,7 +169,7 @@ public WholeEdge getPrev()
 //   return this;
 //}
 
-public WholeEdge linkNext(WholeEdge next)
+public PieceEdge linkNext(PieceEdge next)
 {
    this.next = next;
    next.prev = this;
@@ -170,7 +184,7 @@ public abstract float getEdgeWidth();
  * Can be further combined into SinglePieceOutlines, LargerPieceOutlines, or stored in LargerPiece innerEdges.
  */
 public static class DoubleEdge
- extends WholeEdge
+ extends PieceEdge
 {
    private final HalfEdge half1, half2;
    
@@ -193,7 +207,7 @@ public static class DoubleEdge
 }
 
 public static class StraightEdge
- extends WholeEdge
+ extends PieceEdge
 {
    StraightLine impl;
    
@@ -240,7 +254,7 @@ public static class HalfEdge
    {
       segments = new ArrayList<>(4); // 4 segments
       for (int i = 0; i < allData.length; i += 6) { // 6 float values per segment (rCubicTo)
-         segments.add(new Cubic(allData, i/*, true*/));
+         segments.add(new Cubic(allData, i));
       }
    }
    
@@ -350,24 +364,24 @@ public static class RandomEdge
       neck2 = rng.nextInt(3);
    }
    
-   public DoubleEdge getWholeEdge(HalfEdge[][] pool, Direction dir)
+   public DoubleEdge getPieceEdge(HalfEdge[][] pool, Direction dir)
    {
-      int poolIndex;
+      int rotationIndex;
       switch (dir) {
       case EAST: case SOUTH:
-         poolIndex = (in ?4 :0) + dir.ordinal();
+         rotationIndex = (in ?4 :0) + dir.ordinal();
          return new DoubleEdge(
           // pool [ NECK*6 + CURV*2 + (secondHalf?1:0) ]  [ (inward ?4 :0) + direction.ordinal ]
-          pool[neck1 * 6 + curv1 * 2][poolIndex],
-          pool[neck2 * 6 + curv2 * 2 + 1][poolIndex]
+          pool[neck1 * 6 + curv1 * 2][rotationIndex],
+          pool[neck2 * 6 + curv2 * 2 + 1][rotationIndex]
          );
       default: // WEST: NORTH:
          // in/out is flipped:
-         poolIndex = (in ?0 :4) + dir.ordinal();
+         rotationIndex = (in ?0 :4) + dir.ordinal();
          return new DoubleEdge(
           // first/second is flipped:
-          pool[neck2 * 6 + curv2 * 2][poolIndex],
-          pool[neck1 * 6 + curv1 * 2 + 1][poolIndex]
+          pool[neck2 * 6 + curv2 * 2][rotationIndex],
+          pool[neck1 * 6 + curv1 * 2 + 1][rotationIndex]
          );
       }
    }

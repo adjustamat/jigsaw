@@ -117,11 +117,11 @@ public abstract static class VectorEdges
       return new Pair<>(ret, num);
    }
    
-   public Path getPath(float startX, float startY, WholeEdge firstEdge)
+   public Path getPath(float startX, float startY, PieceEdge firstEdge)
    {
       Path ret = new Path();
       ret.moveTo(startX, startY);
-      WholeEdge nextEdge = firstEdge;
+      PieceEdge nextEdge = firstEdge;
       do {
          nextEdge.appendSegmentsTo(ret);
          nextEdge = nextEdge.getNext();

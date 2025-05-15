@@ -9,9 +9,9 @@ import java.util.Random;
 
 import github.adjustamat.jigsawpuzzlefloss.game.Box.GroupOrSinglePiece;
 import github.adjustamat.jigsawpuzzlefloss.pieces.SinglePiece;
-import github.adjustamat.jigsawpuzzlefloss.pieces.WholeEdge;
-import github.adjustamat.jigsawpuzzlefloss.pieces.WholeEdge.HalfEdge;
-import github.adjustamat.jigsawpuzzlefloss.pieces.WholeEdge.RandomEdge;
+import github.adjustamat.jigsawpuzzlefloss.pieces.PieceEdge;
+import github.adjustamat.jigsawpuzzlefloss.pieces.PieceEdge.HalfEdge;
+import github.adjustamat.jigsawpuzzlefloss.pieces.PieceEdge.RandomEdge;
 
 /**
  * An instance of an image turned into many jigsaw puzzle pieces ({@link SinglePiece}s).
@@ -60,7 +60,7 @@ public static ImagePuzzle generate(int pWidth, int pHeight, Bitmap image)
 {
    LinkedList<GroupOrSinglePiece> singlePieces = new LinkedList<>();
    ImagePuzzle ret = new ImagePuzzle(pWidth, pHeight, image, singlePieces);
-   HalfEdge[][] pool = WholeEdge.generateAllJigsaws();
+   HalfEdge[][] pool = PieceEdge.generateAllJigsaws();
    Random rng = new Random();
    
    RandomEdge[] wests = new RandomEdge[pHeight];
