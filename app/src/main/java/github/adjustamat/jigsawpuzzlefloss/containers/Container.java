@@ -1,7 +1,8 @@
-package github.adjustamat.jigsawpuzzlefloss.game;
+package github.adjustamat.jigsawpuzzlefloss.containers;
 
 import android.content.Context;
 
+import github.adjustamat.jigsawpuzzlefloss.game.ImagePuzzle;
 import github.adjustamat.jigsawpuzzlefloss.pieces.AbstractPiece;
 import github.adjustamat.jigsawpuzzlefloss.pieces.Group;
 

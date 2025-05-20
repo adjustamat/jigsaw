@@ -9,11 +9,11 @@ import java.util.Collection;
 import java.util.LinkedList;
 
 import github.adjustamat.jigsawpuzzlefloss.R;
-import github.adjustamat.jigsawpuzzlefloss.game.Box;
-import github.adjustamat.jigsawpuzzlefloss.game.Box.GroupOrSinglePiece;
-import github.adjustamat.jigsawpuzzlefloss.game.Container;
-import github.adjustamat.jigsawpuzzlefloss.game.PlayField;
-import github.adjustamat.jigsawpuzzlefloss.game.TemporaryStorage;
+import github.adjustamat.jigsawpuzzlefloss.containers.Box;
+import github.adjustamat.jigsawpuzzlefloss.containers.Box.GroupOrSinglePiece;
+import github.adjustamat.jigsawpuzzlefloss.containers.Container;
+import github.adjustamat.jigsawpuzzlefloss.containers.PlayField;
+import github.adjustamat.jigsawpuzzlefloss.containers.TemporaryStorage;
 
 /**
  * A (named) group of {@link AbstractPiece}s ({@link SinglePiece}s and/or {@link LargerPiece}s).
@@ -25,7 +25,7 @@ public class Group
  implements GroupOrSinglePiece
 {
 @Nullable String name;
-private int counterNumber;
+private final int counterNumber;
 Container containerParent;
 
 private static int counter = 0;

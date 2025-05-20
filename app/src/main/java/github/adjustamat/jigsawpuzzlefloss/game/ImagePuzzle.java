@@ -2,16 +2,17 @@ package github.adjustamat.jigsawpuzzlefloss.game;
 
 import android.graphics.Bitmap;
 import android.graphics.Point;
-import android.graphics.drawable.shapes.Shape;
 
 import java.util.LinkedList;
 import java.util.Random;
 
-import github.adjustamat.jigsawpuzzlefloss.game.Box.GroupOrSinglePiece;
-import github.adjustamat.jigsawpuzzlefloss.pieces.SinglePiece;
+import github.adjustamat.jigsawpuzzlefloss.containers.Box;
+import github.adjustamat.jigsawpuzzlefloss.containers.Box.GroupOrSinglePiece;
+import github.adjustamat.jigsawpuzzlefloss.containers.PlayField;
 import github.adjustamat.jigsawpuzzlefloss.pieces.PieceEdge;
 import github.adjustamat.jigsawpuzzlefloss.pieces.PieceEdge.HalfEdge;
 import github.adjustamat.jigsawpuzzlefloss.pieces.PieceEdge.RandomEdge;
+import github.adjustamat.jigsawpuzzlefloss.pieces.SinglePiece;
 
 /**
  * An instance of an image turned into many jigsaw puzzle pieces ({@link SinglePiece}s).
@@ -19,17 +20,6 @@ import github.adjustamat.jigsawpuzzlefloss.pieces.PieceEdge.RandomEdge;
  */
 public class ImagePuzzle
 {
-
-/**
- * A (named) area of an {@link ImagePuzzle}.
- * Every {@link SinglePiece} belongs to exactly one {@link Area}.
- */
-public static class Area
-{
-   String areaName;
-   Shape includedPieces;
-   
-} // class Area
 
 public final int width;
 public final int height;
@@ -56,12 +46,19 @@ private ImagePuzzle(int width, int height, Bitmap image,
    this.playingFieldContainer = new PlayField(this);
 }
 
-public static ImagePuzzle generate(int pWidth, int pHeight, Bitmap image)
+/**
+ * Generate a random jigsaw pattern for the given image and size of the ImagePuzzle.
+ * @param pWidth the width, in number of pieces
+ * @param pHeight the height, in number of pieces
+ * @param image the image
+ * @param rng a random number generator
+ * @return a new ImagePuzzle with the given size and image
+ */
+public static ImagePuzzle generateNewPuzzle(int pWidth, int pHeight, Bitmap image, Random rng)
 {
    LinkedList<GroupOrSinglePiece> singlePieces = new LinkedList<>();
    ImagePuzzle ret = new ImagePuzzle(pWidth, pHeight, image, singlePieces);
-   HalfEdge[][] pool = PieceEdge.generateAllJigsaws();
-   Random rng = new Random();
+   HalfEdge[][] pool = PieceEdge.generateAllJigsawEdges();
    
    RandomEdge[] wests = new RandomEdge[pHeight];
    for (int x = 0; x < pWidth; x++) {
@@ -79,8 +76,11 @@ public static ImagePuzzle generate(int pWidth, int pHeight, Bitmap image)
          else
             south = new RandomEdge(rng);
          
-         singlePieces.add(new SinglePiece(ret, new Point(x, y),
-          north, east, south, wests[y], pool, rng.nextInt(4)));
+         singlePieces.add(new SinglePiece(ret,
+          new Point(x, y),
+          north, east, south, wests[y],
+          pool,
+          rng.nextInt(4)));
          
          //if (south != null)
          north = south;
@@ -89,5 +89,33 @@ public static ImagePuzzle generate(int pWidth, int pHeight, Bitmap image)
       } // for(y)
    } // for(x)
    return ret;
+}
+
+/**
+ * A (named) area of an {@link ImagePuzzle}.
+ * Every {@link SinglePiece} belongs to exactly one {@link Area}.
+ */
+public static class Area
+{
+   private String areaName;
+   //   Shape includedPieces; // import android.graphics.drawable.shapes.Shape;
+//   boolean[][] included;
+   final DividingLine[] neswDividers = new DividingLine[4];
+   
+   public Area(DividingLine n, DividingLine e, DividingLine s, DividingLine w)
+   {
+   
+   }
+   
+   public void setDivider(int direction, DividingLine divider)
+   {
+      neswDividers[direction] = divider;
+   }
+   
+} // class Area
+
+public static class DividingLine
+{
+   Point point1, point2;
 }
 }

@@ -7,7 +7,8 @@ import android.util.Pair;
 
 import androidx.annotation.NonNull;
 
-import github.adjustamat.jigsawpuzzlefloss.game.Container;
+import github.adjustamat.jigsawpuzzlefloss.containers.Container;
+import github.adjustamat.jigsawpuzzlefloss.game.Direction;
 
 /**
  * A {@link SinglePiece}, or a {@link LargerPiece} made up of two or more of the former that
@@ -25,7 +26,7 @@ protected Path imageMask;
 protected Point correctPuzzlePosition;
 
 protected Group groupParent;
-protected Integer indexInGroup; // TODO: null when not in any Group. or -1?
+protected Integer indexInGroup; // TODO: null when not in any Group. or -1 int?
 
 protected @NonNull Container containerParent;
 int indexInContainer;
@@ -89,11 +90,19 @@ public abstract boolean isNorthEdge();
 public abstract boolean isEastEdge();
 public abstract boolean isSouthEdge();
 
+/**
+ * @return whether or not this piece is an "edge piece" - being at one of the outermost rows or columns of an
+ * ImagePuzzle.
+ */
 public boolean isEdgePiece()
 {
    return isWestEdge() || isNorthEdge() || isEastEdge() || isSouthEdge();
 }
 
+/**
+ * @return whether or not this piece is one of the four "edge pieces" at the corners of an ImagePuzzle.
+ * @see #isEdgePiece()
+ */
 public boolean isCornerPiece()
 {
    return (isWestEdge() || isEastEdge()) && (isNorthEdge() || isSouthEdge());

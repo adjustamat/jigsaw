@@ -1,6 +1,6 @@
-package github.adjustamat.jigsawpuzzlefloss.game;
+package github.adjustamat.jigsawpuzzlefloss.ui;
 
-import github.adjustamat.jigsawpuzzlefloss.pieces.Direction;
+import github.adjustamat.jigsawpuzzlefloss.game.Direction;
 
 public class BorderDrawable
 {

@@ -1,4 +1,4 @@
-package github.adjustamat.jigsawpuzzlefloss.pieces;
+package github.adjustamat.jigsawpuzzlefloss.game;
 
 public enum Direction
 {

@@ -6,6 +6,11 @@ import android.graphics.Point;
 import java.util.ArrayList;
 import java.util.Random;
 
+import github.adjustamat.jigsawpuzzlefloss.game.Direction;
+
+/**
+ * A jigsaw edge, or straight edge for an "edge piece" (see {@link AbstractPiece#isEdgePiece()}), being one of four sides of a SinglePiece.
+ */
 public abstract class PieceEdge
 {
 private static final StraightLine STRAIGHT_NORTH = new StraightLine(new float[]{120f, 0f});
@@ -28,32 +33,12 @@ public static StraightEdge getStraightEdge(Direction d)
    }
 }
 
-public static StraightEdge getNorthOuterEdge()
-{
-   return new StraightEdge(STRAIGHT_NORTH);
-}
-
-public static StraightEdge getEastOuterEdge()
-{
-   return new StraightEdge(STRAIGHT_EAST);
-}
-
-public static StraightEdge getSouthOuterEdge()
-{
-   return new StraightEdge(STRAIGHT_SOUTH);
-}
-
-public static StraightEdge getWestOuterEdge()
-{
-   return new StraightEdge(STRAIGHT_WEST);
-}
-
 /**
- * Returns the pool from which to get paths with the selected neckWidth and curvature, like this:
- * pool [NECK*6 + CURV*2 + (secondHalf?1:0)] [(inward?4:0) + direction_ordinal]
- * @return the pool of pre-rotated paths
+ * Returns the pool from which to get jigsaw edges with desired neckWidth (NECK) and curvature (CURV) like this:
+ * pool [ NECK*6 + CURV*2 + (secondHalf?1:0) ]  [ (inward?4:0) + direction_ordinal ]
+ * @return the pool of pre-rotated jigsaw edges, first and second half, pointing inward and outward.
  */
-public static HalfEdge[][] generateAllJigsaws()
+public static HalfEdge[][] generateAllJigsawEdges()
 {
    HalfEdge[][] ret = new HalfEdge[3 * 3 * 2][];
    int reti = 0;
@@ -66,68 +51,74 @@ public static HalfEdge[][] generateAllJigsaws()
    return ret;
 }
 
-static HalfEdge[] generateFirstHalf(float neckWidth, float curvature)
+private static HalfEdge[] generateFirstHalf(float neckWidth, float curvature)
 {
    HalfEdge cfirst_north_out = new HalfEdge(
     new float[]{0f, 0f, // <- control from
      40f, curvature, // <- control to
      45f, curvature, // <- endPoint 1
+     
      15f, 0f, // <- control from
      45 - neckWidth, -curvature, // <- control to
      47.5f - neckWidth, -7.5f - curvature, // <- endPoint 2
+     
      2.5f, -7.5f,// <- control from
      -15 + neckWidth, -15f,// <- control to
      -15 + neckWidth, -25f, // <- endPoint 3
+     
      0f, -10f, // <- control from
      7.5f, -17.5f, // <- control to
      22.5f, -17.5f // <- endPoint 4
-    }).setEdgeWidth(25 + 7.5f + 17.5f);
-   HalfEdge cfirst_east_out = cfirst_north_out.getTransformed(Direction.EAST)
-    .setEdgeWidth(cfirst_north_out.edgeWidth);
-   HalfEdge cfirst_south_out = cfirst_north_out.getTransformed(Direction.SOUTH)
-    .setEdgeWidth(cfirst_north_out.edgeWidth);
-   HalfEdge cfirst_west_out = cfirst_north_out.getTransformed(Direction.WEST)
-    .setEdgeWidth(cfirst_north_out.edgeWidth);
+    },
+    25 + 7.5f + 17.5f
+   );
+   HalfEdge cfirst_east_out = cfirst_north_out.getTransformed(Direction.EAST);
+   HalfEdge cfirst_south_out = cfirst_north_out.getTransformed(Direction.SOUTH);
+   HalfEdge cfirst_west_out = cfirst_north_out.getTransformed(Direction.WEST);
    
-   HalfEdge cfirst_north_in = cfirst_north_out.getTransformed(Direction.NORTH).setEdgeWidth(curvature);
-   HalfEdge cfirst_east_in = cfirst_north_in.getTransformed(Direction.EAST).setEdgeWidth(curvature);
-   HalfEdge cfirst_south_in = cfirst_north_in.getTransformed(Direction.SOUTH).setEdgeWidth(curvature);
-   HalfEdge cfirst_west_in = cfirst_north_in.getTransformed(Direction.WEST).setEdgeWidth(curvature);
+   HalfEdge cfirst_north_in = cfirst_north_out.getTransformed(Direction.NORTH);
+   cfirst_north_in.edgeWidth = curvature;
+   HalfEdge cfirst_east_in = cfirst_north_in.getTransformed(Direction.EAST);
+   HalfEdge cfirst_south_in = cfirst_north_in.getTransformed(Direction.SOUTH);
+   HalfEdge cfirst_west_in = cfirst_north_in.getTransformed(Direction.WEST);
    
-   return new HalfEdge[]{cfirst_north_out, cfirst_east_out, cfirst_south_out, cfirst_west_out, cfirst_north_in,
-    cfirst_east_in, cfirst_south_in, cfirst_west_in};
+   return new HalfEdge[]{cfirst_north_out, cfirst_east_out, cfirst_south_out, cfirst_west_out,
+    cfirst_north_in, cfirst_east_in, cfirst_south_in, cfirst_west_in};
 }
 
-static HalfEdge[] generateSecondHalf(float neckWidth, float curvature)
+private static HalfEdge[] generateSecondHalf(float neckWidth, float curvature)
 {
    HalfEdge csecond_north_out = new HalfEdge(
     new float[]{15f, 0f, // <- control from
      22.5f, 7.5f, // <- control to
      22.5f, 17.5f, // <- endPoint 1
+     
      0f, -10f, // <- control from
      -17.5f + neckWidth, -17.5f, // <- control to
      -15 + neckWidth, 25f, // <- endPoint 2
+     
      2.5f, 7.5f, // <- control from
      32.5f - neckWidth, 7.5f + curvature, // <- control to
      47.5f - neckWidth, 7.5f + curvature, // <- endPoint 3
+     
      5f, 0f, // <- control from
      45f, -curvature, // <- control to
      45f, -curvature // <- endPoint 4
-    }).setEdgeWidth(25 + 7.5f + 17.5f);
-   HalfEdge csecond_east_out = csecond_north_out.getTransformed(Direction.EAST)
-    .setEdgeWidth(csecond_north_out.edgeWidth);
-   HalfEdge csecond_south_out = csecond_north_out.getTransformed(Direction.SOUTH)
-    .setEdgeWidth(csecond_north_out.edgeWidth);
-   HalfEdge csecond_west_out = csecond_north_out.getTransformed(Direction.WEST)
-    .setEdgeWidth(csecond_north_out.edgeWidth);
+    },
+    25 + 7.5f + 17.5f
+   );
+   HalfEdge csecond_east_out = csecond_north_out.getTransformed(Direction.EAST);
+   HalfEdge csecond_south_out = csecond_north_out.getTransformed(Direction.SOUTH);
+   HalfEdge csecond_west_out = csecond_north_out.getTransformed(Direction.WEST);
    
-   HalfEdge csecond_north_in = csecond_north_out.getTransformed(Direction.NORTH).setEdgeWidth(curvature);
-   HalfEdge csecond_east_in = csecond_north_in.getTransformed(Direction.EAST).setEdgeWidth(curvature);
-   HalfEdge csecond_south_in = csecond_north_in.getTransformed(Direction.SOUTH).setEdgeWidth(curvature);
-   HalfEdge csecond_west_in = csecond_north_in.getTransformed(Direction.WEST).setEdgeWidth(curvature);
+   HalfEdge csecond_north_in = csecond_north_out.getTransformed(Direction.NORTH);
+   csecond_north_in.edgeWidth = curvature;
+   HalfEdge csecond_east_in = csecond_north_in.getTransformed(Direction.EAST);
+   HalfEdge csecond_south_in = csecond_north_in.getTransformed(Direction.SOUTH);
+   HalfEdge csecond_west_in = csecond_north_in.getTransformed(Direction.WEST);
    
-   return new HalfEdge[]{csecond_north_out, csecond_east_out, csecond_south_out, csecond_west_out, csecond_north_in,
-    csecond_east_in, csecond_south_in, csecond_west_in};
+   return new HalfEdge[]{csecond_north_out, csecond_east_out, csecond_south_out, csecond_west_out,
+    csecond_north_in, csecond_east_in, csecond_south_in, csecond_west_in};
 }
 
 private Point subPiece;
@@ -143,6 +134,20 @@ public Direction getSubPieceDir()
    return subPieceDir;
 }
 
+public Direction getRealDirection(Direction rotate)
+{
+   switch (rotate) {
+   case EAST:
+      return subPieceDir.next();
+   case SOUTH:
+      return subPieceDir.opposite();
+   case WEST:
+      return subPieceDir.prev();
+   default: //    case NORTH:
+      return subPieceDir;
+   }
+}
+
 public PieceEdge setSubPiece(Point subPiece, Direction dir)
 {
    this.subPiece = subPiece;
@@ -150,29 +155,23 @@ public PieceEdge setSubPiece(Point subPiece, Direction dir)
    return this;
 }
 
-private PieceEdge next;
-private PieceEdge prev;
+private PieceEdge nextLink;
+private PieceEdge prevLink;
 
 public PieceEdge getNext()
 {
-   return next;
+   return nextLink;
 }
 
 public PieceEdge getPrev()
 {
-   return prev;
+   return prevLink;
 }
-
-//public WholeEdge unlinkInnerEdge (){
-//   next = null;
-//   prev = null;
-//   return this;
-//}
 
 public PieceEdge linkNext(PieceEdge next)
 {
-   this.next = next;
-   next.prev = this;
+   this.nextLink = next;
+   next.prevLink = this;
    return this;
 }
 
@@ -180,8 +179,7 @@ public abstract void appendSegmentsTo(Path path);
 public abstract float getEdgeWidth();
 
 /**
- * Two HalfEdges that makes a WholeEdge.
- * Can be further combined into SinglePieceOutlines, LargerPieceOutlines, or stored in LargerPiece innerEdges.
+ * Two HalfEdges makes a DoubleEdge.
  */
 public static class DoubleEdge
  extends PieceEdge
@@ -206,6 +204,10 @@ public static class DoubleEdge
    }
 }
 
+/**
+ * The straight edge of an "edge piece"
+ * @see AbstractPiece#isEdgePiece()
+ */
 public static class StraightEdge
  extends PieceEdge
 {
@@ -238,7 +240,7 @@ private static class StraightLine
 }
 
 /**
- * HalfEdges are generated for the pool.
+ * A HalfEdge is a jigsaw edge, generated for the pool, made up of Cubic SVG segments. It is one half of a PieceEdge.
  */
 public static class HalfEdge
 {
@@ -248,25 +250,21 @@ public static class HalfEdge
    
    /**
     * Create a NORTH OUT HalfEdge.
-    * @param allData data for all Cubic segments of this SVG HalfEdge.
+    * @param allData data for all Cubic segments of this HalfEdge.
     */
-   private HalfEdge(float[] allData)
+   private HalfEdge(float[] allData, float edgeWidth)
    {
+      this.edgeWidth = edgeWidth;
       segments = new ArrayList<>(4); // 4 segments
       for (int i = 0; i < allData.length; i += 6) { // 6 float values per segment (rCubicTo)
          segments.add(new Cubic(allData, i));
       }
    }
    
-   private HalfEdge(ArrayList<Cubic> segments)
+   private HalfEdge(ArrayList<Cubic> segments, float edgeWidth)
    {
+      this.edgeWidth = edgeWidth;
       this.segments = segments;
-   }
-   
-   HalfEdge setEdgeWidth(float f)
-   {
-      edgeWidth = f;
-      return this;
    }
    
    public void appendHalfEdgeTo(Path path)
@@ -282,21 +280,21 @@ public static class HalfEdge
       for (Cubic segm: segments) {
          Cubic newSegment;
          switch (dir) {
-         case NORTH:
-            newSegment = segm.flipToIn();
-            break;
          case EAST:
             newSegment = segm.rotateToEast();
             break;
          case WEST:
             newSegment = segm.rotateToWest();
             break;
-         default:// case SOUTH:
+         case SOUTH:
             newSegment = segm.rotateToSouth();
+            break;
+         default: // case NORTH:
+            newSegment = segm.flipToIn();
          }
          ret.add(newSegment);
       }
-      return new HalfEdge(ret);
+      return new HalfEdge(ret, edgeWidth);
    }
 } // class HalfEdge
 

@@ -1,7 +1,8 @@
-package github.adjustamat.jigsawpuzzlefloss.game;
+package github.adjustamat.jigsawpuzzlefloss.containers;
 
 import android.content.Context;
 
+import github.adjustamat.jigsawpuzzlefloss.game.ImagePuzzle;
 import github.adjustamat.jigsawpuzzlefloss.pieces.AbstractPiece;
 import github.adjustamat.jigsawpuzzlefloss.pieces.Group;
 
@@ -75,7 +76,6 @@ public boolean moveGroupFrom(Context ctx, Container other, Group group)
 
 /**
  * Make all pieces in a Group non-overlapping, if possible.
- * @return whether or not the Group could be spread out here.
  */
 public void spreadOutGroup(Group group)
 {
@@ -84,7 +84,6 @@ public void spreadOutGroup(Group group)
 
 /**
  * Make all pieces in a Group overlap, if possible.
- * @return whether or not the Group could be piled up here.
  */
 public void pileUpGroup(Group group)
 {

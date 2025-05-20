@@ -10,7 +10,8 @@ import androidx.annotation.NonNull;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import github.adjustamat.jigsawpuzzlefloss.game.BorderDrawable;
+import github.adjustamat.jigsawpuzzlefloss.game.Direction;
+import github.adjustamat.jigsawpuzzlefloss.ui.BorderDrawable;
 import github.adjustamat.jigsawpuzzlefloss.pieces.SinglePiece.SinglePieceEdges;
 
 /**
@@ -31,7 +32,7 @@ public class LargerPiece
 //public static final int BITS_BG = 0b111111111;
 
 /**
- * The outline to draw when rotating or when drawing embossed 3D-effect.
+ * The outline to draw when rotating or when drawing embossed 3D-effect. Also the shape / mask of the image.
  */
 private final LargerPieceEdges vectorEdges;
 
@@ -48,7 +49,7 @@ boolean southEdge;
 
 private final RectF edgeWidths = new RectF();
 
-static class OuterEdgeIndex
+private static class OuterEdgeIndex
 {
    int hole;
    int index;
@@ -60,7 +61,7 @@ static class OuterEdgeIndex
    }
 } // class OuterEdgeIndex
 
-static class OuterEdgeIndices
+private static class OuterEdgeIndices
 {
    private final ArrayList<OuterEdgeIndex> nesw = new ArrayList<>(4);
    
@@ -81,11 +82,6 @@ static class OuterEdgeIndices
    {
       nesw.set(direction, new OuterEdgeIndex(hole, index));
    }
-
-//   void remove(int direction)
-//   {
-//      nesw.set(direction, null);
-//   }
    
    OuterEdgeIndex getIndex(Direction direction)
    {
@@ -96,18 +92,12 @@ static class OuterEdgeIndices
    {
       set(direction.ordinal(), hole, index);
    }
-
-//   void remove(Direction direction)
-//   {
-//      remove(direction.ordinal());
-//   }
 } // class OuterEdgeIndices
 
-class LargerPieceEdges
+private class LargerPieceEdges
  extends VectorEdges
 {
    private final ArrayList<PieceEdge> innerEdges = new ArrayList<>();
-   //   private final ArrayList<WholeEdge> outerEdges = new ArrayList<>();
    private final ArrayList<ArrayList<PieceEdge>> outerEdgeHoles = new ArrayList<>(2);
    private int[] removed;
    
@@ -117,7 +107,6 @@ class LargerPieceEdges
       // TODO: combine outlines and innerEdges (my own UNION) - indexes in matrix need to change too
       // TODO: outerEdgeHoles is empty, only its CAPACITY is two! Add at least one list to it!
       // TODO: make sure when combining two LargerPieces that I know there can be nulls in both outerEdgeHoles lists!
-      
       LargerPieceEdges edges1 = p1.vectorEdges;
       LargerPieceEdges edges2 = p2.vectorEdges;
       int matrixX, matrixY;
@@ -706,7 +695,7 @@ class LargerPieceEdges
    
    public ArrayList<PieceEdge> getInnerEdges()
    {
-      return innerEdges;
+      return innerEdges; // TODO: cannot make into closed path! have to draw each edge individually.
    }
    //   public Path getInnerEdgesPath(float startX, float startY)
 //   {
@@ -743,7 +732,7 @@ class LargerPieceEdges
          return null;
       ArrayList<PieceEdge> outerEdges = getOuterEdges(removeIndex);
       
-      // TODO: make sure when combining two LargerPieces that I know there can be nulls in outerEdgeHoles lists!
+      // make sure when combining two LargerPieces that I know there can be nulls in outerEdgeHoles lists!
       
       PieceEdge ret = outerEdges.set(removeIndex.index, null); // hole.remove(removeIndex.index)
       removed[removeIndex.hole]++;
@@ -936,10 +925,13 @@ private int linear(int x, int y)
 
 private Integer checkBounds(int x, int y)
 {
-   int ret = linear(x, y);
-   if (ret < 0 || ret >= matrix.size())
+   if (x < 0 || y < 0 || x >= matrixWidth || y >= matrixHeight)
       return null;
-   return ret;
+   return linear(x, y);
+//   int ret = linear(x, y);
+//   if (ret < 0 || ret >= matrix.size())
+//      return null;
+//   return ret;
 }
 
 private OuterEdgeIndices getSubPieceIndicesOrNull(int x, int y)
@@ -950,7 +942,17 @@ private OuterEdgeIndices getSubPieceIndicesOrNull(int x, int y)
    return matrix.get(linear);
 }
 
-private OuterEdgeIndices getSubPieceIndices(Point p)
+private boolean isSubPiece(int x, int y)
+{
+   return matrix.get(linear(x, y)) != null;
+   // return getSubPieceIndicesOrNull(x, y) != null;
+//   Integer linear = checkBounds(x, y);
+//   if (linear == null)
+//      return false;
+//   return matrix.get(linear) != null;
+}
+
+private @NonNull OuterEdgeIndices getSubPieceIndices(Point p)
 {
    return matrix.get(linear(p.x, p.y));
 }
@@ -1014,7 +1016,7 @@ public int getSubPieceY(float mouseOffsetY)
    return (int) (mouseOffsetY / (SIDE_SIZE * matrixHeight));
 }
 
-public ArrayList<BorderDrawable> getBgOutline()
+public ArrayList<BorderDrawable> getBorder()
 {
    /*
    ArrayList<BgDrawable> ret = new ArrayList<>(matrix.size());//+2*matrixWidth+2*matrixHeight+4);
@@ -1089,31 +1091,32 @@ public ArrayList<BorderDrawable> getBgOutline()
    
    int x;
    int y;
-   // check edges (do not outline EdgeType.EDGE!)
+   // check edges (do not generate borders for straight edges!)
    if (!isWestEdge()) { // leftmost column (WEST) can be outlined
       x = -1; // outside left edge
       
       // leftmost column: top left corner (NW)
       if (!isNorthEdge()) { // leftmost column: NW can be outlined
          y = -1; // outside top edge
-         if (matrix.get(linear(x + 1, y + 1)) != null) { // x+1 == 0, y+1 == 0
+         // if(matrix.get(linear(x + 1, y + 1)) != null)
+         if (isSubPiece(x + 1, y + 1)) { // x+1 == 0, y+1 == 0
             // outside left edge, outside top edge (-1, -1)
             ret.add(BorderDrawable.cornerSE(x, y));
             // outside left edge, top row (-1, 0)
             ret.add(BorderDrawable.single(x, y + 1, Direction.EAST));
          }
-         else if (matrix.get(linear(x + 1, (++y) + 1)) != null) { // x+1 == 0, y+1 == 1
+         else if (isSubPiece(x + 1, (++y) + 1)) { // x+1 == 0, y+1 == 1
             // outside left edge, top row (-1, 0)
             ret.add(BorderDrawable.cornerSE(x, y));
          }
       }
       else { // leftmost column: isTopEdge (NW)
          y = 0; // top row
-         if (matrix.get(linear(x + 1, y)) != null) { // x+1 == 0
+         if (isSubPiece(x + 1, y)) { // x+1 == 0
             // outside left edge, top row (-1, 0)
             ret.add(BorderDrawable.singleShortRight(x, y, Direction.EAST));
          }
-         else if (matrix.get(linear(x + 1, y + 1)) != null) { // x+1 == 0, y+1 == 1
+         else if (isSubPiece(x + 1, y + 1)) { // x+1 == 0, y+1 == 1
             // outside left edge, top row (-1, 0)
             ret.add(BorderDrawable.cornerSE(x, y));
          }
@@ -1121,16 +1124,16 @@ public ArrayList<BorderDrawable> getBgOutline()
       
       // leftmost column: loop through the middle of the column
       for (y = 1; y < matrixHeight - 1; y++) {
-         if (matrix.get(linear(x + 1, y)) != null) { // x+1 == 0
+         if (isSubPiece(x + 1, y)) { // x+1 == 0
             // outside left edge, middle rows
             ret.add(BorderDrawable.single(x, y, Direction.EAST));
          }
          else {
-            if (matrix.get(linear(x + 1, y - 1)) != null) { // x+1 == 0
+            if (isSubPiece(x + 1, y - 1)) { // x+1 == 0
                // outside left edge, middle rows
                ret.add(BorderDrawable.cornerNE(x, y));
             }
-            if (matrix.get(linear(x + 1, y + 1)) != null) { // x+1 == 0
+            if (isSubPiece(x + 1, y + 1)) { // x+1 == 0
                // outside left edge, middle rows
                ret.add(BorderDrawable.cornerSE(x, y));
             }
@@ -1140,23 +1143,23 @@ public ArrayList<BorderDrawable> getBgOutline()
       // leftmost column: bottom left corner (SW)
       if (!isSouthEdge()) { // leftmost column: SW can be outlined
          // TODO: matrixHeight: outside bottom edge
-         if (matrix.get(linear(x + 1, y)) != null) { // x+1 == 0, y == matrixHeight - 1
+         if (isSubPiece(x + 1, y)) { // x+1 == 0, y == matrixHeight - 1
             // outside left edge, bottom row (-1, matrixHeight - 1)
             ret.add(BorderDrawable.single(x, y, Direction.EAST));
             // outside left edge, outside bottom edge (-1, matrixHeight)
             ret.add(BorderDrawable.cornerNE(x, y + 1));
          }
-         else if (matrix.get(linear(x + 1, y - 1)) != null) { // x+1 == 0
+         else if (isSubPiece(x + 1, y - 1)) { // x+1 == 0
             // outside left edge, bottom row (-1, matrixHeight - 1)
             ret.add(BorderDrawable.cornerNE(x, y));
          }
       }
       else { // leftmost column: isSouthEdge (SW)
          // TODO: bottom row (NOT OUTSIDE)
-         if (matrix.get(linear(x + 1, y)) != null) { // x+1 == 0, y == matrixHeight - 1
+         if (isSubPiece(x + 1, y)) { // x+1 == 0, y == matrixHeight - 1
             ret.add(BorderDrawable.singleShortLeft(x, y, Direction.EAST));
          }
-         else if (matrix.get(linear(x + 1, y - 1)) != null) { // x+1 == 0, y-1 == matrixHeight - 2
+         else if (isSubPiece(x + 1, y - 1)) { // x+1 == 0, y-1 == matrixHeight - 2
             
             ret.add(BorderDrawable.cornerNE(x, y));
          }
@@ -1171,14 +1174,14 @@ public ArrayList<BorderDrawable> getBgOutline()
       x = 0;
       
       for (x = 1; x < matrixWidth - 1; x++) {
-         if (matrix.get(linear(x, 0)) != null) {
+         if (isSubPiece(x, 0)) {
             ret.add(BorderDrawable.single(-1, y, Direction.EAST));
          }
          else {
-            if (matrix.get(linear(x - 1, 0)) != null) {
+            if (isSubPiece(x - 1, 0)) {
                ret.add(BorderDrawable.cornerSW(x, -1));
             }
-            if (matrix.get(linear(x + 1, 0)) != null) {
+            if (isSubPiece(x + 1, 0)) {
                ret.add(BorderDrawable.cornerSE(x, -1));
             }
          }

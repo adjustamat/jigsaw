@@ -8,7 +8,8 @@ import android.graphics.RectF;
 
 import androidx.annotation.Nullable;
 
-import github.adjustamat.jigsawpuzzlefloss.game.Box.GroupOrSinglePiece;
+import github.adjustamat.jigsawpuzzlefloss.containers.Box.GroupOrSinglePiece;
+import github.adjustamat.jigsawpuzzlefloss.game.Direction;
 import github.adjustamat.jigsawpuzzlefloss.game.ImagePuzzle;
 import github.adjustamat.jigsawpuzzlefloss.pieces.PieceEdge.HalfEdge;
 import github.adjustamat.jigsawpuzzlefloss.pieces.PieceEdge.RandomEdge;
@@ -21,11 +22,11 @@ public class SinglePiece
  extends AbstractPiece
  implements GroupOrSinglePiece
 {
-final RandomEdge westEdge;
-final RandomEdge northEdge;
-final RandomEdge eastEdge;
-final RandomEdge southEdge;
-final RandomEdge[] randomEdgesNesw = new RandomEdge[4];
+//final RandomEdge westEdge;
+//final RandomEdge northEdge;
+//final RandomEdge eastEdge;
+//final RandomEdge southEdge;
+final RandomEdge[] neswRandomEdges = new RandomEdge[4];
 
 /**
  * The outline to draw when rotating or when drawing embossed 3D-effect.
@@ -58,9 +59,9 @@ class SinglePieceEdges
    {
       for (Direction d: Direction.values()) {
          int i = d.ordinal();
-         nesw[i] = randomEdgesNesw[i] == null
-          ?PieceEdge.getStraightEdge(d)
-          :randomEdgesNesw[i].getPieceEdge(pool, d);
+         nesw[i] = neswRandomEdges[i] != null
+          ?neswRandomEdges[i].getPieceEdge(pool, d)
+          :PieceEdge.getStraightEdge(d);
       }
       nesw[3].linkNext(nesw[0].linkNext(nesw[1].linkNext(nesw[2].linkNext(nesw[3]))));
    }
@@ -95,10 +96,10 @@ public SinglePiece(ImagePuzzle imagePuzzle, Point coordinates,
    final float imageSize = imagePuzzle.pieceImageSize;
    this.imageOffset = new PointF(coordinates.x * imageSize, coordinates.y * imageSize);
    
-   northEdge = north;
-   eastEdge = east;
-   southEdge = south;
-   westEdge = west;
+   neswRandomEdges[0] = north;
+   neswRandomEdges[1] = east;
+   neswRandomEdges[2] = south;
+   neswRandomEdges[3] = west;
    vectorEdges = new SinglePieceEdges(pool);
    
    zeroOffsetOutline = vectorEdges.getOuterEdgePath(0f, 0f).first;
@@ -115,22 +116,22 @@ public RectF getEdgeWidths()
 
 public boolean isNorthEdge()
 {
-   return randomEdgesNesw[0] == null;
+   return neswRandomEdges[0] == null;
 }
 
 public boolean isEastEdge()
 {
-   return randomEdgesNesw[1] == null;
+   return neswRandomEdges[1] == null;
 }
 
 public boolean isSouthEdge()
 {
-   return randomEdgesNesw[2] == null;
+   return neswRandomEdges[2] == null;
 }
 
 public boolean isWestEdge()
 {
-   return randomEdgesNesw[3] == null;
+   return neswRandomEdges[3] == null;
 }
 
 }
