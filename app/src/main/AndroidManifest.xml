@@ -3,30 +3,36 @@
  xmlns:tools="http://schemas.android.com/tools"
  >
 
-<!--
-generate puzzle from an image
+ <!--
 
-write help popups with explanation for options and menu items
+ (generative options) - generate puzzle from a bitmap
+ (background options) {
+   boolean: change bg around pieces that are low contrast against bg
+   boolean: scrolling/unscrolling bg
+ }
+ (game options) {
+   boolean: activate automating piecing together action
 
-(generative options)
-(background options)
-(game options)
+ }
+ // EVENTS: click, long-click, flick, drag, drag-after-long-click, rotate with two fingers, ...
+ // ACTIONS: scroll, zoom, rotate bg, move or rotate piece, zoom in on piece, show context menu, select, select group,
+ // ACTIONS: lock/unlock piece/group, ...
 
-define and name areas of the image
-move and rotate puzzle pieces (single and larger)
-try to put pieces together into larger pieces
-automate trying to put pieces together
-give hints or help (like these two pieces don't fit together or this belongs in that area)
-sort/group them manually or by properties
-move groups of pieces across the playing field
-search for them, individually and as part of larger pieces/groups
-lock them in place
-select or change background
+ + write help popups with explanation for options and menu items
+ + give help by automating trying to put pieces together
+ + define and give names to areas of the image
+ + give hints or help (like these two pieces don't fit together or this belongs in that area)
+ + sort/group pieces manually or by properties (in/out patterns, edge pieces, corner pieces, neckWidth, curvature, colors, areas (cheating!), ...)
+ + give names to pieces or groups
+ + move pieces through temporary storage across the playing field
+ + search for pieces, individually and as part of larger pieces/groups
+ + lock pieces in place
+ select or change background
 
 
 
 
--->
+   -->
    <application android:allowBackup="true"
     android:dataExtractionRules="@xml/data_extraction_rules"
     android:fullBackupContent="@xml/backup_rules"

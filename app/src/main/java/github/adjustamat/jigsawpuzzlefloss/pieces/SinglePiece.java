@@ -43,10 +43,6 @@ PointF imageOffset;
 
 // ImagePuzzle.Area areaParent // can be calculated when needed, instead of stored in memory.
 
-
-// LargerPiece largerPieceParent;
-// Point positionInLargerPiece;
-
 Color edgesColor; // TODO: extract color from the super.imageMask part of the image.
 Color highContrastBgColor;
 
@@ -76,25 +72,24 @@ class SinglePieceEdges
       );
    }
    
-   public int toOuterEdgePath(Path path)
+   public PieceEdge getFirstEdge(int hole)
    {
-      for (PieceEdge edge: nesw) {
-         edge.appendSegmentsTo(path);
-      }
+      return nesw[0];
+   }
+   
+   public int getOuterEdgesCount()
+   {
       return 1;
    }
 } // class SinglePieceEdges
 
-public SinglePiece(ImagePuzzle imagePuzzle, Point coordinates,
+public SinglePiece(ImagePuzzle imagePuzzle, int indexInBox, Point coordinates,
  @Nullable RandomEdge north, @Nullable RandomEdge east, @Nullable RandomEdge south, @Nullable RandomEdge west,
  HalfEdge[][] pool, int randomRotation
 )
 {
-   super(imagePuzzle.singlePiecesContainer, Direction.values()[randomRotation]);
-   this.correctPuzzlePosition = coordinates;
-   
-   final float imageSize = imagePuzzle.pieceImageSize;
-   this.imageOffset = new PointF(coordinates.x * imageSize, coordinates.y * imageSize);
+   super(imagePuzzle.singlePiecesContainer, indexInBox,
+    Direction.values()[randomRotation], coordinates);
    
    neswRandomEdges[0] = north;
    neswRandomEdges[1] = east;
@@ -102,10 +97,11 @@ public SinglePiece(ImagePuzzle imagePuzzle, Point coordinates,
    neswRandomEdges[3] = west;
    vectorEdges = new SinglePieceEdges(pool);
    
-   zeroOffsetOutline = vectorEdges.getOuterEdgePath(0f, 0f).first;
-   
-   this.imageMask = new Path();
-   zeroOffsetOutline.offset(imageSize * coordinates.x, imageSize * coordinates.y, imageMask);
+   imageOffset = new PointF(coordinates.x * imagePuzzle.pieceImageSize,
+    coordinates.y * imagePuzzle.pieceImageSize);
+   zeroOffsetOutline = vectorEdges.drawOuterEdges(0, 0f, 0f);
+   //this.imageMask = new Path();
+   //zeroOffsetOutline.offset(imageOffset.x, imageOffset.y, imageMask);
 }
 
 public RectF getEdgeWidths()
@@ -134,4 +130,12 @@ public boolean isWestEdge()
    return neswRandomEdges[3] == null;
 }
 
+/**
+ * @return whether or not this piece is one of the four pieces at the outer corners of an ImagePuzzle.
+ * @see #isEdgePiece()
+ */
+public boolean isCornerPiece()
+{
+   return (isWestEdge() || isEastEdge()) && (isNorthEdge() || isSouthEdge());
+}
 }

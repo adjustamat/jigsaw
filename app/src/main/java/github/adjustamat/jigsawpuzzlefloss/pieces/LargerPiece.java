@@ -328,7 +328,7 @@ private class LargerPieceEdges
       case 1: { // the attached direction is the opposite of dir
          
          attachingEdge = innerEdges.get(innerEdges.size() - 1);
-         ArrayList<PieceEdge> outerEdges = getOuterEdges(attachingIndex);
+         ArrayList<PieceEdge> outerEdges = outerEdgeHoles.get(attachingIndex.hole);
          PieceEdge firstNewEdge = singlePieceEdges.nesw[dir.prev().ordinal()];
          PieceEdge middleNewEdge = firstNewEdge.getNext();
          PieceEdge lastNewEdge = middleNewEdge.getNext(); // singlePieceEdges.nesw[dir.next().ordinal()]
@@ -488,10 +488,11 @@ private class LargerPieceEdges
          } // no behindPrev or behindNext (no new hole)
          
          break; // case sum == 1
-      }
+      } // case sum == 1
+      
       case 2: { // the attached directions are the opposites of emptyDir1 and emptyDir2
          
-         ArrayList<PieceEdge> outerEdges = getOuterEdges(attachingIndex);
+         ArrayList<PieceEdge> outerEdges = outerEdgeHoles.get(attachingIndex.hole);
          
          if (behindNull) { // corner:
             boolean switched = false;
@@ -613,10 +614,11 @@ private class LargerPieceEdges
          } // dir and dir.opposite()
          
          break; // case sum == 2
-      }
+      } // case sum == 2
+      
       case 3: { // the attached directions are all but emptyDir1
          
-         ArrayList<PieceEdge> outerEdges = getOuterEdges(attachingIndex);
+         ArrayList<PieceEdge> outerEdges = outerEdgeHoles.get(attachingIndex.hole);
          
          PieceEdge attachingEdge3;
          if (behindNull) {
@@ -648,9 +650,9 @@ private class LargerPieceEdges
 //         outerEdges.add(newEdge.setSubPiece(newSubPiece, dir));
          
          break; // case sum == 3
-      }
+      } // case sum == 3
+      
       case 4: // all four directions are attached:
-         
          // the new piece filled a hole which was 4 edges that all became innerEdges.
          // delete the hole, but keep the null in the list of holes so that hole indexes don't need to change.
          outerEdgeHoles.set(attachingIndex.hole, null);
@@ -676,45 +678,34 @@ private class LargerPieceEdges
       outerEdges.add(newEdge.setSubPiece(newSubPiece, dir));
    }
    
-   public int toOuterEdgePath(Path path)
+   public int getOuterEdgesCount()
    {
-      // loop through getNext(), not index in the list!
-      PieceEdge firstEdge = outerEdgeHoles.get(0).get(0);
-      PieceEdge nextEdge = firstEdge;
-      do {
-         nextEdge.appendSegmentsTo(path);
-         nextEdge = nextEdge.getNext();
-      }while (nextEdge != firstEdge);
       return outerEdgeHoles.size();
    }
    
-   public Path getOuterEdgesPath(float startX, float startY, int hole)
+   public PieceEdge getFirstEdge(int hole)
    {
-      return getPath(startX, startY, outerEdgeHoles.get(hole).get(0));
+      return outerEdgeHoles.get(hole).get(0);
    }
    
    public ArrayList<PieceEdge> getInnerEdges()
    {
-      return innerEdges; // TODO: cannot make into closed path! have to draw each edge individually.
+      return innerEdges;
    }
-   //   public Path getInnerEdgesPath(float startX, float startY)
-//   {
-//      // TODO: all inner edges need a reference to its starting point (subPiece)
-//      //return getPath(startX, startY, innerEdges.get(0));
-//      // TODO: first draw all inner edges with 100% opacity on a buffered image / canvas, and then draw the canvas with lower opacity on top of the largerpiece.
-//
-//   }
    
-   private ArrayList<PieceEdge> getOuterEdges(@NonNull OuterEdgeIndex index)
+   public Path[] drawInnerEdges(float startX, float startY)
    {
-      return outerEdgeHoles.get(index.hole);//index.hole == -1 ?outerEdges :holes.get(index.hole);
+      // TODO: cannot make into closed path! have to draw each edge individually.
+      // TODO: all inner edges need a reference to its starting point (subPiece)
+      // TODO: first draw all inner edges with 100% opacity on a BufferedImage/Raster/Bitmap/Canvas, and then draw the canvas with lower opacity on top of the largerpiece.
+      
    }
    
    private PieceEdge getOuterEdge(OuterEdgeIndex index)
    {
       if (index == null)
          return null;
-      return getOuterEdges(index).get(index.index);
+      return outerEdgeHoles.get(index.hole).get(index.index);
 //      if (index.hole == -1)
 //         return outerEdges.get(index.index);
 //      return holes.get(index.hole).get(index.index);
@@ -730,7 +721,7 @@ private class LargerPieceEdges
    {
       if (removeIndex == null)
          return null;
-      ArrayList<PieceEdge> outerEdges = getOuterEdges(removeIndex);
+      ArrayList<PieceEdge> outerEdges = outerEdgeHoles.get(removeIndex.hole);
       
       // make sure when combining two LargerPieces that I know there can be nulls in outerEdgeHoles lists!
       
@@ -766,9 +757,19 @@ private class LargerPieceEdges
    }
 } // class LargerPieceEdges
 
-private LargerPiece(LargerPiece p1, LargerPiece p2, Point subPiece1, Point subPiece2, Direction dir)
+/**
+ * Combine two LargerPieces.
+ * @param newIndexInContainer index in Container
+ * @param p1
+ * @param p2
+ * @param subPiece1
+ * @param subPiece2
+ * @param dir
+ */
+private LargerPiece(int newIndexInContainer,
+ LargerPiece p1, LargerPiece p2, Point subPiece1, Point subPiece2, Direction dir)
 {
-   super(p1.containerParent, p1.currentRotationNorthDirection);
+   super(p1.containerParent, newIndexInContainer, p1.currentRotationNorthDirection);
    
    int diffX = subPiece1.x + dir.x - subPiece2.x;
    int offsetX1 = diffX < 0 ?-diffX :0;
@@ -779,6 +780,12 @@ private LargerPiece(LargerPiece p1, LargerPiece p2, Point subPiece1, Point subPi
    
    init(Math.max(offsetX1 + p1.matrixWidth, offsetX2 + p2.matrixWidth),
     Math.max(offsetY1 + p1.matrixHeight, offsetY2 + p2.matrixHeight));
+   
+   correctPuzzlePosition = p1.correctPuzzlePosition;
+   correctPuzzlePosition.offset(offsetX1, offsetY1);
+   // could also do:
+   //correctPuzzlePosition = p2.correctPuzzlePosition;
+   //correctPuzzlePosition.offset(offsetX2, offsetY2);
    
    pieceCount = p1.pieceCount + p2.pieceCount;
    westEdge = p1.isWestEdge() || p2.isWestEdge();
@@ -799,15 +806,19 @@ private LargerPiece(LargerPiece p1, LargerPiece p2, Point subPiece1, Point subPi
 }
 
 /**
+ * Combine two SinglePieces.
+ * TODO: param's
  * @param p1 a SinglePiece
  * @param p2 another SinglePiece
  * @param dir the direction of combination
  * Constructs a LargerPiece by combining two SinglePieces.
  */
-private LargerPiece(SinglePiece p1, SinglePiece p2, Direction dir)
+private LargerPiece(int newIndexInContainer, SinglePiece p1, SinglePiece p2, Direction dir)
 {
-   super(p1.containerParent, p1.currentRotationNorthDirection);
+   super(p1.containerParent, newIndexInContainer, p1.currentRotationNorthDirection);
    init(dir.initWidth, dir.initHeight);
+   
+   this.correctPuzzlePosition =;
    
    pieceCount = 2;
    copyIsEdge(p1);

@@ -76,11 +76,14 @@ public static ImagePuzzle generateNewPuzzle(int pWidth, int pHeight, Bitmap imag
          else
             south = new RandomEdge(rng);
          
-         singlePieces.add(new SinglePiece(ret,
+         singlePieces.add(new SinglePiece(
+          ret,
+          singlePieces.size(),
           new Point(x, y),
           north, east, south, wests[y],
           pool,
-          rng.nextInt(4)));
+          rng.nextInt(4)
+         ));
          
          //if (south != null)
          north = south;

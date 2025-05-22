@@ -3,7 +3,6 @@ package github.adjustamat.jigsawpuzzlefloss.pieces;
 import android.graphics.Path;
 import android.graphics.Point;
 import android.graphics.RectF;
-import android.util.Pair;
 
 import androidx.annotation.NonNull;
 
@@ -19,31 +18,31 @@ public abstract class AbstractPiece
 public static final float SIDE_SIZE = 120f;
 public static final float HALF_SIZE = 60f;
 
-/**
- * The mask of the ImagePuzzle image. Consists of the outline SVGPath turned into a graphics.Path.
+/*
+ * The mask of the ImagePuzzle bitmap, equal to the outline "vectorEdges".
  */
-protected Path imageMask;
+//protected Path imageMask;
+
 protected Point correctPuzzlePosition;
-
-protected Group groupParent;
-protected Integer indexInGroup; // TODO: null when not in any Group. or -1 int?
-
-protected @NonNull Container containerParent;
-int indexInContainer;
-
-public int getIndexInContainer()
-{
-   return indexInContainer;
-}
-
 protected @NonNull Direction currentRotationNorthDirection;
 
-protected AbstractPiece(@NonNull Container containerParent, @NonNull Direction rotation)
+protected @NonNull Container containerParent;
+private int indexInContainer;
+
+protected AbstractPiece(@NonNull Container containerParent, int indexInContainer,
+ @NonNull Direction rotation, Point correctPuzzlePosition)
 {
-   this.containerParent = containerParent;
-   currentRotationNorthDirection = rotation;
+   setContainer(containerParent, indexInContainer);
+   this.currentRotationNorthDirection = rotation;
+   this.correctPuzzlePosition = correctPuzzlePosition;
 }
 
+protected AbstractPiece(@NonNull Container containerParent, int indexInContainer,
+ @NonNull Direction rotation)
+{
+   setContainer(containerParent, indexInContainer);
+   this.currentRotationNorthDirection = rotation;
+}
 public void setContainer(Container newParent, int indexInContainer)
 {
    this.containerParent = newParent;
@@ -54,6 +53,16 @@ public @NonNull Container getContainer()
 {
    return containerParent;
 }
+
+public int getIndexInContainer()
+{
+   return indexInContainer;
+}
+
+// groups:
+
+protected Group groupParent;
+protected Integer indexInGroup; // TODO: null when not in any Group. or -1 int?
 
 void setGroup(@NonNull Group group, int index)
 {
@@ -83,6 +92,8 @@ public boolean isGrouped()
    return groupParent != null && !groupParent.isLonelyPiece();
 }
 
+// edges:
+
 public abstract RectF getEdgeWidths();
 
 public abstract boolean isWestEdge();
@@ -91,60 +102,56 @@ public abstract boolean isEastEdge();
 public abstract boolean isSouthEdge();
 
 /**
- * @return whether or not this piece is an "edge piece" - being at one of the outermost rows or columns of an
- * ImagePuzzle.
+ * @return whether or not this piece is, or contains at least, one "edge piece" - a piece at one of the outermost rows
+ * or columns of an ImagePuzzle.
  */
 public boolean isEdgePiece()
 {
    return isWestEdge() || isNorthEdge() || isEastEdge() || isSouthEdge();
 }
 
-/**
- * @return whether or not this piece is one of the four "edge pieces" at the corners of an ImagePuzzle.
- * @see #isEdgePiece()
- */
-public boolean isCornerPiece()
-{
-   return (isWestEdge() || isEastEdge()) && (isNorthEdge() || isSouthEdge());
-}
-
 public abstract static class VectorEdges
 {
-   
    /**
     * Create a closed vector graphics Path of the outer edge of this AbstractPiece, with the supplied top-left corner.
+    * @param hole an integer between 0 (inclusive) and {@link #getOuterEdgesCount()} (exclusive)
     * @param startX X of the top-left corner
     * @param startY Y of the top-left corner
     * @return a closed Path
     */
-   public Pair<Path, Integer> getOuterEdgePath(float startX, float startY)
+   public Path drawOuterEdges(int hole, float startX, float startY)
    {
-      Path ret = new Path();
-      ret.moveTo(startX, startY);
-      int num = this.toOuterEdgePath(ret);
-      ret.close();
-      return new Pair<>(ret, num);
+      return getPath(startX, startY, getFirstEdge(hole));
    }
    
-   public Path getPath(float startX, float startY, PieceEdge firstEdge)
+   protected static Path getPath(float startX, float startY, PieceEdge firstEdge)
    {
       Path ret = new Path();
       ret.moveTo(startX, startY);
-      PieceEdge nextEdge = firstEdge;
-      do {
-         nextEdge.appendSegmentsTo(ret);
-         nextEdge = nextEdge.getNext();
-      }while (nextEdge != firstEdge);
+      toPath(ret, firstEdge);
       ret.close();
       return ret;
    }
    
-   /**
-    * Append all Path segments of the outer edge to {@code path}. If there is more than one outer edge (holes),
-    * append all segments of the "first hole" and return the number of "holes".
-    * @param path the Path
-    * @return the number of outer edges of this AbstractPiece
-    */
-   public abstract int toOuterEdgePath(Path path);
+   protected static void toPath(Path path, PieceEdge firstEdge)
+   {
+      // in SinglePiece: for(PieceEdge edge:nesw) edge.appendSegmentsTo(path);
+      // in LargerPiece: loop with getNext(), not index in the list!
+      PieceEdge nextEdge = firstEdge;
+      do {
+         nextEdge.appendSegmentsTo(path);
+         nextEdge = nextEdge.getNext();
+      }while (nextEdge != firstEdge);
+   }
+
+
+//   public Path drawOuterEdges(float startX, float startY, int hole)
+//   {
+//      return getPath(startX, startY, outerEdgeHoles.get(hole).get(0));
+//   }
+   
+   protected abstract PieceEdge getFirstEdge(int hole);
+   
+   public abstract int getOuterEdgesCount();
 }
 }
