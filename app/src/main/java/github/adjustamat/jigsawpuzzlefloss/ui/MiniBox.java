@@ -1,36 +1,32 @@
 package github.adjustamat.jigsawpuzzlefloss.ui;
 
-import android.view.LayoutInflater;
-import android.view.ViewGroup;
+import android.content.Context;
+import android.util.AttributeSet;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.RecyclerView;
 
-import github.adjustamat.jigsawpuzzlefloss.R;
 import github.adjustamat.jigsawpuzzlefloss.containers.Box;
 
 public class MiniBox
- extends RecyclerView.Adapter<BoxItemView>
+ extends RecyclerView
 {
-RecyclerView recyclerView;
+BoxAdapter adapter;
 Box box;
 
-@NonNull public BoxItemView onCreateViewHolder(@NonNull ViewGroup parent, int viewType)
+public MiniBox(@NonNull Context context)
 {
-   LayoutInflater inflater = LayoutInflater.from(parent.getContext());
-   BoxItemView ret = new BoxItemView(inflater.inflate(R.layout.item_box_item_view, parent, false));
-   return ret;
+   this(context, null);
 }
 
-public void onBindViewHolder(@NonNull BoxItemView holder, int position)
+public MiniBox(@NonNull Context context, @Nullable AttributeSet attrs)
 {
-
+   this(context, null, 0);
 }
 
-public int getItemCount()
+public MiniBox(@NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr)
 {
-   return 0;
+   super(context, attrs, defStyleAttr);
 }
-
-
 }

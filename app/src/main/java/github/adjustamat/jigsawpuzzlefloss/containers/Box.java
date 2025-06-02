@@ -117,6 +117,10 @@ public boolean moveGroupFrom(Container other, Group group, Context ctx)
    return true;
 }
 
+public int size(){ return list.size(); }
+
+public GroupOrSinglePiece get(int index){ return list.get(index); }
+
 public interface GroupOrSinglePiece
 {
    boolean isSelected();
