@@ -17,7 +17,7 @@ Box box;
 @NonNull public BoxItemView onCreateViewHolder(@NonNull ViewGroup parent, int viewType)
 {
    LayoutInflater inflater= LayoutInflater.from(parent.getContext());
-   BoxItemView ret = new BoxItemView(inflater.inflate(R.layout.view_box_item_view,parent,false));
+   BoxItemView ret = new BoxItemView(inflater.inflate(R.layout.item_box_item_view,parent,false));
    return ret;
 }
 

@@ -102,48 +102,72 @@ private class LargerPieceEdges
    private int[] removed;
    
    LargerPieceEdges(LargerPiece p1, LargerPiece p2,
-    Point point1, Point point2, Direction dir, int offsetX1, int offsetX2, int offsetY1, int offsetY2)
+    Point subp1, Point subp2, Direction dir, int offsetX1, int offsetX2, int offsetY1, int offsetY2)
    {
+      // we know that p2 has less or equal amount of pieces.
       // TODO: combine outlines and innerEdges (my own UNION) - indexes in matrix need to change too
       // TODO: outerEdgeHoles is empty, only its CAPACITY is two! Add at least one list to it!
       // TODO: make sure when combining two LargerPieces that I know there can be nulls in both outerEdgeHoles lists!
       LargerPieceEdges edges1 = p1.vectorEdges;
       LargerPieceEdges edges2 = p2.vectorEdges;
+      for (PieceEdge innerEdge: edges1.innerEdges) {
+         innerEdge.getSubPiece().offset(offsetX1, offsetY1);
+      }
+      innerEdges.addAll(edges1.innerEdges);
+      for (PieceEdge innerEdge: edges2.innerEdges) {
+         innerEdge.getSubPiece().offset(offsetX2, offsetY2);
+      }
+      innerEdges.addAll(edges2.innerEdges);
+      
       int matrixX, matrixY;
       
-      innerEdges.addAll(edges1.getInnerEdges());
-      innerEdges.addAll(edges2.getInnerEdges());
       
-      { // combine matrices:
-         matrixX = 0;
-         matrixY = 0;
-         for (OuterEdgeIndices indices1: p1.matrix) {
-            if (indices1 != null)
-               setSubPieceIndices(
-                matrixX + offsetX1, matrixY + offsetY1,
-                indices1 // TODO: combine outlines (indices1 value(s) should change)
-               );
-            matrixX++;
-            if (matrixX == p1.matrixWidth) {
-               matrixY++;
-               matrixX = 0;
-            }
+      
+      // combine matrices:
+      matrixX = 0;
+      matrixY = 0;
+      for (OuterEdgeIndices indices1: p1.matrix) {
+         if (indices1 != null)
+            // TODO: indices1.set(DIRECTION,HOLE,INDEX);
+            //  in a loop after the outeredges and inneredges are added to.
+            //  this loop has to be before, because that algorithm depends on this being done first.
+            //  but we need to loop again over the whole matrix, to change the indices.
+            /*
+   addOuterEdges does this:
+      newIndices.set(dir, hole, outerEdges.size());
+      outerEdges.add(newEdge.setSubPiece(newSubPiece, dir));
+      
+   in addPieceEdges:
+      setSubPieceIndices(newSubPiece.x, newSubPiece.y, newIndices);
+      
+   in constructor that combines two SinglePieces:
+      setSubPieceIndices(dir.initX1, dir.initY1, indices);
+             */
+            setSubPieceIndices(
+             matrixX + offsetX1, matrixY + offsetY1,
+             indices1 // TODO: combine outlines (indices1 value(s) should change)
+            );
+         matrixX++;
+         if (matrixX == p1.matrixWidth) {
+            matrixY++;
+            matrixX = 0;
          }
-         matrixX = 0;
-         matrixY = 0;
-         for (OuterEdgeIndices indices2: p2.matrix) {
-            if (indices2 != null)
-               setSubPieceIndices(
-                matrixX + offsetX2, matrixY + offsetY2,
-                indices2 // TODO: combine outline (indices should change)
-               );
-            matrixX++;
-            if (matrixX == p2.matrixWidth) {
-               matrixY++;
-               matrixX = 0;
-            }
+      }
+      matrixX = 0;
+      matrixY = 0;
+      for (OuterEdgeIndices indices2: p2.matrix) {
+         if (indices2 != null)
+            setSubPieceIndices(
+             matrixX + offsetX2, matrixY + offsetY2,
+             indices2 // TODO: combine outline (indices should change)
+            );
+         matrixX++;
+         if (matrixX == p2.matrixWidth) {
+            matrixY++;
+            matrixX = 0;
          }
-      } // combine matrices
+      }
+      // /combine matrices
       
       matrixX = 0;
       matrixY = 0;
@@ -186,62 +210,57 @@ private class LargerPieceEdges
    {
       ArrayList<PieceEdge> outerEdges = new ArrayList<>();
       outerEdgeHoles.add(outerEdges);
+      
+      // the point in the LargerPiece matrix that corresponds to the first 3 edges in the list
+      Point subPiece1 = new Point(dir.initX1, dir.initY1);
+      
       // only need one innerEdge! skip the same one from p2.
-      innerEdges.add(p1.nesw[dir.ordinal()]);
+      PieceEdge innerEdge = p1.nesw[dir.ordinal()];
+      innerEdge.setSubPiece(subPiece1, dir);
+      innerEdges.add(innerEdge);
       
       Direction dirNext = dir.next();
       Direction dirPrev = dir.prev();
       
       // UNION: add the six outer edges from p1 and p2 to outerEdges, and save the list indices in the matrix.
       
-      // the point in the LargerPiece matrix that corresponds to the next 3 edges in the list
-      Point point1 = new Point(dir.initX1, dir.initY1);
       // the index references to store at this point
-      OuterEdgeIndices indices1 = new OuterEdgeIndices();
-      
+      OuterEdgeIndices indices = new OuterEdgeIndices();
       PieceEdge firstEdge = p1.nesw[dirNext.ordinal()];
       PieceEdge nextEdge;
-      addOuterEdge(0, outerEdges, nextEdge = firstEdge, point1, dirNext, indices1
+      addOuterEdge(0, outerEdges,
+       nextEdge = firstEdge, subPiece1, dirNext, indices
       );
-//      indices1.set(currentDir = dirNext, 0, 0);
-//      outerEdges.add(nextEdge.setSubPiece(point1, currentDir));
-      addOuterEdge(0, outerEdges, nextEdge = nextEdge.getNext(), point1, dir.opposite(), indices1
+      addOuterEdge(0, outerEdges,
+       nextEdge = nextEdge.getNext(), subPiece1, dir.opposite(), indices
       );
-//      indices1.set(currentDir = dirNext.next(), 0, 1);
-//      outerEdges.add(nextEdge = nextEdge.getNext().setSubPiece(point1, currentDir));
-      addOuterEdge(0, outerEdges, nextEdge = nextEdge.getNext(), point1, dirPrev, indices1
+      addOuterEdge(0, outerEdges,
+       nextEdge = nextEdge.getNext(), subPiece1, dirPrev, indices
       );
-//      indices1.set(currentDir = dirNext.opposite(), 0, 2);
-//      outerEdges.add(nextEdge = nextEdge.getNext().setSubPiece(point1, currentDir));
+      // store the list index references in the LargerPiece matrix
+      setSubPieceIndices(dir.initX1, dir.initY1, indices);
       
       // link together the edges from p1 and p2
       nextEdge.linkNext(
-       nextEdge = p2.nesw[dirPrev.ordinal()]);
+       nextEdge = p2.nesw[dirPrev.ordinal()]
+      );
       
       // the point in the LargerPiece matrix that corresponds to the next 3 edges in the list
-      Point point2 = new Point(dir.initX2, dir.initY2);
+      Point subPiece2 = new Point(dir.initX2, dir.initY2);
       // the index references to store at this point
-      OuterEdgeIndices indices2 = new OuterEdgeIndices();
-      
-      addOuterEdge(0, outerEdges, nextEdge, point2, dirPrev, indices2
+      indices = new OuterEdgeIndices();
+      addOuterEdge(0, outerEdges, nextEdge, subPiece2, dirPrev, indices);
+      addOuterEdge(0, outerEdges,
+       nextEdge = nextEdge.getNext(), subPiece2, dir, indices
       );
-      addOuterEdge(0, outerEdges, nextEdge = nextEdge.getNext(), point2, dir, indices2
+      addOuterEdge(0, outerEdges,
+       nextEdge = nextEdge.getNext(), subPiece2, dirNext, indices
       );
-      addOuterEdge(0, outerEdges, nextEdge = nextEdge.getNext(), point2, dirNext, indices2
-      );
-//      indices2.set(currentDir, 0, 3);
-//      outerEdges.add(nextEdge.setSubPiece(point2, currentDir = dirPrev));
-//      indices2.set(currentDir, 0, 4); = dirPrev.next()
-//      outerEdges.add(nextEdge = nextEdge.getNext().setSubPiece(point2, currentDir));
-//      indices2.set(currentDir, 0, 5); currentDir = dirPrev.opposite()
-//      outerEdges.add(nextEdge = nextEdge.getNext().setSubPiece(point2,));
+      // store the list index references in the LargerPiece matrix
+      setSubPieceIndices(dir.initX2, dir.initY2, indices);
       
       // link together the edges from p1 and p2 a second time
       nextEdge.linkNext(firstEdge);
-      
-      // store the list index references in the LargerPiece matrix
-      setSubPieceIndices(dir.initX1, dir.initY1, indices1);
-      setSubPieceIndices(dir.initX2, dir.initY2, indices2);
       
       removed = new int[1];
    } // LargerPieceEdges(SinglePieceEdges, SinglePieceEdges, Direction)
@@ -660,6 +679,55 @@ private class LargerPieceEdges
       } // switch(sum)
    } // void addPieceEdges(SinglePieceEdges, Point, Direction)
    
+   public int getOuterEdgesCount()
+   {
+      return outerEdgeHoles.size();
+   }
+   
+   public PieceEdge getFirstEdge(int hole)
+   {
+      return outerEdgeHoles.get(hole).get(0);
+   }
+   
+   /**
+    * TODO: first draw all inner edges with 100% opacity on a BufferedImage/Raster/Bitmap/Canvas, and
+    *  then draw the canvas with lower opacity on top of the largerpiece.
+    * @param startX the canvas x position of this LargerPiece
+    * @param startY the canvas y position of this LargerPiece
+    * @return the Paths to draw
+    */
+   public Path[] drawInnerEdges(float startX, float startY)
+   {
+      Path[] ret = new Path[innerEdges.size()];
+      int i = 0;
+      for (PieceEdge innerEdge: innerEdges) {
+         Path path = new Path();
+         //path.incReserve(9);
+         float x = startX + innerEdge.getSubPiece().x * SIDE_SIZE;
+         float y = startY + innerEdge.getSubPiece().y * SIDE_SIZE;
+         switch (innerEdge.getSubPieceDir()) {
+         case WEST:
+            y += SIDE_SIZE;
+            break;
+         case SOUTH:
+            y += SIDE_SIZE;
+         case EAST:
+            x += SIDE_SIZE;
+         }
+         path.moveTo(x, y);
+         innerEdge.appendSegmentsTo(path);
+         // path.close(); cannot make into closed path! have to draw each edge individually.
+         ret[i++] = path;
+      }
+      return ret;
+   }
+   
+   private void addHole(ArrayList<PieceEdge> newHole)
+   {
+      outerEdgeHoles.add(newHole);
+      removed = Arrays.copyOf(removed, outerEdgeHoles.size());
+   }
+   
    /**
     * Add an outer edge to a list, set its corresponding subPiece edge (Point and Direction), and
     * store a reference to its list index in newIndices. The instance should
@@ -671,34 +739,11 @@ private class LargerPieceEdges
     * @param dir the direction of newSubPiece at which newEdge is the edge
     * @param newIndices the OuterEdgeIndices at the point "newSubPiece"
     */
-   private /*static*/ void addOuterEdge(int hole, ArrayList<PieceEdge> outerEdges, PieceEdge newEdge, Point newSubPiece,
+   private void addOuterEdge(int hole, ArrayList<PieceEdge> outerEdges, PieceEdge newEdge, Point newSubPiece,
     Direction dir, OuterEdgeIndices newIndices)
    {
       newIndices.set(dir, hole, outerEdges.size());
       outerEdges.add(newEdge.setSubPiece(newSubPiece, dir));
-   }
-   
-   public int getOuterEdgesCount()
-   {
-      return outerEdgeHoles.size();
-   }
-   
-   public PieceEdge getFirstEdge(int hole)
-   {
-      return outerEdgeHoles.get(hole).get(0);
-   }
-   
-   public ArrayList<PieceEdge> getInnerEdges()
-   {
-      return innerEdges;
-   }
-   
-   public Path[] drawInnerEdges(float startX, float startY)
-   {
-      // TODO: cannot make into closed path! have to draw each edge individually.
-      // TODO: all inner edges need a reference to its starting point (subPiece)
-      // TODO: first draw all inner edges with 100% opacity on a BufferedImage/Raster/Bitmap/Canvas, and then draw the canvas with lower opacity on top of the largerpiece.
-      
    }
    
    private PieceEdge getOuterEdge(OuterEdgeIndex index)
@@ -709,12 +754,6 @@ private class LargerPieceEdges
 //      if (index.hole == -1)
 //         return outerEdges.get(index.index);
 //      return holes.get(index.hole).get(index.index);
-   }
-   
-   private void addHole(ArrayList<PieceEdge> newHole)
-   {
-      outerEdgeHoles.add(newHole);
-      removed = Arrays.copyOf(removed, outerEdgeHoles.size());
    }
    
    private PieceEdge removeOuterEdge(OuterEdgeIndex removeIndex)
@@ -818,7 +857,7 @@ private LargerPiece(int newIndexInContainer, SinglePiece p1, SinglePiece p2, Dir
    super(p1.containerParent, newIndexInContainer, p1.currentRotationNorthDirection);
    init(dir.initWidth, dir.initHeight);
    
-   this.correctPuzzlePosition =;
+   correctPuzzlePosition = p1.correctPuzzlePosition;
    
    pieceCount = 2;
    copyIsEdge(p1);
@@ -832,6 +871,7 @@ private LargerPiece(int newIndexInContainer, SinglePiece p1, SinglePiece p2, Dir
    RectF edgeWidths2 = p2.getEdgeWidths();
    switch (dir) {
    case NORTH:
+      correctPuzzlePosition.y -= 1;
       edgeWidths.top = edgeWidths2.top;
       edgeWidths.bottom = edgeWidths1.bottom;
       edgeWidths.left = Math.max(edgeWidths1.left, edgeWidths2.left);
@@ -850,6 +890,7 @@ private LargerPiece(int newIndexInContainer, SinglePiece p1, SinglePiece p2, Dir
       edgeWidths.right = Math.max(edgeWidths1.right, edgeWidths2.right);
       break;
    default: // WEST:
+      correctPuzzlePosition.x -= 1;
       edgeWidths.left = edgeWidths2.left;
       edgeWidths.right = edgeWidths1.right;
       edgeWidths.top = Math.max(edgeWidths1.top, edgeWidths2.top);
@@ -1007,8 +1048,7 @@ private void expandY(int i)
 public Point getPuzzlePiece(PointF mouseOffset)
 {
    Point ret = new Point(correctPuzzlePosition);
-   ret.x += getSubPieceX(mouseOffset.x);
-   ret.y += getSubPieceY(mouseOffset.y);
+   ret.offset(getSubPieceX(mouseOffset.x), getSubPieceY(mouseOffset.y));
    return ret;
 }
 

@@ -2,12 +2,14 @@ package github.adjustamat.jigsawpuzzlefloss.pieces;
 
 import android.graphics.Path;
 import android.graphics.Point;
+import android.graphics.PointF;
 import android.graphics.RectF;
 
 import androidx.annotation.NonNull;
 
 import github.adjustamat.jigsawpuzzlefloss.containers.Container;
 import github.adjustamat.jigsawpuzzlefloss.game.Direction;
+import github.adjustamat.jigsawpuzzlefloss.pieces.PieceEdge.DoubleEdge;
 
 /**
  * A {@link SinglePiece}, or a {@link LargerPiece} made up of two or more of the former that
@@ -23,17 +25,33 @@ public static final float HALF_SIZE = 60f;
  */
 //protected Path imageMask;
 
+/**
+ * The visual position of this piece, relative to its Group, or if none, to its Container. It's null in the Box.
+ */
+public PointF relativePos;
+
 protected Point correctPuzzlePosition;
 protected @NonNull Direction currentRotationNorthDirection;
 
 protected @NonNull Container containerParent;
 private int indexInContainer;
 
+private boolean selected;
+
+public boolean isSelected()
+{
+   return selected;
+}
+
+public void setSelected(boolean b)
+{
+   selected = b;
+}
+
 protected AbstractPiece(@NonNull Container containerParent, int indexInContainer,
  @NonNull Direction rotation, Point correctPuzzlePosition)
 {
-   setContainer(containerParent, indexInContainer);
-   this.currentRotationNorthDirection = rotation;
+   this(containerParent, indexInContainer, rotation);
    this.correctPuzzlePosition = correctPuzzlePosition;
 }
 
@@ -43,7 +61,8 @@ protected AbstractPiece(@NonNull Container containerParent, int indexInContainer
    setContainer(containerParent, indexInContainer);
    this.currentRotationNorthDirection = rotation;
 }
-public void setContainer(Container newParent, int indexInContainer)
+
+public void setContainer(@NonNull Container newParent, int indexInContainer)
 {
    this.containerParent = newParent;
    this.indexInContainer = indexInContainer;
@@ -62,21 +81,26 @@ public int getIndexInContainer()
 // groups:
 
 protected Group groupParent;
-protected Integer indexInGroup; // TODO: null when not in any Group. or -1 int?
+protected int indexInGroup;
 
-void setGroup(@NonNull Group group, int index)
+public int getIndexInGroup()
+{
+   return indexInGroup;
+}
+
+void setGroup(@NonNull Group newGroup, int newIndex)
 {
    if (groupParent != null) {
-      groupParent.removeMe(indexInGroup);
+      groupParent.remove(this);
    }
-   groupParent = group;
-   indexInGroup = index;
+   groupParent = newGroup;
+   indexInGroup = newIndex;
 }
 
 public void removeFromGroup()
 {
    if (groupParent != null) {
-      groupParent.removeMe(indexInGroup);
+      groupParent.remove(this);
       setNullGroup();
    }
 }
@@ -84,7 +108,6 @@ public void removeFromGroup()
 private void setNullGroup()
 {
    groupParent = null;
-   indexInGroup = null;
 }
 
 public boolean isGrouped()
@@ -139,16 +162,15 @@ public abstract static class VectorEdges
       // in LargerPiece: loop with getNext(), not index in the list!
       PieceEdge nextEdge = firstEdge;
       do {
+         path.incReserve(
+          nextEdge instanceof DoubleEdge
+           ?8 // increase with 4 points per half edge
+           :1 // increase with 1 point per straight edge
+         );
          nextEdge.appendSegmentsTo(path);
          nextEdge = nextEdge.getNext();
       }while (nextEdge != firstEdge);
    }
-
-
-//   public Path drawOuterEdges(float startX, float startY, int hole)
-//   {
-//      return getPath(startX, startY, outerEdgeHoles.get(hole).get(0));
-//   }
    
    protected abstract PieceEdge getFirstEdge(int hole);
    

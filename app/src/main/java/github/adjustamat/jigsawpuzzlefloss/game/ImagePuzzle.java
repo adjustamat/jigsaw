@@ -43,7 +43,7 @@ private ImagePuzzle(int width, int height, Bitmap image,
    this.pieceImageSize = (float) image.getHeight() / height;
    
    this.singlePiecesContainer = new Box(pieceLinkedList, this);
-   this.playingFieldContainer = new PlayField(this);
+   this.playingFieldContainer = new PlayField();
 }
 
 /**
@@ -100,21 +100,20 @@ public static ImagePuzzle generateNewPuzzle(int pWidth, int pHeight, Bitmap imag
  */
 public static class Area
 {
-   private String areaName;
+   public String areaName;
    //   Shape includedPieces; // import android.graphics.drawable.shapes.Shape;
 //   boolean[][] included;
-   final DividingLine[] neswDividers = new DividingLine[4];
+   final DividingLine[] neswDividers;// = new DividingLine[4];
    
    public Area(DividingLine n, DividingLine e, DividingLine s, DividingLine w)
    {
-   
+      neswDividers = new DividingLine[]{n, e, s, w};
    }
    
    public void setDivider(int direction, DividingLine divider)
    {
       neswDividers[direction] = divider;
    }
-   
 } // class Area
 
 public static class DividingLine
