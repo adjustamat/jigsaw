@@ -34,7 +34,7 @@ public void onBindViewHolder(@NonNull BoxItemView holder, int position)
    GroupOrSinglePiece or = box.get(position);
    if (or instanceof Group) {
       Group group = (Group) or;
-      // TODO: generate or get RecyclerView thumbnail from group,
+      // TODO: generate or get RecyclerView thumbnail from group, see Group.layoutPiecesNoOverlap
    }
    else {
       SinglePiece piece = (SinglePiece) or;

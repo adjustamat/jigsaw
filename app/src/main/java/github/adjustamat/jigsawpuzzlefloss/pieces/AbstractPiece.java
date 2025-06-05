@@ -19,6 +19,9 @@ public abstract class AbstractPiece
 {
 public static final float SIDE_SIZE = 120f;
 public static final float HALF_SIZE = 60f;
+public static final float MAX_SIZE = (25 + 7.5f + 17.5f) * 2 / 1.7f + SIDE_SIZE;
+// 50 / 1.7f == 29.411764705882355f (from 102 to 60)
+// 100 / 1.7f ==58.82352941176471f (from 102 to 60)
 
 /*
  * The mask of the ImagePuzzle bitmap, equal to the outline "vectorEdges".
@@ -118,6 +121,17 @@ public boolean isGrouped()
 // edges:
 
 public abstract RectF getEdgeWidths();
+
+public PointF getCurrentEdgeWidths()
+{
+   RectF edges = getEdgeWidths();
+   switch (currentRotationNorthDirection) {
+   case NORTH: case SOUTH:
+      return new PointF(edges.left + edges.right, edges.top + edges.bottom);
+   default: // case WEST: case EAST:
+      return new PointF(edges.top + edges.bottom, edges.left + edges.right);
+   }
+}
 
 public abstract boolean isWestEdge();
 public abstract boolean isNorthEdge();

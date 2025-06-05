@@ -2,12 +2,14 @@ package github.adjustamat.jigsawpuzzlefloss.pieces;
 
 import android.content.Context;
 import android.graphics.PointF;
+import android.graphics.RectF;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.LinkedList;
 
 import github.adjustamat.jigsawpuzzlefloss.R;
@@ -68,6 +70,15 @@ private Group(int newIndex)
    setContainer(this, newIndex);
 }
 
+public void setContainer(Container newParent, int indexInContainer)
+{
+   if (newParent == null) { // merging this Group into another Group!
+      pieces.clear();
+   }
+   containerParent = newParent;
+   this.indexInContainer = indexInContainer;
+}
+
 public @NonNull String getName(Context ctx)
 {
    if (name == null)
@@ -89,18 +100,72 @@ public void setName(@Nullable String name)
    this.name = name;
 }
 
+public static void layoutPiecesNoOverlap(Collection<AbstractPiece> pieces, float minMargin,
+ @Nullable RectF[] within)
+{
+   int size = pieces.size();
+   int c = 0, row = 0;
+   float widthSum = 0f, heightSum = 0f, heightMax = 0f;
+   if (within == null) {
+      int cols = (size <= 12) ?3 :(size <= 30) ?5 :(size <= 56) ?7 :9;
+      for (AbstractPiece piece: pieces) {
+         if (piece.relativePos == null)
+            piece.relativePos = new PointF();
+         PointF edgeWidths = piece.getCurrentEdgeWidths();
+         widthSum += edgeWidths.x + (AbstractPiece.SIDE_SIZE + minMargin);
+         heightMax = Math.max(heightMax, edgeWidths.y);
+         piece.relativePos.x = widthSum;
+         piece.relativePos.y = heightSum;
+         c++;
+         if (c == cols) {
+            row++;
+            c = 0;
+            heightSum += heightMax + (AbstractPiece.SIDE_SIZE + minMargin);
+            heightMax = 0f;
+            widthSum = 0f;
+         }
+      } // for(pieces)
+   }
+   else {
+      // int rectangles = within.length;
+      Iterator<AbstractPiece> iterator = pieces.iterator();
+      for (RectF rect: within) {
+         // TODO: layout until reaching edge of rect, new row until edge of rect, start with next rect from (0,0).
+         float rectheight = rect.height();
+         float rectwidth = rect.width();
+         while (heightSum < rectheight) {
+            while (widthSum < rectwidth) {
+               AbstractPiece piece = iterator.next();
+               if (piece.relativePos == null)
+                  piece.relativePos = new PointF();
+               PointF edgeWidths = piece.getCurrentEdgeWidths();
+               widthSum += edgeWidths.x + (AbstractPiece.SIDE_SIZE + minMargin);
+               heightMax = Math.max(heightMax, edgeWidths.y);
+               piece.relativePos.x = widthSum + rect.left;
+               piece.relativePos.y = heightSum + rect.top;
+               c++;
+            }
+            row++;
+            c = 0;
+            heightSum += heightMax + (AbstractPiece.SIDE_SIZE + minMargin);
+            heightMax = 0f;
+            widthSum = 0f;
+         }
+         c = row = 0;
+         widthSum = heightSum = heightMax = 0f;
+      }
+      // TODO: save last position from loop, and if there are more pieces, use within==null algorithm for the rest.
+   }
+}
+
+public void layoutPiecesNoOverlap(float margin)
+{
+   layoutPiecesNoOverlap(pieces, margin, null);
+}
+
 public LinkedList<AbstractPiece> getAllPieces()
 {
    return pieces;
-}
-
-public void setContainer(Container newParent, int indexInContainer)
-{
-   if (newParent == null) { // merging this Group into another Group!
-      pieces.clear();
-   }
-   containerParent = newParent;
-   this.indexInContainer = indexInContainer;
 }
 
 public void add(Collection<AbstractPiece> pieces)
