@@ -3,7 +3,6 @@ package github.adjustamat.jigsawpuzzlefloss.containers;
 import android.content.Context;
 
 import github.adjustamat.jigsawpuzzlefloss.pieces.AbstractPiece;
-import github.adjustamat.jigsawpuzzlefloss.pieces.Group;
 
 /**
  * An abstract container for pieces and groups of pieces.

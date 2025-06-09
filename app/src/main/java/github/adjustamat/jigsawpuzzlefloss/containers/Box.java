@@ -3,10 +3,10 @@ package github.adjustamat.jigsawpuzzlefloss.containers;
 import android.content.Context;
 
 import java.util.LinkedList;
+import java.util.List;
 
 import github.adjustamat.jigsawpuzzlefloss.game.ImagePuzzle;
 import github.adjustamat.jigsawpuzzlefloss.pieces.AbstractPiece;
-import github.adjustamat.jigsawpuzzlefloss.pieces.Group;
 import github.adjustamat.jigsawpuzzlefloss.pieces.LargerPiece;
 import github.adjustamat.jigsawpuzzlefloss.pieces.SinglePiece;
 
@@ -16,12 +16,29 @@ import github.adjustamat.jigsawpuzzlefloss.pieces.SinglePiece;
 public class Box
  extends Container
 {
-final LinkedList<GroupOrSinglePiece> list;
+final List<GroupOrSinglePiece> list;
+public final List<GroupOrSinglePiece> expandedList;
 
-public Box(LinkedList<GroupOrSinglePiece> pieces, ImagePuzzle parent)
+public Box(List<GroupOrSinglePiece> pieces, ImagePuzzle parent)
 {
    // super(parent);
    this.list = pieces;
+   this.expandedList = new LinkedList<>();
+   expandedList.addAll(list);
+}
+
+void setExpanded(Group group, boolean expand)
+{
+   int index = group.getIndexInContainer();
+   int size = group.size();
+   if (size > 1) {
+      for (int i = size - 1; i > 0; i--) {
+         if (expand)
+            expandedList.add(index, group);
+         else
+            expandedList.remove(index);
+      }
+   }
 }
 
 public void remove(AbstractPiece p)
@@ -117,9 +134,8 @@ public boolean moveGroupFrom(Container other, Group group, Context ctx)
    return true;
 }
 
-public int size(){ return list.size(); }
-
-public GroupOrSinglePiece get(int index){ return list.get(index); }
+//public int size(){ return expandedList.size(); }
+//public GroupOrSinglePiece get(int index){ return expandedList.get(index); }
 
 public interface GroupOrSinglePiece
 {

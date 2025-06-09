@@ -6,8 +6,10 @@ import android.graphics.PointF;
 import android.graphics.RectF;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import github.adjustamat.jigsawpuzzlefloss.containers.Container;
+import github.adjustamat.jigsawpuzzlefloss.containers.Group;
 import github.adjustamat.jigsawpuzzlefloss.game.Direction;
 import github.adjustamat.jigsawpuzzlefloss.pieces.PieceEdge.DoubleEdge;
 
@@ -29,27 +31,16 @@ public static final float MAX_SIZE = (25 + 7.5f + 17.5f) * 2 / 1.7f + SIDE_SIZE;
 //protected Path imageMask;
 
 /**
- * The visual position of this piece, relative to its Group, or if none, to its Container. It's null in the Box.
+ * The visual position of this piece, relative to its Group, or if none, to its Container. Can be null in the Box.
  */
-public PointF relativePos;
+private PointF relativePos;
+private boolean selected;
+protected @NonNull Direction currentRotationNorthDirection;
 
 protected Point correctPuzzlePosition;
-protected @NonNull Direction currentRotationNorthDirection;
 
 protected @NonNull Container containerParent;
 private int indexInContainer;
-
-private boolean selected;
-
-public boolean isSelected()
-{
-   return selected;
-}
-
-public void setSelected(boolean b)
-{
-   selected = b;
-}
 
 protected AbstractPiece(@NonNull Container containerParent, int indexInContainer,
  @NonNull Direction rotation, Point correctPuzzlePosition)
@@ -81,30 +72,52 @@ public int getIndexInContainer()
    return indexInContainer;
 }
 
+public boolean isSelected()
+{
+   return selected;
+}
+
+public void setSelected(boolean b)
+{
+   selected = b;
+}
+
+public void setRelativePos(float x, float y)
+{
+   if (relativePos == null) {
+      relativePos = new PointF(x, y);
+   }
+   else {
+      relativePos.x = x;
+      relativePos.y = y;
+   }
+}
+
+public @Nullable PointF getRelativePos()
+{
+   return relativePos;
+}
+
 // groups:
 
 protected Group groupParent;
-protected int indexInGroup;
 
-public int getIndexInGroup()
-{
-   return indexInGroup;
-}
-
-void setGroup(@NonNull Group newGroup, int newIndex)
+public void setGroup(@NonNull Group newGroup, int newIndex)
 {
    if (groupParent != null) {
       groupParent.remove(this);
    }
+   // TODO: do this but not in this method: containerParent.remove(this); // the group needs to be added to containerParent or the group needs to be a temporary storage!
    groupParent = newGroup;
-   indexInGroup = newIndex;
+   indexInContainer = newIndex;
 }
 
-public void removeFromGroup()
+public void removeFromGroup(Container newContainer)
 {
    if (groupParent != null) {
       groupParent.remove(this);
       setNullGroup();
+      // TODO: this AbstractPiece needs a new indexInContainer!
    }
 }
 

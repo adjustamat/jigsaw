@@ -1,4 +1,4 @@
-package github.adjustamat.jigsawpuzzlefloss.pieces;
+package github.adjustamat.jigsawpuzzlefloss.containers;
 
 import android.content.Context;
 import android.graphics.PointF;
@@ -11,12 +11,13 @@ import androidx.annotation.Nullable;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 
 import github.adjustamat.jigsawpuzzlefloss.R;
-import github.adjustamat.jigsawpuzzlefloss.containers.Box;
 import github.adjustamat.jigsawpuzzlefloss.containers.Box.GroupOrSinglePiece;
-import github.adjustamat.jigsawpuzzlefloss.containers.Container;
-import github.adjustamat.jigsawpuzzlefloss.containers.PlayField;
+import github.adjustamat.jigsawpuzzlefloss.pieces.AbstractPiece;
+import github.adjustamat.jigsawpuzzlefloss.pieces.LargerPiece;
+import github.adjustamat.jigsawpuzzlefloss.pieces.SinglePiece;
 
 /**
  * A (named) group of {@link AbstractPiece}s ({@link SinglePiece}s and/or {@link LargerPiece}s).
@@ -32,25 +33,33 @@ public class Group
 private static final String DBG = "Group";
 private static int counter = 0;
 
+public class Dirty
+{
+   public boolean overlapping = true;
+   public boolean pile = true;
+   public boolean layout = true;
+}
+
+public final Dirty dirty = new Dirty();
+
 /**
  * The visual position of this group, relative to its Container, or if it's its own Container, to the screen.
  */
-public PointF relativePos;
+public final PointF relativePos = new PointF();
 
 private boolean selected;
+private boolean expanded;
 
 private @Nullable String name;
 private final int myNumber;
 Container containerParent;
 private int indexInContainer;
 
-final LinkedList<AbstractPiece> pieces = new LinkedList<>();
-//Set<AbstractPiece> separatedPieces;
+final List<AbstractPiece> pieces = new LinkedList<>();
 int largerPieces = 0;
 
 public Group(Container container, int indexInContainer)
 {
-   //super(null); // TODO: Container needs ImagePuzzle?
    myNumber = ++counter;
    setContainer(container, indexInContainer);
 }
@@ -65,7 +74,6 @@ public Group getNewTemporaryContainer(int newIndex)
 
 private Group(int newIndex)
 {
-   //super(null); // TODO: Container needs ImagePuzzle?
    myNumber = 0;
    setContainer(this, newIndex);
 }
@@ -103,104 +111,118 @@ public void setName(@Nullable String name)
 public static void layoutPiecesNoOverlap(Collection<AbstractPiece> pieces, float minMargin,
  @Nullable RectF[] within)
 {
-   int size = pieces.size();
-   int c = 0, row = 0;
-   float widthSum = 0f, heightSum = 0f, heightMax = 0f;
-   if (within == null) {
-      int cols = (size <= 12) ?3 :(size <= 30) ?5 :(size <= 56) ?7 :9;
-      for (AbstractPiece piece: pieces) {
-         if (piece.relativePos == null)
-            piece.relativePos = new PointF();
-         PointF edgeWidths = piece.getCurrentEdgeWidths();
-         widthSum += edgeWidths.x + (AbstractPiece.SIDE_SIZE + minMargin);
-         heightMax = Math.max(heightMax, edgeWidths.y);
-         piece.relativePos.x = widthSum;
-         piece.relativePos.y = heightSum;
-         c++;
-         if (c == cols) {
-            row++;
-            c = 0;
-            heightSum += heightMax + (AbstractPiece.SIDE_SIZE + minMargin);
-            heightMax = 0f;
-            widthSum = 0f;
-         }
-      } // for(pieces)
-   }
-   else {
-      // int rectangles = within.length;
-      Iterator<AbstractPiece> iterator = pieces.iterator();
-      for (RectF rect: within) {
-         // TODO: layout until reaching edge of rect, new row until edge of rect, start with next rect from (0,0).
-         float rectheight = rect.height();
-         float rectwidth = rect.width();
+   Iterator<AbstractPiece> pieceIterator = pieces.iterator();
+   AbstractPiece piece;
+   PointF edgeWidths;
+   int c = 0;
+   float widthSum = 0f, heightSum = 0f, edgeHeightsMax = 0f;
+   if (within != null) {
+      int rectangles = within.length;
+      outer:
+      for (int i = 0; i < rectangles; i++) {
+         // layout until reaching right edge of rect, new row until bottom edge of rect, next rect from (0,0)
+         float rectheight = within[i].height();
+         float rectwidth = within[i].width();
          while (heightSum < rectheight) {
             while (widthSum < rectwidth) {
-               AbstractPiece piece = iterator.next();
-               if (piece.relativePos == null)
-                  piece.relativePos = new PointF();
-               PointF edgeWidths = piece.getCurrentEdgeWidths();
+               if (!pieceIterator.hasNext())
+                  break outer;
+               piece = pieceIterator.next();
+               edgeWidths = piece.getCurrentEdgeWidths();
                widthSum += edgeWidths.x + (AbstractPiece.SIDE_SIZE + minMargin);
-               heightMax = Math.max(heightMax, edgeWidths.y);
-               piece.relativePos.x = widthSum + rect.left;
-               piece.relativePos.y = heightSum + rect.top;
+               edgeHeightsMax = Math.max(edgeHeightsMax, edgeWidths.y);
+               piece.setRelativePos(widthSum + within[i].left, heightSum + within[i].top);
                c++;
             }
-            row++;
             c = 0;
-            heightSum += heightMax + (AbstractPiece.SIDE_SIZE + minMargin);
-            heightMax = 0f;
-            widthSum = 0f;
+            heightSum += edgeHeightsMax + (AbstractPiece.SIDE_SIZE + minMargin);
+            edgeHeightsMax = widthSum = 0f;
          }
-         c = row = 0;
-         widthSum = heightSum = heightMax = 0f;
-      }
-      // TODO: save last position from loop, and if there are more pieces, use within==null algorithm for the rest.
+         // if there are more pieces in pieceIterator, continue with algorithm below.
+         if (i < rectangles - 1) {
+            c = 0;
+            edgeHeightsMax = widthSum = heightSum = 0f;
+         }
+      } // for(RectF within)
    }
+   int size = pieces.size();
+   int cols = (size <= 12) ?3 :(size <= 30) ?5 :(size <= 56) ?7 :9;
+   while (pieceIterator.hasNext()) {
+      piece = pieceIterator.next();
+      edgeWidths = piece.getCurrentEdgeWidths();
+      widthSum += edgeWidths.x + (AbstractPiece.SIDE_SIZE + minMargin);
+      edgeHeightsMax = Math.max(edgeHeightsMax, edgeWidths.y);
+      piece.setRelativePos(widthSum, heightSum);
+      c++;
+      if (c == cols) {
+         c = 0;
+         heightSum += edgeHeightsMax + (AbstractPiece.SIDE_SIZE + minMargin);
+         edgeHeightsMax = widthSum = 0f;
+      }
+   } // while (pieceIterator.hasNext())
 }
 
-public void layoutPiecesNoOverlap(float margin)
+public void layoutPiecesNoOverlap(float margin, @Nullable RectF[] within)
 {
-   layoutPiecesNoOverlap(pieces, margin, null);
+   // TODO: first check if(dirty.layout) if this method is used to make an image for BoxAdapter.
+   layoutPiecesNoOverlap(pieces, margin, within);
+   dirty.layout = false;
+   // TODO: overlapping = false; dirty.overlapping = false;
 }
 
-public LinkedList<AbstractPiece> getAllPieces()
+public List<AbstractPiece> getAllPieces()
 {
    return pieces;
 }
 
 public void add(Collection<AbstractPiece> pieces)
 {
-   //int i = 0;
-   for (AbstractPiece p: pieces) {
-      add(p);
-//      if(p instanceof LargerPiece)
-//         largerPieces++;
-//      p.setGroup(this, i++);
-//      this.pieces.add(p);
+   add(pieces, false);
+}
+
+private void add(Collection<AbstractPiece> pieces, boolean isContainer)
+{
+   for (AbstractPiece piece: pieces) {
+      if (isContainer) {
+         piece.setContainer(this, pieces.size());
+      }
+      add(piece);
    }
 }
 
 public void add(AbstractPiece piece)
 {
+   int size = size();
+   PointF piecePos = piece.getRelativePos();
+   if (piecePos == null)
+      dirty.layout = true;
+   else {
+      if (size == 0) {
+         this.relativePos.set(piecePos.x, piecePos.y);
+         piecePos.set(0f, 0f);
+         dirty.layout = false;
+      }
+      else {
+         piecePos.offset(-relativePos.x, -relativePos.y);
+      }
+   }
+   piece.setGroup(this, size);
+   pieces.add(piece);
    if (piece instanceof LargerPiece)
       largerPieces++;
-   piece.setGroup(this, pieces.size());
-   pieces.add(piece);
 }
 
 /**
  * Move a piece here from another Container - only use when this Group is a temporary storage!
  * @param other a Container
- * @param p the piece
+ * @param piece the piece
  * @return true
  */
-public boolean movePieceFrom(Container other, AbstractPiece p)
+public boolean movePieceFrom(Container other, AbstractPiece piece)
 {
-   other.remove(p);
-   int indexInContainerAndGroup = pieces.size();
-   p.setContainer(this, indexInContainerAndGroup);
-   p.setGroup(this, indexInContainerAndGroup);
-   pieces.add(p);
+   other.remove(piece);
+   piece.setContainer(this, pieces.size());
+   add(piece);
 //   if (other instanceof Box) {
 //      Box box = (Box) other;
 //
@@ -221,13 +243,12 @@ public boolean movePieceFrom(Container other, AbstractPiece p)
  */
 public boolean moveGroupFrom(Container other, Group group, Context ctx)
 {
-   // TODO: combine groups, but ask first!
+   // TODO: merge group into this group, but ask first! (ctx)
 //   if (ANSWER_IS_CANCEL) {
 //      return false;
 //   }
    other.removeGroup(group);
-   
-   add(group.getAllPieces());
+   add(group.getAllPieces(), true);
    // delete the group:
    group.setContainer(null, -1);
    return true;
@@ -235,25 +256,20 @@ public boolean moveGroupFrom(Container other, Group group, Context ctx)
 
 public void remove(AbstractPiece p)
 {
-   pieces.remove(p.getIndexInGroup()); // uses index in group, not index in container!
+   pieces.remove(p.getIndexInContainer());
 }
 
 /**
  * Do nothing.
- * @param group == this (should be)
+ * @param group == this
  */
 public void removeGroup(Group group)
 {
    if (group != this) {
-      throw new UnsupportedOperationException("No Groups inside Group!");
+      throw new UnsupportedOperationException("No Groups inside a Group!");
    }
    Log.i(DBG, "removing Group from itself");
 }
-
-//void removeAbstractPiece(int index)
-//{
-//   pieces.remove(index);
-//}
 
 public boolean hasLargerPieces()
 {
@@ -290,6 +306,18 @@ public void setSelected(boolean b)
    selected = b;
 }
 
+public boolean isExpanded()
+{
+   return expanded;
+}
+
+public void setExpanded(boolean expanded)
+{
+   this.expanded = expanded;
+   Box box = (Box) containerParent;
+   box.setExpanded(this, expanded);
+}
+
 //public boolean isPile() // TODO: maybe move these to PlayField.java
 //{
 //   // TOD
@@ -297,7 +325,8 @@ public void setSelected(boolean b)
 //}
 //public boolean isOverlapping()
 //{
-//   // TOD
-//   return true;
+//   if(dirty.overlapping){ // TOD
+//   }
+//   return overlapping;
 //}
 }

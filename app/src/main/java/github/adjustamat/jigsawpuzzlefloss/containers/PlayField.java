@@ -1,12 +1,14 @@
 package github.adjustamat.jigsawpuzzlefloss.containers;
 
 import android.content.Context;
-import android.graphics.drawable.shapes.PathShape;
+import android.graphics.PointF;
+import android.graphics.RectF;
+
+import androidx.annotation.NonNull;
 
 import java.util.List;
 
 import github.adjustamat.jigsawpuzzlefloss.pieces.AbstractPiece;
-import github.adjustamat.jigsawpuzzlefloss.pieces.Group;
 import github.adjustamat.jigsawpuzzlefloss.pieces.LargerPiece;
 import github.adjustamat.jigsawpuzzlefloss.pieces.SinglePiece;
 
@@ -66,12 +68,11 @@ public boolean movePieceFrom(Container other, AbstractPiece p)
 
 public boolean moveGroupFrom(Container other, Group group, Context ctx)
 {
-   // TODO: when if anytime will this method return false and use ctx?
    other.removeGroup(group);
-   group.setContainer(this,groups.size());
+   group.setContainer(this, groups.size());
    groups.add(group);
 //   if (other instanceof Group) {
-//      Group temporaryStorage = (Group) other;
+//      Group temporaryStorage = (Group) other; // other == group !!
 //
 //   }
 //   else {
@@ -82,21 +83,26 @@ public boolean moveGroupFrom(Container other, Group group, Context ctx)
 }
 
 /**
- * Make all pieces in a Group non-overlapping, if possible.
+ * Make all pieces in a Group non-overlapping, if possible. They will never overlap with other pieces in the same Group.
  */
-public void spreadOutGroup(Group group, PathShape area)
+public void spreadOutGroup(Group group, @NonNull RectF[] within)
 {
-   // TODO: supply which area it can be spread out over
-   // TODO: give the group a coordinate and the pieces coordinates relative to that.
+   PointF groupPos = group.relativePos;
+   groupPos.set(within[0].left, within[0].top);
+   for (RectF rect: within) {
+      rect.offset(-groupPos.x, -groupPos.y);
+   }
+   group.layoutPiecesNoOverlap(0f, within);
 }
 
 /**
  * Make all pieces in a Group overlap, if possible.
  */
-public void pileUpGroup(Group group, PathShape area)
+public void pileUpGroup(Group group, RectF within)
 {
-   // TODO: supply area to limit the group to
-   // TODO: give the group a coordinate and the pieces coordinates relative to that.
-   //  no two pieces can have the exact same coordinates!
+   // TODO: the area to limit the group to has to always be a bit bigger than the largest possible piece,
+   //  regardless of the width and height of "within".
+   
+   // TODO: no two pieces can have the exact same coordinates! (absolute position on the playing field)
 }
 }

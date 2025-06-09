@@ -4,6 +4,7 @@ import android.graphics.Bitmap;
 import android.graphics.Point;
 
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Random;
 
 import github.adjustamat.jigsawpuzzlefloss.containers.Box;
@@ -31,9 +32,7 @@ public final float pieceImageSize;
 public final Box singlePiecesContainer;
 public final PlayField playingFieldContainer;
 
-private ImagePuzzle(int width, int height, Bitmap image,
- LinkedList<GroupOrSinglePiece> pieceLinkedList
-)
+private ImagePuzzle(int width, int height, Bitmap image, List<GroupOrSinglePiece> pieceList)
 {
    this.width = width;
    this.height = height;
@@ -42,7 +41,7 @@ private ImagePuzzle(int width, int height, Bitmap image,
    this.image = image;
    this.pieceImageSize = (float) image.getHeight() / height;
    
-   this.singlePiecesContainer = new Box(pieceLinkedList, this);
+   this.singlePiecesContainer = new Box(pieceList, this);
    this.playingFieldContainer = new PlayField();
 }
 

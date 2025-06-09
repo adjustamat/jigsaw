@@ -11,7 +11,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import github.adjustamat.jigsawpuzzlefloss.R;
 import github.adjustamat.jigsawpuzzlefloss.containers.Box;
 import github.adjustamat.jigsawpuzzlefloss.containers.Box.GroupOrSinglePiece;
-import github.adjustamat.jigsawpuzzlefloss.pieces.Group;
+import github.adjustamat.jigsawpuzzlefloss.containers.Group;
 import github.adjustamat.jigsawpuzzlefloss.pieces.SinglePiece;
 
 public class BoxAdapter
@@ -20,7 +20,7 @@ public class BoxAdapter
 RecyclerView recyclerView;
 Box box;
 
-@NonNull public BoxItemView onCreateViewHolder(@NonNull ViewGroup parent, int viewType)
+public @NonNull BoxItemView onCreateViewHolder(@NonNull ViewGroup parent, int viewType)
 {
    LayoutInflater inflater = LayoutInflater.from(parent.getContext());
    BoxItemView ret = new BoxItemView(
@@ -31,20 +31,32 @@ Box box;
 
 public void onBindViewHolder(@NonNull BoxItemView holder, int position)
 {
-   GroupOrSinglePiece or = box.get(position);
+   GroupOrSinglePiece or = box.expandedList.get(position);
    if (or instanceof Group) {
       Group group = (Group) or;
-      // TODO: generate or get RecyclerView thumbnail from group, see Group.layoutPiecesNoOverlap
+      if (group.isExpanded()) {
+         int original = group.getIndexInContainer();
+         int relative = position - original;
+         onBind(holder, (SinglePiece) group.getAllPieces().get(relative));
+      }
+      else {
+         // TODO: generate or get RecyclerView thumbnail from group, see Group.layoutPiecesNoOverlap and Group.dirty
+      }
    }
    else {
       SinglePiece piece = (SinglePiece) or;
-      // TODO: get image with standard outlines, respecting the piece's current rotation.
+      onBind(holder, piece);
    }
+}
+
+private void onBind(@NonNull BoxItemView holder, SinglePiece piece)
+{
+   // TODO: get image with standard outlines, respecting the piece's current rotation.
 }
 
 public int getItemCount()
 {
-   return box.size();
+   return box.expandedList.size();
 }
 
 /**
