@@ -45,11 +45,13 @@ List<SinglePiece> singlePieces;
 public void remove(AbstractPiece p)
 {
    (p instanceof SinglePiece ?singlePieces :largerPieces).remove(p.getIndexInContainer());
+   // TODO: all objects with higher index must index--!
 }
 
 public void removeGroup(Group group)
 {
    groups.remove(group.getIndexInContainer());
+   // TODO: all objects with higher index must index--!
 }
 
 public boolean movePieceFrom(Container other, AbstractPiece p)

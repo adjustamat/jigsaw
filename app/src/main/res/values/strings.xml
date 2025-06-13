@@ -5,4 +5,5 @@
    <string name="imgBoxCover">Box Cover</string>
     <string name="group_default_name">Group %d</string>
     <string name="imgBoxItem">A piece</string>
+    <string name="imgTemporaryStorageThumbnail">Temporary Storage thumbnail</string>
 </resources>

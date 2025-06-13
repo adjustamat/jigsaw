@@ -72,6 +72,21 @@ public int getIndexInContainer()
    return indexInContainer;
 }
 
+public void setIndex(int newIndex)
+{
+   indexInContainer = newIndex;
+}
+
+public void decrementIndex()
+{
+   indexInContainer--;
+}
+
+public void incrementIndex()
+{
+   indexInContainer++;
+}
+
 public boolean isSelected()
 {
    return selected;

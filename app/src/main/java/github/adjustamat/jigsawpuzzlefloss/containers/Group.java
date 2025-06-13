@@ -257,6 +257,10 @@ public boolean moveGroupFrom(Container other, Group group, Context ctx)
 public void remove(AbstractPiece p)
 {
    pieces.remove(p.getIndexInContainer());
+   if (isExpanded()) {
+      // TODO: remove 1 reference from Box.expandedList - maybe have to use Box method ungroupPiece - or is this method only used when moving a piece from a tempstorage to playfield or box?
+   }
+   // TODO: all objects with higher index must index--!
 }
 
 /**
@@ -294,6 +298,21 @@ public int size()
 public int getIndexInContainer()
 {
    return indexInContainer;
+}
+
+public void setIndex(int newIndex)
+{
+   indexInContainer = newIndex;
+}
+
+public void decrementIndex()
+{
+   indexInContainer--;
+}
+
+public void incrementIndex()
+{
+   indexInContainer++;
 }
 
 public boolean isSelected()

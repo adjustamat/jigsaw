@@ -2,8 +2,11 @@ package github.adjustamat.jigsawpuzzlefloss.containers;
 
 import android.content.Context;
 
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
+import java.util.Map.Entry;
 
 import github.adjustamat.jigsawpuzzlefloss.game.ImagePuzzle;
 import github.adjustamat.jigsawpuzzlefloss.pieces.AbstractPiece;
@@ -18,6 +21,7 @@ public class Box
 {
 final List<GroupOrSinglePiece> list;
 public final List<GroupOrSinglePiece> expandedList;
+private final HashMap<Integer, Group> expanded = new HashMap<>();
 
 public Box(List<GroupOrSinglePiece> pieces, ImagePuzzle parent)
 {
@@ -31,6 +35,10 @@ void setExpanded(Group group, boolean expand)
 {
    int index = group.getIndexInContainer();
    int size = group.size();
+   if (expand)
+      expanded.put(index, group);
+   else
+      expanded.remove(index);
    if (size > 1) {
       for (int i = size - 1; i > 0; i--) {
          if (expand)
@@ -41,69 +49,89 @@ void setExpanded(Group group, boolean expand)
    }
 }
 
+public Group createGroup(List<SinglePiece> selectedPieces, int atIndex)
+{
+   Group group = new Group(this, atIndex);
+   
+   
+   int atExpandedIndex = atIndex;
+   for (Entry<Integer, Group> expandedGroup: expanded.entrySet()) {
+      if (atIndex > expandedGroup.getKey())
+         atExpandedIndex += expandedGroup.getValue().size();
+   }
+   list.add(atIndex, group);
+   expandedList.add(atExpandedIndex, group);
+   
+   return group;
+}
+
+public void ungroupGroup(Group group)
+{
+
+}
+
+public void ungroupPiece(Group group, int indexInGroup)
+{
+
+}
+
+public void reorder(int fromIndex, int toIndex)
+{
+   GroupOrSinglePiece or = list.remove(fromIndex);
+   list.add(toIndex, or);
+   or.setIndex(toIndex);
+   
+   if (fromIndex < toIndex) {
+      for (ListIterator<GroupOrSinglePiece> i = list.listIterator(fromIndex);
+           i.nextIndex() < toIndex; ) {
+         i.next().decrementIndex();
+      }
+   }
+   else {
+      for (ListIterator<GroupOrSinglePiece> i = list.listIterator(toIndex + 1);
+           i.nextIndex() <= fromIndex; ) {
+         i.next().incrementIndex();
+      }
+   }
+   
+   int fromExpandedIndex = fromIndex;
+   int toExpandedIndex = toIndex;
+   for (Entry<Integer, Group> expandedGroup: expanded.entrySet()) {
+      if (fromIndex > expandedGroup.getKey())
+         fromExpandedIndex += expandedGroup.getValue().size();
+      if (toIndex > expandedGroup.getKey())
+         toExpandedIndex += expandedGroup.getValue().size();
+   }
+   
+}
+
 public void remove(AbstractPiece p)
 {
    list.remove(p.getIndexInContainer());
-   
-   // TODO:  check that all uses add the piece to another container and that container's list.
-
-// /*
-// * Move a Group of pieces to another Container, if possible.
-// * @param pieces the AbstractPieces to move from this Container, if possible.
-// * @return whether or not <code>pieces</code> is now in <code>to</code>.
-// */
-//public boolean movePieces(Group pieces, Container to)
-//{
-//   if (to == this)
-//      return true;
-//
-//   if (to instanceof Box) {
-//         if(pieces instanceof Group) {
-//      Group group = (Group) pieces;
-//      if (group.hasLargerPieces())
-//         return false;
-//      LinkedList<AbstractPiece> all = group.getAll();
-//      for (AbstractPiece piece: all) {
-//      }
-//      return true;
-//         }
-//         else if (pieces instanceof LargerPiece)
-//            return false;
-//         else { // pieces instanceof SinglePiece
-//            SinglePiece singlePiece = (SinglePiece) pieces;
-//            if(singlePiece.isGrouped())
-//               return false;
-//            to.add(singlePiece);
-//            return true;
-//         }
-//   }
-//   else if (to instanceof TemporaryStorage) {
-//   }
-//   else { // to instanceof PlayField
-//      //   if(containerParent instanceof Box){
-//   }else if(containerParent instanceof TemporaryStorage){
-//
-//   }else{
-//
-//   }
-//   }
-//
-//}
+   expandedList.remove(p.getIndexInContainer());
+   // TODO: all objects with higher index must index--!
 }
 
 public void removeGroup(Group group)
 {
+   // this method is used when moving to another container.
    list.remove(group.getIndexInContainer());
+   if (group.isExpanded())
+      setExpanded(group, false);
+   expandedList.remove(group.getIndexInContainer());
+   // TODO: all objects with higher index must index--!
 }
 
 public boolean movePieceFrom(Container other, AbstractPiece p)
 {
+   // TODO: method for adding piece/group atIndex: just use this method and then reorder.
    // only a SinglePiece can be put back into the box.
    if (p instanceof LargerPiece)
       return false;
    other.remove(p);
    p.setContainer(this, list.size());
    list.add((SinglePiece) p);
+   expandedList.add((SinglePiece) p);
 //   if (other instanceof Group) {
 //      Group temporaryStorage = (Group) other;
 //
@@ -123,6 +151,7 @@ public boolean moveGroupFrom(Container other, Group group, Context ctx)
    other.removeGroup(group);
    group.setContainer(this, list.size());
    list.add(group);
+   expandedList.add(group);
 //   if (other instanceof TemporaryStorage) {
 //      TemporaryStorage storage = (TemporaryStorage) other;
 //
@@ -134,12 +163,12 @@ public boolean moveGroupFrom(Container other, Group group, Context ctx)
    return true;
 }
 
-//public int size(){ return expandedList.size(); }
-//public GroupOrSinglePiece get(int index){ return expandedList.get(index); }
-
 public interface GroupOrSinglePiece
 {
    boolean isSelected();
    void setSelected(boolean b);
+   void setIndex(int newIndex);
+   void decrementIndex();
+   void incrementIndex();
 }
 }

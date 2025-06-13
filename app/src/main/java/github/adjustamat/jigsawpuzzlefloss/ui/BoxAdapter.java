@@ -33,19 +33,17 @@ public void onBindViewHolder(@NonNull BoxItemView holder, int position)
 {
    GroupOrSinglePiece or = box.expandedList.get(position);
    if (or instanceof Group) {
-      Group group = (Group) or;
+      Group group = (Group) or; // Groups in Box have only SinglePieces, no LargerPiece!
       if (group.isExpanded()) {
-         int original = group.getIndexInContainer();
-         int relative = position - original;
-         onBind(holder, (SinglePiece) group.getAllPieces().get(relative));
+         int index = position - group.getIndexInContainer();
+         onBind(holder, (SinglePiece) group.getAllPieces().get(index));
       }
       else {
          // TODO: generate or get RecyclerView thumbnail from group, see Group.layoutPiecesNoOverlap and Group.dirty
       }
    }
    else {
-      SinglePiece piece = (SinglePiece) or;
-      onBind(holder, piece);
+      onBind(holder, (SinglePiece) or);
    }
 }
 
@@ -65,13 +63,12 @@ public int getItemCount()
 public static class BoxItemView
  extends RecyclerView.ViewHolder
 {
-   public ImageView imgBoxItem; // NOT SurfaceView!
+   public final ImageView imgBoxItem; // NOT SurfaceView!
    
    public BoxItemView(@NonNull View itemView)
    {
       super(itemView);
       imgBoxItem = itemView.findViewById(R.id.imgBoxItem);
    }
-   
 }
 }

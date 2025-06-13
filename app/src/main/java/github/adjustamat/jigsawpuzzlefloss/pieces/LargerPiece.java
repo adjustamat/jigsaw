@@ -104,10 +104,12 @@ private class LargerPieceEdges
    LargerPieceEdges(LargerPiece p1, LargerPiece p2,
     Point subp1, Point subp2, Direction dir, int offsetX1, int offsetX2, int offsetY1, int offsetY2)
    {
-      // we know that p2 has less or equal amount of pieces.
+      // we know that p2 has less or equal amount of pieces!
+      
       // TODO: combine outlines and innerEdges (my own UNION) - indexes in matrix need to change too
       // TODO: outerEdgeHoles is empty, only its CAPACITY is two! Add at least one list to it!
       // TODO: make sure when combining two LargerPieces that I know there can be nulls in both outerEdgeHoles lists!
+      
       LargerPieceEdges edges1 = p1.vectorEdges;
       LargerPieceEdges edges2 = p2.vectorEdges;
       for (PieceEdge innerEdge: edges1.innerEdges) {
@@ -119,13 +121,8 @@ private class LargerPieceEdges
       }
       innerEdges.addAll(edges2.innerEdges);
       
-      int matrixX, matrixY;
-      
-      
-      
       // combine matrices:
-      matrixX = 0;
-      matrixY = 0;
+      int matrixX = 0, matrixY = 0;
       for (OuterEdgeIndices indices1: p1.matrix) {
          if (indices1 != null)
             // TODO: indices1.set(DIRECTION,HOLE,INDEX);
@@ -1154,7 +1151,7 @@ public ArrayList<BorderDrawable> getBorder()
             // outside left edge, outside top edge (-1, -1)
             ret.add(BorderDrawable.cornerSE(x, y));
             // outside left edge, top row (-1, 0)
-            ret.add(BorderDrawable.single(x, y + 1, Direction.EAST));
+            ret.add(BorderDrawable.side(x, y + 1, Direction.EAST));
          }
          else if (isSubPiece(x + 1, (++y) + 1)) { // x+1 == 0, y+1 == 1
             // outside left edge, top row (-1, 0)
@@ -1165,7 +1162,7 @@ public ArrayList<BorderDrawable> getBorder()
          y = 0; // top row
          if (isSubPiece(x + 1, y)) { // x+1 == 0
             // outside left edge, top row (-1, 0)
-            ret.add(BorderDrawable.singleShortRight(x, y, Direction.EAST));
+            ret.add(BorderDrawable.sideShortRight(x, y, Direction.EAST));
          }
          else if (isSubPiece(x + 1, y + 1)) { // x+1 == 0, y+1 == 1
             // outside left edge, top row (-1, 0)
@@ -1177,7 +1174,7 @@ public ArrayList<BorderDrawable> getBorder()
       for (y = 1; y < matrixHeight - 1; y++) {
          if (isSubPiece(x + 1, y)) { // x+1 == 0
             // outside left edge, middle rows
-            ret.add(BorderDrawable.single(x, y, Direction.EAST));
+            ret.add(BorderDrawable.side(x, y, Direction.EAST));
          }
          else {
             if (isSubPiece(x + 1, y - 1)) { // x+1 == 0
@@ -1196,7 +1193,7 @@ public ArrayList<BorderDrawable> getBorder()
          // TODO: matrixHeight: outside bottom edge
          if (isSubPiece(x + 1, y)) { // x+1 == 0, y == matrixHeight - 1
             // outside left edge, bottom row (-1, matrixHeight - 1)
-            ret.add(BorderDrawable.single(x, y, Direction.EAST));
+            ret.add(BorderDrawable.side(x, y, Direction.EAST));
             // outside left edge, outside bottom edge (-1, matrixHeight)
             ret.add(BorderDrawable.cornerNE(x, y + 1));
          }
@@ -1208,7 +1205,7 @@ public ArrayList<BorderDrawable> getBorder()
       else { // leftmost column: isSouthEdge (SW)
          // TODO: bottom row (NOT OUTSIDE)
          if (isSubPiece(x + 1, y)) { // x+1 == 0, y == matrixHeight - 1
-            ret.add(BorderDrawable.singleShortLeft(x, y, Direction.EAST));
+            ret.add(BorderDrawable.sideShortLeft(x, y, Direction.EAST));
          }
          else if (isSubPiece(x + 1, y - 1)) { // x+1 == 0, y-1 == matrixHeight - 2
             
@@ -1226,7 +1223,7 @@ public ArrayList<BorderDrawable> getBorder()
       
       for (x = 1; x < matrixWidth - 1; x++) {
          if (isSubPiece(x, 0)) {
-            ret.add(BorderDrawable.single(-1, y, Direction.EAST));
+            ret.add(BorderDrawable.side(-1, y, Direction.EAST));
          }
          else {
             if (isSubPiece(x - 1, 0)) {
