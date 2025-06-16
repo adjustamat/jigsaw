@@ -1,5 +1,9 @@
 package github.adjustamat.jigsawpuzzlefloss.ui;
 
+import android.graphics.BitmapShader;
+import android.graphics.EmbossMaskFilter;
+import android.graphics.Paint;
+import android.graphics.Shader.TileMode;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -50,6 +54,14 @@ public void onBindViewHolder(@NonNull BoxItemView holder, int position)
 private void onBind(@NonNull BoxItemView holder, SinglePiece piece)
 {
    // TODO: get image with standard outlines, respecting the piece's current rotation.
+   
+   BitmapShader shader = new BitmapShader(box.imagePuzzle.image, TileMode.CLAMP, TileMode.CLAMP);
+   //shader.setFilterMode(BitmapShader.FILTER_MODE_NEAREST);
+   Paint mPaint = new Paint();
+   mPaint.setMaskFilter(new EmbossMaskFilter(new float[]{0.5f, 0.5f, 0.5f},
+    0.9f, 8, 1));
+   mPaint.setShader(shader);
+   
 }
 
 public int getItemCount()

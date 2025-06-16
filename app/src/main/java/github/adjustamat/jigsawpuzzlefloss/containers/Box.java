@@ -22,10 +22,12 @@ public class Box
 final List<GroupOrSinglePiece> list;
 public final List<GroupOrSinglePiece> expandedList;
 private final HashMap<Integer, Group> expanded = new HashMap<>();
+public final ImagePuzzle imagePuzzle;
 
 public Box(List<GroupOrSinglePiece> pieces, ImagePuzzle parent)
 {
    // super(parent);
+   this.imagePuzzle = parent;
    this.list = pieces;
    this.expandedList = new LinkedList<>();
    expandedList.addAll(list);

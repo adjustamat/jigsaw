@@ -11,8 +11,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 import github.adjustamat.jigsawpuzzlefloss.game.Direction;
-import github.adjustamat.jigsawpuzzlefloss.ui.BorderDrawable;
 import github.adjustamat.jigsawpuzzlefloss.pieces.SinglePiece.SinglePieceEdges;
+import github.adjustamat.jigsawpuzzlefloss.ui.BorderDrawable;
 
 /**
  * Two or more {@link SinglePiece}s that fit together.
@@ -94,7 +94,7 @@ private static class OuterEdgeIndices
    }
 } // class OuterEdgeIndices
 
-private class LargerPieceEdges
+public class LargerPieceEdges
  extends VectorEdges
 {
    private final ArrayList<PieceEdge> innerEdges = new ArrayList<>();
@@ -693,12 +693,13 @@ private class LargerPieceEdges
     * @param startY the canvas y position of this LargerPiece
     * @return the Paths to draw
     */
-   public Path[] drawInnerEdges(float startX, float startY)
+   public Path drawInnerEdges(float startX, float startY)
    {
-      Path[] ret = new Path[innerEdges.size()];
-      int i = 0;
+      //Path[] ret = new Path[innerEdges.size()];
+      Path path = new Path();
+      path.incReserve(9 * innerEdges.size());
+      //int i = 0;
       for (PieceEdge innerEdge: innerEdges) {
-         Path path = new Path();
          //path.incReserve(9);
          float x = startX + innerEdge.getSubPiece().x * SIDE_SIZE;
          float y = startY + innerEdge.getSubPiece().y * SIDE_SIZE;
@@ -713,10 +714,10 @@ private class LargerPieceEdges
          }
          path.moveTo(x, y);
          innerEdge.appendSegmentsTo(path);
-         // path.close(); cannot make into closed path! have to draw each edge individually.
-         ret[i++] = path;
+         // path.close(); // cannot make into closed path! have to draw each edge individually.
+         //ret[i++] = path;
       }
-      return ret;
+      return path;//ret;
    }
    
    private void addHole(ArrayList<PieceEdge> newHole)
@@ -790,6 +791,16 @@ private class LargerPieceEdges
 //         index.index = i; // same as: index.index -= 1;
 //      }
       return ret;
+   }
+   
+   protected int width()
+   {
+      return 0;// TODO! check the largest "hole"
+   }
+   
+   protected int height()
+   {
+      return 0;// TODO!
    }
 } // class LargerPieceEdges
 
@@ -898,6 +909,9 @@ private LargerPiece(int newIndexInContainer, SinglePiece p1, SinglePiece p2, Dir
 
 public void addPiece(SinglePiece newPiece, Point attachedTo, Direction dir)
 {
+   // reset buffer canvas
+   buffer = null;
+   
    // edge widths:
    RectF newEdgeWidths = newPiece.getEdgeWidths();
    if (attachedTo.x == 0)
@@ -1385,6 +1399,11 @@ public ArrayList<BorderDrawable> getBorder()
    } // for(y)
    return ret;
 } // method: getOutline()
+
+protected VectorEdges getVectorEdges()
+{
+   return vectorEdges;
+}
 
 public RectF getEdgeWidths()
 {

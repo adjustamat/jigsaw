@@ -72,14 +72,24 @@ class SinglePieceEdges
       );
    }
    
+   public int getOuterEdgesCount()
+   {
+      return 1;
+   }
+   
    public PieceEdge getFirstEdge(int hole)
    {
       return nesw[0];
    }
    
-   public int getOuterEdgesCount()
+   protected int width()
    {
-      return 1;
+      return MAX_BUFFER_SIZE;
+   }
+   
+   protected int height()
+   {
+      return MAX_BUFFER_SIZE;
    }
 } // class SinglePieceEdges
 
@@ -102,6 +112,11 @@ public SinglePiece(ImagePuzzle imagePuzzle, int indexInBox, Point coordinates,
    zeroOffsetOutline = vectorEdges.drawOuterEdges(0, 0f, 0f);
    //this.imageMask = new Path();
    //zeroOffsetOutline.offset(imageOffset.x, imageOffset.y, imageMask);
+}
+
+protected VectorEdges getVectorEdges()
+{
+   return vectorEdges;
 }
 
 public RectF getEdgeWidths()

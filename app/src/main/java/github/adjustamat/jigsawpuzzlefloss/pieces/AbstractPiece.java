@@ -1,5 +1,9 @@
 package github.adjustamat.jigsawpuzzlefloss.pieces;
 
+import android.graphics.Bitmap;
+import android.graphics.Bitmap.Config;
+import android.graphics.Canvas;
+import android.graphics.Matrix;
 import android.graphics.Path;
 import android.graphics.Point;
 import android.graphics.PointF;
@@ -11,7 +15,9 @@ import androidx.annotation.Nullable;
 import github.adjustamat.jigsawpuzzlefloss.containers.Container;
 import github.adjustamat.jigsawpuzzlefloss.containers.Group;
 import github.adjustamat.jigsawpuzzlefloss.game.Direction;
+import github.adjustamat.jigsawpuzzlefloss.game.ImagePuzzle;
 import github.adjustamat.jigsawpuzzlefloss.pieces.PieceEdge.DoubleEdge;
+import github.adjustamat.jigsawpuzzlefloss.ui.PuzzleGraphics;
 
 /**
  * A {@link SinglePiece}, or a {@link LargerPiece} made up of two or more of the former that
@@ -22,6 +28,7 @@ public abstract class AbstractPiece
 public static final float SIDE_SIZE = 120f;
 public static final float HALF_SIZE = 60f;
 public static final float MAX_SIZE = (25 + 7.5f + 17.5f) * 2 / 1.7f + SIDE_SIZE;
+public static final int MAX_BUFFER_SIZE = 180;
 // 50 / 1.7f == 29.411764705882355f (from 102 to 60)
 // 100 / 1.7f ==58.82352941176471f (from 102 to 60)
 
@@ -113,6 +120,24 @@ public @Nullable PointF getRelativePos()
    return relativePos;
 }
 
+// graphics:
+
+protected Bitmap buffer;
+
+public Bitmap getUnrotatedFullSizeGraphics()
+{
+   VectorEdges vectorEdges = getVectorEdges();
+   
+   if (buffer == null) { // TODO: for LargerPieces: make buffer=null when it grows!
+      buffer = Bitmap.createBitmap(vectorEdges.width(), vectorEdges.height(), Config.ARGB_8888);
+      Canvas canvas = new Canvas(buffer);
+      PuzzleGraphics.drawPiece(canvas, vectorEdges);
+   }
+   return buffer;
+}
+
+protected abstract VectorEdges getVectorEdges();
+
 // groups:
 
 protected Group groupParent;
@@ -175,7 +200,7 @@ public boolean isEdgePiece()
    return isWestEdge() || isNorthEdge() || isEastEdge() || isSouthEdge();
 }
 
-public abstract static class VectorEdges
+public abstract class VectorEdges
 {
    /**
     * Create a closed vector graphics Path of the outer edge of this AbstractPiece, with the supplied top-left corner.
@@ -189,7 +214,7 @@ public abstract static class VectorEdges
       return getPath(startX, startY, getFirstEdge(hole));
    }
    
-   protected static Path getPath(float startX, float startY, PieceEdge firstEdge)
+   protected /*static*/ Path getPath(float startX, float startY, PieceEdge firstEdge)
    {
       Path ret = new Path();
       ret.moveTo(startX, startY);
@@ -198,7 +223,7 @@ public abstract static class VectorEdges
       return ret;
    }
    
-   protected static void toPath(Path path, PieceEdge firstEdge)
+   protected /*static*/ void toPath(Path path, PieceEdge firstEdge)
    {
       // in SinglePiece: for(PieceEdge edge:nesw) edge.appendSegmentsTo(path);
       // in LargerPiece: loop with getNext(), not index in the list!
@@ -217,5 +242,16 @@ public abstract static class VectorEdges
    protected abstract PieceEdge getFirstEdge(int hole);
    
    public abstract int getOuterEdgesCount();
+   
+   protected abstract int width();
+   protected abstract int height();
+   
+   public Matrix getTranslateMatrix(ImagePuzzle imagePuzzle)
+   {
+      Matrix matrix = new Matrix();
+      matrix.preTranslate(correctPuzzlePosition.x * imagePuzzle.pieceImageSize,
+       correctPuzzlePosition.y * imagePuzzle.pieceImageSize);
+      return matrix;
+   }
 }
 }
