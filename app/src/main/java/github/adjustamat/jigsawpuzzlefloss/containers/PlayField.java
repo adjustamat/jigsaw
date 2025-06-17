@@ -7,6 +7,7 @@ import android.graphics.RectF;
 import androidx.annotation.NonNull;
 
 import java.util.List;
+import java.util.ListIterator;
 
 import github.adjustamat.jigsawpuzzlefloss.pieces.AbstractPiece;
 import github.adjustamat.jigsawpuzzlefloss.pieces.LargerPiece;
@@ -25,40 +26,30 @@ List<SinglePiece> singlePieces;
 
 //float visibleOuterMargin;
 
-//protected PointF positionInContainer; // null when container is Box. (in Box, use indexInContainer instead)
-//protected boolean lockedInPlace; // always false when container is Box.
-//public boolean isLockedInPlace()
-//{
-//   return lockedInPlace;
-//}
-//
-//public void setLockedInPlace(boolean locked)
-//{
-//   lockedInPlace = locked;
-//}
-
-//public PlayField(ImagePuzzle imagePuzzle)
-//{
-//   super(imagePuzzle);
-//}
+/*
+TODO: in PlayField, use these AbstractPiece fields:
+ // PointF positionInContainer; // this already exists: relativePosition
+ // boolean lockedInPlace; // see also AbstractPiece.lockedRotation
+*/
 
 public void remove(AbstractPiece p)
 {
-   (p instanceof SinglePiece ?singlePieces :largerPieces).remove(p.getIndexInContainer());
-   // TODO: all objects with higher index must index--!
-}
-
-public void removeGroup(Group group)
-{
-   groups.remove(group.getIndexInContainer());
-   // TODO: all objects with higher index must index--!
+   List<? extends AbstractPiece> list = (p instanceof SinglePiece) ?singlePieces :largerPieces;
+   
+   int index = p.getIndexInContainer();
+   list.remove(index);
+   
+   // all objects with higher index must decrement index:
+   for (ListIterator<? extends AbstractPiece> iterator = list.listIterator(index); iterator.hasNext(); ) {
+      AbstractPiece next = iterator.next();
+      next.decrementIndex();
+   }
 }
 
 public boolean movePieceFrom(Container other, AbstractPiece p)
 {
    other.remove(p);
-   List<?> list = (p instanceof SinglePiece ?singlePieces :largerPieces);
-   p.setContainer(this, list.size());
+   p.setContainer(this, (p instanceof SinglePiece ?singlePieces :largerPieces).size());
    if (p instanceof SinglePiece) {
       singlePieces.add((SinglePiece) p);
    }
@@ -66,6 +57,18 @@ public boolean movePieceFrom(Container other, AbstractPiece p)
       largerPieces.add((LargerPiece) p);
    }
    return true;
+}
+
+public void removeGroup(Group group)
+{
+   int index = group.getIndexInContainer();
+   groups.remove(index);
+   
+   // all objects with higher index must decrement index:
+   for (ListIterator<Group> iterator = groups.listIterator(index); iterator.hasNext(); ) {
+      Group next = iterator.next();
+      next.decrementIndex();
+   }
 }
 
 public boolean moveGroupFrom(Container other, Group group, Context ctx)

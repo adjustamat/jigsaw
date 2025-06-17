@@ -67,17 +67,17 @@ public static void init(ImagePuzzle imagePuzzle)
    innerPaint.setStrokeCap(Cap.BUTT);
 }
 
-public static void drawRotatingPiece(Canvas playFieldCanvas, PointF mousePoint, VectorEdges vectorEdges,
+public static void drawRotatingPiece(Canvas playFieldCanvas, VectorEdges vectorEdges,
+ PointF mousePoint, PointF position,
  Direction originalRotation, boolean clockwise, @FloatRange(from=0, to=1) float amount)
 {
    Path pieceShapePath = vectorEdges.drawOuterEdges();
    
    // move to the playField-coordinates of the piece:
-   // TODO: playFieldCanvas.translate(x,y); // use the PlayField-coordinates
+   playFieldCanvas.translate(position.x, position.y);
    
    // rotate:
    float degrees = originalRotation.degrees;
-   
    degrees += (clockwise ?90 :-90) * amount;
    playFieldCanvas.rotate(-degrees, mousePoint.x, mousePoint.y);
    
@@ -96,7 +96,7 @@ public static void drawPiece(Canvas pieceBufferCanvas, VectorEdges vectorEdges)
 {
    Path pieceShapePath = vectorEdges.drawOuterEdges();
    
-   // offset (translate) to the correct part of the image:
+   // offset (translate) BitmapShader to the correct part of the puzzle image:
    shader.setLocalMatrix(vectorEdges.getImageTranslateMatrix(theImagePuzzle));
    //piecePaint.setShader(shader); // TODO: is it necessary to do this again?
    

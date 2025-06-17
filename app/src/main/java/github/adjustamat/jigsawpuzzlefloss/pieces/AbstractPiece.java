@@ -43,7 +43,9 @@ public static final int MAX_BUFFER_SIZE = 180;
  */
 private PointF relativePos;
 private boolean selected;
-public @NonNull Direction currentRotationNorthDirection;
+public @NonNull Direction currentRotationNorthDirection = Direction.NORTH;
+public boolean lockedRotation = false;
+public boolean lockedInPlace = false;
 
 protected Point correctPuzzlePosition;
 
@@ -80,17 +82,17 @@ public int getIndexInContainer()
    return indexInContainer;
 }
 
-public void setBoxIndex(int newIndex)
+public void setIndex(int newIndex)
 {
    indexInContainer = newIndex;
 }
 
-public void decrementBoxIndex()
+public void decrementIndex()
 {
    indexInContainer--;
 }
 
-public void incrementBoxIndex()
+public void incrementIndex()
 {
    indexInContainer++;
 }
@@ -207,7 +209,6 @@ public abstract class VectorEdges
    /**
     * Create a closed vector graphics Path of the outer edge of this AbstractPiece, with the supplied top-left corner.
     * @param hole an integer between 0 (inclusive) and {@link #getOuterEdgesCount()} (exclusive)
- 
     * @return a closed Path
     */
    private Path drawOuterEdges(int hole/*, float startX, float startY*/)
@@ -237,7 +238,7 @@ public abstract class VectorEdges
    protected /*static*/ Path getPath(/*float startX, float startY,*/ PieceEdge firstEdge)
    {
       Path ret = new Path();
-      ret.moveTo(0f,0f);//startX, startY);
+      ret.moveTo(0f, 0f);//startX, startY);
       toPath(ret, firstEdge);
       ret.close();
       return ret;
@@ -262,8 +263,9 @@ public abstract class VectorEdges
    public Matrix getImageTranslateMatrix(ImagePuzzle imagePuzzle)
    {
       Matrix matrix = new Matrix();
-      matrix.preTranslate(correctPuzzlePosition.x * imagePuzzle.pieceImageSize,
-       correctPuzzlePosition.y * imagePuzzle.pieceImageSize);
+      RectF edgeWidths = getEdgeWidths();
+      matrix.preTranslate(correctPuzzlePosition.x * imagePuzzle.pieceImageSize - edgeWidths.left,
+       correctPuzzlePosition.y * imagePuzzle.pieceImageSize - edgeWidths.top);
       return matrix;
    }
    

@@ -81,18 +81,18 @@ public void reorder(int fromIndex, int toIndex)
 {
    GroupOrSinglePiece or = list.remove(fromIndex);
    list.add(toIndex, or);
-   or.setBoxIndex(toIndex);
+   or.setIndex(toIndex);
    
    if (fromIndex < toIndex) {
       for (ListIterator<GroupOrSinglePiece> i = list.listIterator(fromIndex);
            i.nextIndex() < toIndex; ) {
-         i.next().decrementBoxIndex();
+         i.next().decrementIndex();
       }
    }
    else {
       for (ListIterator<GroupOrSinglePiece> i = list.listIterator(toIndex + 1);
            i.nextIndex() <= fromIndex; ) {
-         i.next().incrementBoxIndex();
+         i.next().incrementIndex();
       }
    }
    
@@ -169,9 +169,9 @@ public interface GroupOrSinglePiece
 {
    boolean isSelected();
    void setSelected(boolean b);
-   void setBoxIndex(int newIndex);
-   void decrementBoxIndex();
-   void incrementBoxIndex();
+   void setIndex(int newIndex);
+   void decrementIndex();
+   void incrementIndex();
    // BoxItemView
 }
 }

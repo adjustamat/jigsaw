@@ -122,9 +122,12 @@ private void onBind(@NonNull BoxItemView holder, SinglePiece piece)
 
 /**
  * An ImageView for showing a {@link GroupOrSinglePiece} from a {@link Box} in a {@link RecyclerView}.
- * TODO: use a rounded rectangle background with gradient by degrees (NOT RadialGradient!) with colors that are anti-colors of the piece.
+ * TODO: use a rounded rectangle background with SweepGradient (NOT RadialGradient!) with colors that are anti-colors of the piece.
+ *  The rounded rectangle is not full opacity.
+ *  For Groups, do not use SweepGradient, just a single color in the rounded rectangle.
  *  Use four samples: the 9ths at middle-of-edge (skip the five 9ths that are corners and middle of piece) and use colors
- *  that are high contrast to the samples, e.g. white if the sample is dark. BigBox and MiniBox background is dark-grey paper.
+ *  that are high contrast to the samples, e.g. white if the sample is dark. BigBox and MiniBox background is dark-grey paper
+ *  (user-customizable).
  */
 public static class BoxItemView
  extends RecyclerView.ViewHolder
