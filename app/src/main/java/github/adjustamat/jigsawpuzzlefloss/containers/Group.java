@@ -300,17 +300,17 @@ public int getIndexInContainer()
    return indexInContainer;
 }
 
-public void setIndex(int newIndex)
+public void setBoxIndex(int newIndex)
 {
    indexInContainer = newIndex;
 }
 
-public void decrementIndex()
+public void decrementBoxIndex()
 {
    indexInContainer--;
 }
 
-public void incrementIndex()
+public void incrementBoxIndex()
 {
    indexInContainer++;
 }

@@ -681,6 +681,8 @@ public class LargerPieceEdges
       return outerEdgeHoles.size();
    }
    
+ 
+   
    public PieceEdge getFirstEdge(int hole)
    {
       return outerEdgeHoles.get(hole).get(0);
@@ -909,8 +911,9 @@ private LargerPiece(int newIndexInContainer, SinglePiece p1, SinglePiece p2, Dir
 
 public void addPiece(SinglePiece newPiece, Point attachedTo, Direction dir)
 {
-   // reset buffer canvas
+   // reset buffers
    buffer = null;
+   bufferedPath = null;
    
    // edge widths:
    RectF newEdgeWidths = newPiece.getEdgeWidths();

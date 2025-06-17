@@ -1,6 +1,8 @@
 package github.adjustamat.jigsawpuzzlefloss.ui;
 
 import android.graphics.Bitmap;
+import android.graphics.Bitmap.Config;
+import android.graphics.Canvas;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -18,8 +20,16 @@ import github.adjustamat.jigsawpuzzlefloss.pieces.SinglePiece;
 public class BoxAdapter
  extends RecyclerView.Adapter<BoxAdapter.BoxItemView>
 {
-RecyclerView recyclerView;
-Box box;
+//private RecyclerView recyclerView;
+protected final Box box;
+
+public BoxAdapter(Box box)
+{
+   this.box = box;
+}
+
+// TODO: store item sizes from Resources with static method
+public static int bigBoxItemWidth, bigBoxItemHeight, miniBoxItemWidth, miniBoxItemHeight;
 
 public @NonNull BoxItemView onCreateViewHolder(@NonNull ViewGroup parent, int viewType)
 {
@@ -30,9 +40,48 @@ public @NonNull BoxItemView onCreateViewHolder(@NonNull ViewGroup parent, int vi
    return ret;
 }
 
+public int getItemCount()
+{
+   return box.expandedList.size();
+}
+
+protected GroupOrSinglePiece get(int position)
+{
+   return box.expandedList.get(position);
+}
+
+protected Bitmap createThumbnailBitmap()
+{
+   return Bitmap.createBitmap(bigBoxItemWidth, bigBoxItemHeight, Config.ARGB_8888);
+}
+
+public static class MiniBoxAdapter
+ extends BoxAdapter
+{
+   public MiniBoxAdapter(Box box)
+   {
+      super(box);
+   }
+   
+   public int getItemCount()
+   {
+      return box.list.size();
+   }
+   
+   protected GroupOrSinglePiece get(int position)
+   {
+      return box.list.get(position);
+   }
+   
+   protected Bitmap createThumbnailBitmap()
+   {
+      return Bitmap.createBitmap(miniBoxItemWidth, miniBoxItemHeight, Config.ARGB_8888);
+   }
+}
+
 public void onBindViewHolder(@NonNull BoxItemView holder, int position)
 {
-   GroupOrSinglePiece or = box.expandedList.get(position);
+   GroupOrSinglePiece or = get(position);
    if (or instanceof Group) {
       Group group = (Group) or; // Groups in Box have only SinglePieces, no LargerPiece!
       if (group.isExpanded()) {
@@ -50,32 +99,37 @@ public void onBindViewHolder(@NonNull BoxItemView holder, int position)
 
 private void onBind(@NonNull BoxItemView holder, SinglePiece piece)
 {
-   // TODO: get image with standard outlines, respecting the piece's current rotation. then shrink it.
+   Bitmap unrotatedFullSize = piece.getUnrotatedFullSizeGraphics();
+
+//   if (holder.bufferedThumbnail == null)
+//      holder.bufferedThumbnail = createThumbnailBitmap();
+   Bitmap thumbnail = createThumbnailBitmap();
+   Canvas thumbnailCanvas = new Canvas(thumbnail);
    
-   Bitmap bitmap = piece.getUnrotatedFullSizeGraphics();
+   // TODO: shrink unrotatedFullSize to some size, smaller than thumbnail.getWidth(), thumbnail.getHeight()
+   //thumbnailCanvas.scale();
+   
+   thumbnailCanvas.rotate(-piece.currentRotationNorthDirection.degrees);
+   
+   // TODO: left and top might not be 0 if the rotated unrotatedFullSize is smaller in some dimension than thumbnail
+   thumbnailCanvas.drawBitmap(unrotatedFullSize,0f,0f,null);
+   
+   // save thumbnail as a BitmapDrawable? I don't think so. BoxItemView is recycled!! thus,
+   //  we have to rotate and shrink the buffered unrotatedFullSize every time.
 
-
-//   BitmapShader shader = new BitmapShader(box.imagePuzzle.image, TileMode.CLAMP, TileMode.CLAMP);
-//   //shader.setFilterMode(BitmapShader.FILTER_MODE_NEAREST);
-//   Paint mPaint = new Paint();
-//   mPaint.setMaskFilter(new EmbossMaskFilter(new float[]{0.5f, 0.5f, 0.5f},
-//    0.9f, 8, 1));
-//   mPaint.setShader(shader);
-
-}
-
-public int getItemCount()
-{
-   return box.expandedList.size();
+   holder.imgBoxItem.setImageBitmap(thumbnail);
 }
 
 /**
  * An ImageView for showing a {@link GroupOrSinglePiece} from a {@link Box} in a {@link RecyclerView}.
+ * TODO: use a rounded rectangle background with gradient by degrees (NOT RadialGradient!) with colors that are anti-colors of the piece.
+ *  Use four samples: the 9ths at middle-of-edge (skip the five 9ths that are corners and middle of piece) and use colors
+ *  that are high contrast to the samples, e.g. white if the sample is dark. BigBox and MiniBox background is dark-grey paper.
  */
 public static class BoxItemView
  extends RecyclerView.ViewHolder
 {
-   public final ImageView imgBoxItem; // NOT SurfaceView!
+   public final ImageView imgBoxItem;
    
    public BoxItemView(@NonNull View itemView)
    {

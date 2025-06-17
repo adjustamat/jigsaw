@@ -1,9 +1,7 @@
 package github.adjustamat.jigsawpuzzlefloss.pieces;
 
 import android.graphics.Color;
-import android.graphics.Path;
 import android.graphics.Point;
-import android.graphics.PointF;
 import android.graphics.RectF;
 
 import androidx.annotation.Nullable;
@@ -13,6 +11,7 @@ import github.adjustamat.jigsawpuzzlefloss.game.Direction;
 import github.adjustamat.jigsawpuzzlefloss.game.ImagePuzzle;
 import github.adjustamat.jigsawpuzzlefloss.pieces.PieceEdge.HalfEdge;
 import github.adjustamat.jigsawpuzzlefloss.pieces.PieceEdge.RandomEdge;
+import github.adjustamat.jigsawpuzzlefloss.ui.BoxAdapter.BoxItemView;
 
 /**
  * A piece of an {@link ImagePuzzle}. Has four edges that are either jigsaw-shaped or flat (at the
@@ -33,9 +32,6 @@ final RandomEdge[] neswRandomEdges = new RandomEdge[4];
  */
 final SinglePieceEdges vectorEdges;
 
-// translate PathShape imageMask by coordinates to get the correct part of the image
-Path zeroOffsetOutline;
-PointF imageOffset;
 //    PointF shapeSize;
 //   this.shapeSize = new PointF(
 //    imageSize + edgeWidths.left + edgeWidths.right,
@@ -107,9 +103,9 @@ public SinglePiece(ImagePuzzle imagePuzzle, int indexInBox, Point coordinates,
    neswRandomEdges[3] = west;
    vectorEdges = new SinglePieceEdges(pool);
    
-   imageOffset = new PointF(coordinates.x * imagePuzzle.pieceImageSize,
-    coordinates.y * imagePuzzle.pieceImageSize);
-   zeroOffsetOutline = vectorEdges.drawOuterEdges(0, 0f, 0f);
+//   imageOffset = new PointF(coordinates.x * imagePuzzle.pieceImageSize,
+//    coordinates.y * imagePuzzle.pieceImageSize);
+//   zeroOffsetOutline = vectorEdges.drawOuterEdges(0, 0f, 0f);
    //this.imageMask = new Path();
    //zeroOffsetOutline.offset(imageOffset.x, imageOffset.y, imageMask);
 }

@@ -19,7 +19,7 @@ import github.adjustamat.jigsawpuzzlefloss.pieces.SinglePiece;
 public class Box
  extends Container
 {
-final List<GroupOrSinglePiece> list;
+public final List<GroupOrSinglePiece> list;
 public final List<GroupOrSinglePiece> expandedList;
 private final HashMap<Integer, Group> expanded = new HashMap<>();
 public final ImagePuzzle imagePuzzle;
@@ -81,18 +81,18 @@ public void reorder(int fromIndex, int toIndex)
 {
    GroupOrSinglePiece or = list.remove(fromIndex);
    list.add(toIndex, or);
-   or.setIndex(toIndex);
+   or.setBoxIndex(toIndex);
    
    if (fromIndex < toIndex) {
       for (ListIterator<GroupOrSinglePiece> i = list.listIterator(fromIndex);
            i.nextIndex() < toIndex; ) {
-         i.next().decrementIndex();
+         i.next().decrementBoxIndex();
       }
    }
    else {
       for (ListIterator<GroupOrSinglePiece> i = list.listIterator(toIndex + 1);
            i.nextIndex() <= fromIndex; ) {
-         i.next().incrementIndex();
+         i.next().incrementBoxIndex();
       }
    }
    
@@ -169,8 +169,9 @@ public interface GroupOrSinglePiece
 {
    boolean isSelected();
    void setSelected(boolean b);
-   void setIndex(int newIndex);
-   void decrementIndex();
-   void incrementIndex();
+   void setBoxIndex(int newIndex);
+   void decrementBoxIndex();
+   void incrementBoxIndex();
+   // BoxItemView
 }
 }

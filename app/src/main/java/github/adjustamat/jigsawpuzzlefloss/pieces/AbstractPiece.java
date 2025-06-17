@@ -5,6 +5,7 @@ import android.graphics.Bitmap.Config;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.Path;
+import android.graphics.Path.FillType;
 import android.graphics.Point;
 import android.graphics.PointF;
 import android.graphics.RectF;
@@ -42,7 +43,7 @@ public static final int MAX_BUFFER_SIZE = 180;
  */
 private PointF relativePos;
 private boolean selected;
-protected @NonNull Direction currentRotationNorthDirection;
+public @NonNull Direction currentRotationNorthDirection;
 
 protected Point correctPuzzlePosition;
 
@@ -79,17 +80,17 @@ public int getIndexInContainer()
    return indexInContainer;
 }
 
-public void setIndex(int newIndex)
+public void setBoxIndex(int newIndex)
 {
    indexInContainer = newIndex;
 }
 
-public void decrementIndex()
+public void decrementBoxIndex()
 {
    indexInContainer--;
 }
 
-public void incrementIndex()
+public void incrementBoxIndex()
 {
    indexInContainer++;
 }
@@ -122,6 +123,7 @@ public @Nullable PointF getRelativePos()
 
 // graphics:
 
+protected Path bufferedPath = null;
 protected Bitmap buffer;
 
 public Bitmap getUnrotatedFullSizeGraphics()
@@ -135,8 +137,6 @@ public Bitmap getUnrotatedFullSizeGraphics()
    }
    return buffer;
 }
-
-protected abstract VectorEdges getVectorEdges();
 
 // groups:
 
@@ -186,6 +186,8 @@ public PointF getCurrentEdgeWidths()
    }
 }
 
+protected abstract VectorEdges getVectorEdges();
+
 public abstract boolean isWestEdge();
 public abstract boolean isNorthEdge();
 public abstract boolean isEastEdge();
@@ -205,19 +207,37 @@ public abstract class VectorEdges
    /**
     * Create a closed vector graphics Path of the outer edge of this AbstractPiece, with the supplied top-left corner.
     * @param hole an integer between 0 (inclusive) and {@link #getOuterEdgesCount()} (exclusive)
-    * @param startX X of the top-left corner
-    * @param startY Y of the top-left corner
+ 
     * @return a closed Path
     */
-   public Path drawOuterEdges(int hole, float startX, float startY)
+   private Path drawOuterEdges(int hole/*, float startX, float startY*/)
    {
-      return getPath(startX, startY, getFirstEdge(hole));
+//         *@param startX X of the top - left corner
+//    * @param startY Y of the top -left corner
+      return getPath(/*startX, startY,*/ getFirstEdge(hole));
    }
    
-   protected /*static*/ Path getPath(float startX, float startY, PieceEdge firstEdge)
+   public Path drawOuterEdges()
+   {
+      if (bufferedPath == null) {
+         bufferedPath = new Path();
+         // set fill type to respect holes:
+         bufferedPath.setFillType(FillType.EVEN_ODD);
+         
+         // collect all edges of the puzzle piece shape:
+         int holes = getOuterEdgesCount();
+         for (int i = 0; i < holes; i++) {
+            Path path = drawOuterEdges(i/*, 0f, 0f*/);
+            bufferedPath.addPath(path);
+         }
+      }
+      return bufferedPath;
+   }
+   
+   protected /*static*/ Path getPath(/*float startX, float startY,*/ PieceEdge firstEdge)
    {
       Path ret = new Path();
-      ret.moveTo(startX, startY);
+      ret.moveTo(0f,0f);//startX, startY);
       toPath(ret, firstEdge);
       ret.close();
       return ret;
@@ -239,19 +259,19 @@ public abstract class VectorEdges
       }while (nextEdge != firstEdge);
    }
    
-   protected abstract PieceEdge getFirstEdge(int hole);
-   
-   public abstract int getOuterEdgesCount();
-   
-   protected abstract int width();
-   protected abstract int height();
-   
-   public Matrix getTranslateMatrix(ImagePuzzle imagePuzzle)
+   public Matrix getImageTranslateMatrix(ImagePuzzle imagePuzzle)
    {
       Matrix matrix = new Matrix();
       matrix.preTranslate(correctPuzzlePosition.x * imagePuzzle.pieceImageSize,
        correctPuzzlePosition.y * imagePuzzle.pieceImageSize);
       return matrix;
    }
+   
+   protected abstract PieceEdge getFirstEdge(int hole);
+   
+   public abstract int getOuterEdgesCount();
+   
+   protected abstract int width();
+   protected abstract int height();
 }
 }

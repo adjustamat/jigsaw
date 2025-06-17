@@ -2,30 +2,31 @@ package github.adjustamat.jigsawpuzzlefloss.game;
 
 public enum Direction
 {
-   NORTH(1, 2, 0, 1, 0, 0) {
+   NORTH(0, 1, 2, 0, 1, 0, 0) {
       public Direction next()
       {
          return EAST;
       }
    },
-   EAST(2, 1, 0, 0, 1, 0) {
+   EAST(90, 2, 1, 0, 0, 1, 0) {
       public Direction next()
       {
          return SOUTH;
       }
    },
-   SOUTH(1, 2, 0, 0, 0, 1) {
+   SOUTH(180, 1, 2, 0, 0, 0, 1) {
       public Direction next()
       {
          return WEST;
       }
    },
-   WEST(2, 1, 1, 0, 0, 0) {
+   WEST(-90, 2, 1, 1, 0, 0, 0) {
       public Direction next()
       {
          return NORTH;
       }
    };
+   public final int degrees;
 public final int initWidth;
 public final int initHeight;
 public final int initX1;
@@ -37,17 +38,18 @@ public final int y;
 //public final int perpendicularX;
 //public final int perpendicularY;
 
-Direction(int initWidth, int initHeight,
+Direction(int degrees, int initWidth, int initHeight,
  int initX1, int initY1, int initX2, int initY2
 )
 {
+   this.degrees = degrees;
    this.initWidth = initWidth;
    this.initHeight = initHeight;
    this.initX1 = initX1;
    this.initY1 = initY1;
    this.initX2 = initX2;
    this.initY2 = initY2;
-   
+
    this.x = initX2 - initX1;
    // North, South: 0
    // East: 1, if flipped to y, would be south (cw)
