@@ -1,9 +1,24 @@
 <resources>
-   <string name="app_name">Jigsaw Puzzle FLOSS</string>
-   <string name="hello_blank_fragment">DUMMY\nCONTENT</string>
-   <string name="dummy_button">Dummy Button</string>
-   <string name="imgBoxCover">Box Cover</string>
+    <string name="app_name">Jigsaw Puzzle FLOSS</string>
+
+
+    <string name="hello_blank_fragment">DUMMY\nCONTENT</string>
+    <string name="btnDummy">Dummy Button</string>
+
+    <!-- Display strings -->
     <string name="group_default_name">Group %d</string>
+
+
+    <!-- ContentDescriptions -->
     <string name="imgBoxItem">A piece</string>
     <string name="imgTemporaryStorageThumbnail">Temporary Storage thumbnail</string>
+    <string name="imgSeparator">Resize box</string>
+    <string name="imgBoxCover">Box Cover</string>
+    <string name="srcMiniMap">Mini Map</string>
+
+    <!-- Dialog: on Back from PlayFieldFragment -->
+    <string name="btnLeaveNot">Continue Puzzle</string>
+    <string name="btnLeaveToMenu">Main Menu</string>
+    <string name="btnLeaveApp">Quit</string>
+
 </resources>
