@@ -1,16 +1,44 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
  xmlns:tools="http://schemas.android.com/tools"
  android:layout_width="match_parent"
  android:layout_height="match_parent"
  tools:context=".MainMenuFragment"
  >
 
-   <!-- TODO: Update blank fragment layout -->
-   <TextView
-    android:text="@string/hello_blank_fragment"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    />
+<!-- Go to settings -->
 
-</FrameLayout>
+   <Button
+       android:id="@+id/button"
+       android:layout_width="wrap_content"
+       android:layout_height="wrap_content"
+       android:text="Button" />
+
+<!-- Download image online -->
+   <Button
+       android:id="@+id/button"
+       android:layout_width="wrap_content"
+       android:layout_height="wrap_content"
+       android:text="Button" />
+
+   <!-- Open image on device - contentproviders API -->
+   <Button
+       android:id="@+id/button"
+       android:layout_width="wrap_content"
+       android:layout_height="wrap_content"
+       android:text="Button" />
+
+
+   <!-- List of started games -->
+   <androidx.recyclerview.widget.RecyclerView
+       android:id="@+id/button"
+       android:layout_width="wrap_content"
+       android:layout_height="wrap_content" />
+
+   <!-- List of saved images -->
+   <androidx.recyclerview.widget.RecyclerView
+       android:id="@+id/button"
+       android:layout_width="wrap_content"
+       android:layout_height="wrap_content" />
+
+</RelativeLayout>

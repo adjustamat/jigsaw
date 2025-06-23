@@ -67,26 +67,26 @@ public static void init(ImagePuzzle imagePuzzle)
    innerPaint.setStrokeCap(Cap.BUTT);
 }
 
-public static void drawRotatingPiece(Canvas playFieldCanvas, VectorEdges vectorEdges,
+public static void drawRotatingPiece(Canvas playMatCanvas, VectorEdges vectorEdges,
  PointF mousePoint, PointF position,
  Direction originalRotation, boolean clockwise, @FloatRange(from=0, to=1) float amount)
 {
    Path pieceShapePath = vectorEdges.drawOuterEdges();
    
-   // move to the playField-coordinates of the piece:
-   playFieldCanvas.translate(position.x, position.y);
+   // move to the playMat-coordinates of the piece:
+   playMatCanvas.translate(position.x, position.y);
    
    // rotate:
    float degrees = originalRotation.degrees;
    degrees += (clockwise ?90 :-90) * amount;
-   playFieldCanvas.rotate(-degrees, mousePoint.x, mousePoint.y);
+   playMatCanvas.rotate(-degrees, mousePoint.x, mousePoint.y);
    
    // draw the outline:
-   playFieldCanvas.drawPath(pieceShapePath, outerPaint);
+   playMatCanvas.drawPath(pieceShapePath, outerPaint);
 }
 
 /**
- * Draw on a buffer canvas. This canvas can then be drawn with the PlayField-coordinates onto the PlayField canvas,
+ * Draw on a buffer canvas. This canvas can then be drawn with the PlayMat-coordinates onto the PlayMat canvas,
  * or drawn shrunken as a thumbnail for BoxAdapter. The buffer canvas can be saved until the piece is attached (made
  * larger).
  * @param pieceBufferCanvas the buffer canvas

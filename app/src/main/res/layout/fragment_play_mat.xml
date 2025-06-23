@@ -7,7 +7,7 @@
     android:background="?attr/fullscreenBackgroundColor"
     android:keepScreenOn="true"
     android:theme="@style/ThemeOverlay.JigsawPuzzleFLOSS.FullscreenContainer"
-    tools:context=".PlayFieldFragment">
+    tools:context=".PlayMatFragment">
     <!-- android:background="?attr/fullscreenBackgroundColor" is blue. -->
 
     <!--
@@ -16,7 +16,7 @@
        drag of temporary storage view. -->
 
     <LinearLayout
-        android:id="@+id/llvPlayFieldFragment"
+        android:id="@+id/llvPlayMatFragment"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical">
@@ -35,7 +35,7 @@
             android:layout_weight="100">
 
             <SurfaceView
-                android:id="@+id/srcPlayField"
+                android:id="@+id/srcPlayMat"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content" />
         </androidx.core.widget.NestedScrollView>

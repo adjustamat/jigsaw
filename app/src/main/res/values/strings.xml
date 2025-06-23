@@ -1,24 +1,37 @@
 <resources>
     <string name="app_name">Jigsaw Puzzle FLOSS</string>
 
-
-    <string name="hello_blank_fragment">DUMMY\nCONTENT</string>
-    <string name="btnDummy">Dummy Button</string>
-
     <!-- Display strings -->
     <string name="group_default_name">Group %d</string>
 
-
-    <!-- ContentDescriptions -->
+    <!-- UI - ContentDescriptions -->
     <string name="imgBoxItem">A piece</string>
     <string name="imgTemporaryStorageThumbnail">Temporary Storage thumbnail</string>
     <string name="imgSeparator">Resize box</string>
     <string name="imgBoxCover">Box Cover</string>
     <string name="srcMiniMap">Mini Map</string>
 
-    <!-- Dialog: on Back from PlayFieldFragment -->
+    <!-- Dialog: on Back from PlayMatFragment -->
     <string name="btnLeaveNot">Continue Puzzle</string>
     <string name="btnLeaveToMenu">Main Menu</string>
     <string name="btnLeaveApp">Quit</string>
+
+    <!-- Setting: where to download to.  -->
+
+
+<!--    -->
+<!--    &lt;!&ndash; Preference Titles &ndash;&gt;-->
+<!--    <string name="messages_header">Messages</string>-->
+<!--    <string name="sync_header">Sync</string>-->
+
+<!--    &lt;!&ndash; Messages Preferences &ndash;&gt;-->
+<!--    <string name="signature_title">Your signature</string>-->
+<!--    <string name="reply_title">Default reply action</string>-->
+
+<!--    &lt;!&ndash; Sync Preferences &ndash;&gt;-->
+<!--    <string name="sync_title">Sync email periodically</string>-->
+<!--    <string name="attachment_title">Download incoming attachments</string>-->
+<!--    <string name="attachment_summary_on">Automatically download attachments for incoming emails</string>-->
+<!--    <string name="attachment_summary_off">Only download attachments when manually requested</string>-->
 
 </resources>

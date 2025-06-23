@@ -16,7 +16,7 @@ import github.adjustamat.jigsawpuzzlefloss.pieces.SinglePiece;
 /**
  * A surface with a customizable background, for laying the puzzle on.
  */
-public class PlayField
+public class PlayMat
  extends Container
 {
 float usableMargin;
@@ -27,7 +27,7 @@ List<SinglePiece> singlePieces;
 //float visibleOuterMargin;
 
 /*
-TODO: in PlayField, use these AbstractPiece fields:
+TODO: in PlayMat, use these AbstractPiece fields:
  // PointF positionInContainer; // this already exists: relativePosition
  // boolean lockedInPlace; // see also AbstractPiece.lockedRotation
 */
@@ -108,6 +108,6 @@ public void pileUpGroup(Group group, RectF within)
    // TODO: the area to limit the group to has to always be a bit bigger than the largest possible piece,
    //  regardless of the width and height of "within".
    
-   // TODO: no two pieces can have the exact same coordinates! (absolute position on the playing field)
+   // TODO: no two pieces can have the exact same coordinates! (absolute position on the play mat)
 }
 }

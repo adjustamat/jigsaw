@@ -5,24 +5,34 @@ package github.adjustamat.jigsawpuzzlefloss.prefs;
  */
 public interface Pref
 {
+interface BoolPref { }
+
 interface IntPref{ }
 
-interface BoolPref{ }
+interface LongPref { }
 
 interface StrPref{ }
 
-interface LongPref{ }
-
-enum GeneratorPrefs
+interface GeneratorPrefs
 {
 }
 
-enum BackgroundPrefs
+interface BackgroundPrefs
 {
 }
 
-enum PlayPrefs
+interface PlayPrefs
 {
 }
+
+interface OtherPrefs
+{
+   enum Str implements StrPref{
+      downloadDir,
+      downloadFromURL
+   }
+}
+
+
 
 }

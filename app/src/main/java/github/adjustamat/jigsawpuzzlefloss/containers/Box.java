@@ -14,7 +14,7 @@ import github.adjustamat.jigsawpuzzlefloss.pieces.LargerPiece;
 import github.adjustamat.jigsawpuzzlefloss.pieces.SinglePiece;
 
 /**
- * The {@link Container} from which the {@link SinglePiece}s are moved onto the {@link PlayField}.
+ * The {@link Container} from which the {@link SinglePiece}s are moved onto the {@link PlayMat}.
  */
 public class Box
  extends Container
@@ -139,7 +139,7 @@ public boolean movePieceFrom(Container other, AbstractPiece p)
 //
 //   }
 //   else {
-//      PlayField playField = (PlayField) other;
+//      PlayMat playMat = (PlayMat) other;
 //
 //   }
    return true;
@@ -159,7 +159,7 @@ public boolean moveGroupFrom(Container other, Group group, Context ctx)
 //
 //   }
 //   else {
-//      PlayField playField = (PlayField) other;
+//      PlayMat playMat = (PlayMat) other;
 //
 //   }
    return true;

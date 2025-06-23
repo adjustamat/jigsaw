@@ -24,7 +24,7 @@
  + give hints or help (like these two pieces don't fit together or this belongs in that area)
  + sort/group pieces manually or by properties (in/out patterns, edge pieces, corner pieces, neckWidth, curvature, colors, areas (cheating!), ...)
  + give names to pieces or groups
- + move pieces through temporary storage across the playing field
+ + move pieces through temporary storage across the play mat
  + search for pieces, individually and as part of larger pieces/groups
  + lock pieces in place
  select or change background
@@ -43,7 +43,7 @@
     android:theme="@style/Theme.JigsawPuzzleFLOSS"
     tools:targetApi="31"
     >
-      <activity android:name=".MainActivity"
+      <activity android:name=".Act"
        android:exported="true"
        >
          <intent-filter>

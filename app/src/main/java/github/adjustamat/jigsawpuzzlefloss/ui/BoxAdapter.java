@@ -35,7 +35,7 @@ public @NonNull BoxItemView onCreateViewHolder(@NonNull ViewGroup parent, int vi
 {
    LayoutInflater inflater = LayoutInflater.from(parent.getContext());
    BoxItemView ret = new BoxItemView(
-    inflater.inflate(R.layout.item_box_item_view, parent, false)
+    inflater.inflate(R.layout.item_box_itemview, parent, false)
    );
    return ret;
 }

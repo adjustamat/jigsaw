@@ -1,9 +1,9 @@
 package github.adjustamat.jigsawpuzzlefloss.ui;
 
-import github.adjustamat.jigsawpuzzlefloss.containers.PlayField;
+import github.adjustamat.jigsawpuzzlefloss.containers.PlayMat;
 
 /**
- * A View of the whole {@link PlayField}, to help with scrolling.
+ * A View of the whole {@link PlayMat}, to help with scrolling.
  */
 public class MiniMap
 {

@@ -9,7 +9,7 @@ import java.util.Random;
 
 import github.adjustamat.jigsawpuzzlefloss.containers.Box;
 import github.adjustamat.jigsawpuzzlefloss.containers.Box.GroupOrSinglePiece;
-import github.adjustamat.jigsawpuzzlefloss.containers.PlayField;
+import github.adjustamat.jigsawpuzzlefloss.containers.PlayMat;
 import github.adjustamat.jigsawpuzzlefloss.pieces.PieceEdge;
 import github.adjustamat.jigsawpuzzlefloss.pieces.PieceEdge.HalfEdge;
 import github.adjustamat.jigsawpuzzlefloss.pieces.PieceEdge.RandomEdge;
@@ -27,36 +27,39 @@ public final int height;
 public final int totalPieces;
 
 public final Bitmap image;
+
 public final float pieceImageSize;
 
 public final Box singlePiecesContainer;
-public final PlayField playingFieldContainer;
+public final PlayMat playMatContainer;
 
-private ImagePuzzle(int width, int height, Bitmap image, List<GroupOrSinglePiece> pieceList)
+private ImagePuzzle(int width, int height, Bitmap croppedImage, List<GroupOrSinglePiece> pieceList)
 {
    this.width = width;
    this.height = height;
    this.totalPieces = width * height;
    
-   this.image = image;
-   this.pieceImageSize = (float) image.getHeight() / height;
+   
+   
+   this.image = croppedImage;
+   this.pieceImageSize = (float) croppedImage.getHeight() / height;
    
    this.singlePiecesContainer = new Box(pieceList, this);
-   this.playingFieldContainer = new PlayField();
+   this.playMatContainer = new PlayMat();
 }
 
 /**
  * Generate a random jigsaw pattern for the given image and size of the ImagePuzzle.
  * @param pWidth the width, in number of pieces
  * @param pHeight the height, in number of pieces
- * @param image the image
+ * @param croppedImage the image
  * @param rng a random number generator
  * @return a new ImagePuzzle with the given size and image
  */
-public static ImagePuzzle generateNewPuzzle(int pWidth, int pHeight, Bitmap image, Random rng)
+public static ImagePuzzle generateNewPuzzle(int pWidth, int pHeight, Bitmap croppedImage, Random rng)
 {
    LinkedList<GroupOrSinglePiece> singlePieces = new LinkedList<>();
-   ImagePuzzle ret = new ImagePuzzle(pWidth, pHeight, image, singlePieces);
+   ImagePuzzle ret = new ImagePuzzle(pWidth, pHeight, croppedImage, singlePieces);
    HalfEdge[][] pool = PieceEdge.generateAllJigsawEdges();
    
    RandomEdge[] wests = new RandomEdge[pHeight];

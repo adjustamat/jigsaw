@@ -21,9 +21,9 @@ import github.adjustamat.jigsawpuzzlefloss.pieces.SinglePiece;
 
 /**
  * A (named) group of {@link AbstractPiece}s ({@link SinglePiece}s and/or {@link LargerPiece}s).
- * A group of only SinglePieces can be in the {@link Box}, and any group can be on the {@link PlayField}.
+ * A group of only SinglePieces can be in the {@link Box}, and any group can be on the {@link PlayMat}.
  * A group can also constitute a temporary Container by itself.
- * On the PlayField, a group can be a pile (with all pieces overlapping), spread out (with each piece visible),
+ * On the PlayMat, a group can be a pile (with all pieces overlapping), spread out (with each piece visible),
  * or in a custom state (with some pieces overlapping).
  */
 public class Group
@@ -228,7 +228,7 @@ public boolean movePieceFrom(Container other, AbstractPiece piece)
 //
 //   }
 //   else {
-//      PlayField playField = (PlayField) other;
+//      PlayMat playMat = (PlayMat) other;
 //
 //   }
    return true;
@@ -258,7 +258,7 @@ public void remove(AbstractPiece p)
 {
    pieces.remove(p.getIndexInContainer());
    if (isExpanded()) {
-      // TODO: remove 1 reference from Box.expandedList - maybe have to use Box method ungroupPiece - or is this method only used when moving a piece from a tempstorage to playfield or box?
+      // TODO: remove 1 reference from Box.expandedList - maybe have to use Box method ungroupPiece - or is this method only used when moving a piece from a tempstorage to playmat or box?
    }
    // TODO: all objects with higher index must index--!
 }
@@ -337,7 +337,7 @@ public void setExpanded(boolean expanded)
    box.setExpanded(this, expanded);
 }
 
-//public boolean isPile() // TODO: maybe move these to PlayField.java
+//public boolean isPile() // TODO: maybe move these to PlayMat.java
 //{
 //   // TOD
 //   return false;

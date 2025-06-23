@@ -7,13 +7,13 @@
     android:layout_height="match_parent"
     android:background="?attr/fullscreenBackgroundColor"
     android:theme="@style/ThemeOverlay.JigsawPuzzleFLOSS.FullscreenContainer"
-    tools:context=".PlayFieldFragment">
+    tools:context=".PlayMatFragment">
 
     <!-- The primary full-screen view. This can be replaced with whatever view
           is needed to present your content, e.g. VideoView, SurfaceView,
           TextureView, etc. -->
     <RelativeLayout
-        android:id="@+id/layoutPlayFieldFragment"
+        android:id="@+id/layoutPlayMatFragment"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:keepScreenOn="true">
@@ -35,7 +35,7 @@
             android:layout_alignParentEnd="true">
 
             <SurfaceView
-                android:id="@+id/srcPlayField"
+                android:id="@+id/srcPlayMat"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent" />
         </androidx.core.widget.NestedScrollView>
