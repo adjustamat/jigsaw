@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context=".MainMenuFragment"
+    tools:ignore="ContentDescription">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_horizontal"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="@string/app_name"
+            android:textAppearance="@style/TextAppearance.AppCompat.Title"
+            app:drawableBottomCompat="@android:drawable/button_onoff_indicator_on"
+            app:drawableStartCompat="@mipmap/ic_launcher"
+            />
+
+        <TextView
+            style="@style/JigsawPuzzle.MainMenu.Text.ListTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/lblStartedPuzzles"/>
+        <TextView android:id="@+id/lblNoStartedPuzzles"
+            style="@style/JigsawPuzzle.MainMenu.Text.ListPlaceholder"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/lblNoStartedPuzzles"/>
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/lstStartedPuzzles"
+            style="@style/JigsawPuzzle.MainMenu.List"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+
+        <TextView
+            style="@style/JigsawPuzzle.MainMenu.Text.ListTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/lblBitmaps"/>
+        <TextView android:id="@+id/lblNoBitmaps"
+            style="@style/JigsawPuzzle.MainMenu.Text.ListPlaceholder"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/lblNoBitmaps"
+            />
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/lstBitmaps"
+            style="@style/JigsawPuzzle.MainMenu.List"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+        <!-- TODO: removing from lstBitmaps (and the database/prefStringList) -->
+
+        <Button android:id="@+id/btnDownloadBitmap"
+            style="@style/JigsawPuzzle.MainMenu.Button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/btnDownloadBitmap"/>
+
+        <!--  TODO: btnOpenBitmap: contentproviders API ! -->
+        <Button android:id="@+id/btnOpenBitmap"
+            style="@style/JigsawPuzzle.MainMenu.Button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/btnOpenBitmap"/>
+
+        <Button android:id="@+id/btnSettings"
+            style="@style/JigsawPuzzle.MainMenu.Button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/btnSettings"/>
+
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>

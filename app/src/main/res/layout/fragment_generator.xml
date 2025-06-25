@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context=".GeneratorFragment"
+    tools:ignore="ContentDescription">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="vertical"
+        >
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+            <Button android:id="@+id/btnCrop"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="0"
+                android:text="@string/btnCrop"/>
+            <ImageView android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"/>
+        </LinearLayout>
+
+<!--      see post-it. load more options on top after crop.
+  interface GeneratorPrefs
+{
+   enum Strs{
+      CaPiecesList
+
+      itemview_generator_size
+      btnChooseSize
+
+      <string name="btnChooseSizeUnselected">~ %d pieces</string>
+    <string name="btnChooseSizeSelected">~ %d pieces (%d X*¤ %d)</string>
+  -->
+        <LinearLayout android:id="@+id/llvGenerateSizes"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"/>
+
+        <Button android:id="@+id/btnStart"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:text="@string/btnStart"/>
+
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>

@@ -4,11 +4,11 @@
     android:id="@+id/frameFullscreenLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="?attr/fullscreenBackgroundColor"
     android:keepScreenOn="true"
-    android:theme="@style/ThemeOverlay.JigsawPuzzleFLOSS.FullscreenContainer"
-    tools:context=".PlayMatFragment">
-    <!-- android:background="?attr/fullscreenBackgroundColor" is blue. -->
+    tools:context=".PlayMatFragment"
+    tools:ignore="ContentDescription">
+    <!-- android:theme="@style/ThemeOverlay.JigsawPuzzleFLOSS.FullscreenContainer"
+    android:background="?attr/fullscreenBackgroundColor" is blue. -->
 
     <!--
     TODO: temporary storage views (view_temporary_storage_oval) can be children of frameFullscreenLayout.
@@ -24,7 +24,6 @@
 
         <!--      android:textStyle="bold"-->
         <!--      android:textSize="50sp"-->
-        <!--      android:textColor="?attr/fullscreenTextColor"-->
         <!--      android:gravity="center"-->
 
 <!--       TODO: another class, not NestedScrollView -->
@@ -45,7 +44,6 @@
             style="@style/Widget.AppCompat.ImageButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:contentDescription="@string/imgSeparator"
             android:foregroundGravity="center_horizontal"
             android:src="@drawable/ic_arrow_up_down" />
         <!--        android:minHeight="48dp" -->
@@ -61,7 +59,6 @@
                 android:id="@+id/imgBoxCover"
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
-                android:contentDescription="@string/imgBoxCover"
                 android:foregroundGravity="fill_horizontal|bottom"
                 android:maxWidth="60dp"
                 android:minWidth="30dp"
@@ -81,38 +78,10 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:contentDescription="@string/srcMiniMap"
                 android:maxWidth="100dp"
                 android:minWidth="40dp"
                 android:minHeight="40dp" />
         </LinearLayout>
     </LinearLayout>
-
-    <!-- This FrameLayout insets its children based on system windows using
-          android:fitsSystemWindows. -->
-    <!--FrameLayout
-        android:id="@+id/frameFitsSystemWindows"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:fitsSystemWindows="true">
-
-        <LinearLayout
-            android:id="@+id/llhFullscreenButtons"
-            style="@style/Widget.Theme.JigsawPuzzleFLOSS.ButtonBar.Fullscreen"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="bottom|center_horizontal"
-            android:orientation="horizontal">
-
-            <Button
-                android:id="@+id/btnDummy"
-                style="?android:attr/buttonBarButtonStyle"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="@string/btnDummy" />
-        </LinearLayout>
-
-    </FrameLayout-->
 
 </FrameLayout>

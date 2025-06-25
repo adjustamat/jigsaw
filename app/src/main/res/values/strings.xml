@@ -1,37 +1,38 @@
 <resources>
     <string name="app_name">Jigsaw Puzzle FLOSS</string>
 
-    <!-- Display strings -->
-    <string name="group_default_name">Group %d</string>
-
-    <!-- UI - ContentDescriptions -->
-    <string name="imgBoxItem">A piece</string>
-    <string name="imgTemporaryStorageThumbnail">Temporary Storage thumbnail</string>
-    <string name="imgSeparator">Resize box</string>
-    <string name="imgBoxCover">Box Cover</string>
-    <string name="srcMiniMap">Mini Map</string>
-
-    <!-- Dialog: on Back from PlayMatFragment -->
+    <!-- Dialog: PlayMatFragment.handleOnBackPressed -->
     <string name="btnLeaveNot">Continue Puzzle</string>
     <string name="btnLeaveToMenu">Main Menu</string>
     <string name="btnLeaveApp">Quit</string>
 
-    <!-- Setting: where to download to.  -->
+    <!-- MainMenuFragment -->
+    <string name="btnSettings">Settings</string>
+    <string name="btnDownloadBitmap">Find images online…</string>
+    <string name="btnOpenBitmap">Open image(s)…</string>
+    <string name="lblStartedPuzzles">Started games</string>
+    <string name="lblNoStartedPuzzles">&lt;No started games&gt;\n
+        (Click on an image below to start a new game)</string>
+    <string name="lblBitmaps">Images</string>
+    <string name="lblNoBitmaps">&lt;Nothing here!&gt;\n
+        (Download or open an image with the buttons below)</string>
+
+    <!-- GeneratorFragment -->
+    <string name="btnCrop">Crop</string>
+    <string name="btnStart">Start</string>
+    <string name="btnChooseSizeUnselected">~ %d pieces</string>
+    <string name="btnChooseSizeSelected">~ %d pieces (%d X*¤ %d)</string>
+
+    <!-- Display strings -->
+    <string name="group_default_name">Group %d</string>
+
+    <!-- Prefs  -->
+    <string name="preftitle_other_download_dir">Location for downloaded images</string>
+    <string name="preftitle_other_download_source">Webpage with images</string>
 
 
-<!--    -->
-<!--    &lt;!&ndash; Preference Titles &ndash;&gt;-->
-<!--    <string name="messages_header">Messages</string>-->
-<!--    <string name="sync_header">Sync</string>-->
+    <!-- UNSORTED RESOURCES BELOW THIS -->
+    <dimen name="NEW_RESOURCES_BELOW_THIS">1dp</dimen>
 
-<!--    &lt;!&ndash; Messages Preferences &ndash;&gt;-->
-<!--    <string name="signature_title">Your signature</string>-->
-<!--    <string name="reply_title">Default reply action</string>-->
-
-<!--    &lt;!&ndash; Sync Preferences &ndash;&gt;-->
-<!--    <string name="sync_title">Sync email periodically</string>-->
-<!--    <string name="attachment_title">Download incoming attachments</string>-->
-<!--    <string name="attachment_summary_on">Automatically download attachments for incoming emails</string>-->
-<!--    <string name="attachment_summary_off">Only download attachments when manually requested</string>-->
 
 </resources>

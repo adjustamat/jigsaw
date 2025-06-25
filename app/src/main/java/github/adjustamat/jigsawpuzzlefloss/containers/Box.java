@@ -172,6 +172,6 @@ public interface GroupOrSinglePiece
    void setIndex(int newIndex);
    void decrementIndex();
    void incrementIndex();
-   // BoxItemView
+   // MenuListItemView
 }
 }

@@ -5,9 +5,10 @@
     android:id="@+id/frameFullscreenLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="?attr/fullscreenBackgroundColor"
-    android:theme="@style/ThemeOverlay.JigsawPuzzleFLOSS.FullscreenContainer"
-    tools:context=".PlayMatFragment">
+    tools:context=".PlayMatFragment" tools:ignore="ContentDescription">
+
+<!--    android:background="?attr/fullscreenBackgroundColor"-->
+<!--    android:theme="@style/ThemeOverlay.JigsawPuzzleFLOSS.FullscreenContainer"-->
 
     <!-- The primary full-screen view. This can be replaced with whatever view
           is needed to present your content, e.g. VideoView, SurfaceView,
@@ -21,7 +22,6 @@
 
         <!--      android:textStyle="bold"-->
         <!--      android:textSize="50sp"-->
-        <!--      android:textColor="?attr/fullscreenTextColor"-->
         <!--      android:gravity="center"-->
 
         <androidx.core.widget.NestedScrollView
@@ -48,7 +48,6 @@
             android:layout_above="@id/lstBox"
             android:layout_alignParentStart="true"
             android:layout_alignParentEnd="true"
-            android:contentDescription="@string/imgSeparator"
             android:foregroundGravity="center_horizontal"
             android:src="@drawable/ic_arrow_up_down" />
 
@@ -58,7 +57,6 @@
             android:layout_height="wrap_content"
             android:layout_alignParentStart="true"
             android:layout_alignParentBottom="true"
-            android:contentDescription="@string/imgBoxCover"
             android:maxWidth="60dp"
             android:maxHeight="60dp"
             android:minWidth="30dp"
@@ -100,7 +98,6 @@
 
         <LinearLayout
             android:id="@+id/llhFullscreenButtons"
-            style="@style/Widget.Theme.JigsawPuzzleFLOSS.ButtonBar.Fullscreen"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_gravity="bottom|center_horizontal"
@@ -111,8 +108,7 @@
                 style="?android:attr/buttonBarButtonStyle"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="@string/btnDummy" />
+                android:layout_weight="1" />
         </LinearLayout>
 
     </FrameLayout>

@@ -15,9 +15,12 @@ interface StrPref{ }
 
 interface GeneratorPrefs
 {
+   enum Strs{
+      CaPiecesList
+   }
 }
 
-interface BackgroundPrefs
+interface BgImagePrefs
 {
 }
 

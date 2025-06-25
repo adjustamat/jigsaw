@@ -16,9 +16,10 @@ import github.adjustamat.jigsawpuzzlefloss.containers.Box;
 import github.adjustamat.jigsawpuzzlefloss.containers.Box.GroupOrSinglePiece;
 import github.adjustamat.jigsawpuzzlefloss.containers.Group;
 import github.adjustamat.jigsawpuzzlefloss.pieces.SinglePiece;
+import github.adjustamat.jigsawpuzzlefloss.ui.BoxAdapter.BoxItemView;
 
 public class BoxAdapter
- extends RecyclerView.Adapter<BoxAdapter.BoxItemView>
+ extends RecyclerView.Adapter<BoxItemView>
 {
 //private RecyclerView recyclerView;
 protected final Box box;
@@ -35,7 +36,7 @@ public @NonNull BoxItemView onCreateViewHolder(@NonNull ViewGroup parent, int vi
 {
    LayoutInflater inflater = LayoutInflater.from(parent.getContext());
    BoxItemView ret = new BoxItemView(
-    inflater.inflate(R.layout.item_box_itemview, parent, false)
+    inflater.inflate(R.layout.itemview_box_item, parent, false)
    );
    return ret;
 }
@@ -114,7 +115,7 @@ private void onBind(@NonNull BoxItemView holder, SinglePiece piece)
    // TODO: left and top might not be 0 if the rotated unrotatedFullSize is smaller in some dimension than thumbnail
    thumbnailCanvas.drawBitmap(unrotatedFullSize,0f,0f,null);
    
-   // save thumbnail as a BitmapDrawable? I don't think so. BoxItemView is recycled!! thus,
+   // save thumbnail as a BitmapDrawable? I don't think so. MenuListItemView is recycled!! thus,
    //  we have to rotate and shrink the buffered unrotatedFullSize every time.
 
    holder.imgBoxItem.setImageBitmap(thumbnail);

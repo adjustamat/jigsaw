@@ -1,6 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
-   <style name="Widget.Theme.JigsawPuzzleFLOSS.ButtonBar.Fullscreen" parent="">
-      <item name="android:background">@color/black_overlay</item>
-      <item name="android:buttonBarStyle">?android:attr/buttonBarStyle</item>
-   </style>
+    <!--   <color name="black">#FF000000</color>-->
+    <!--   <color name="white">#FFFFFFFF</color>-->
+    <!--   <color name="light_blue_600">#FF039BE5</color>-->
+    <!--   <color name="light_blue_900">#FF01579B</color>-->
+    <!--   <color name="light_blue_A200">#FF40C4FF</color>-->
+    <!--   <color name="light_blue_A400">#FF00B0FF</color>-->
+
+    <!-- For other colors, see themes.xml (day and night) -->
+    <color name="color_black_overlay">#66000000</color>
+
+    <!--   <style name="JigsawPuzzle_ButtonBar" parent="">-->
+    <!--      <item name="android:background">@color/color_black_overlay</item>-->
+    <!--      <item name="android:buttonBarStyle">?android:attr/buttonBarStyle</item>-->
+    <!--   </style>-->
+
+    <style name="JigsawPuzzle_Theme" parent="Base.Theme.JigsawPuzzleFLOSS"/>
+
+    <style name="JigsawPuzzle.MainMenu.Button" parent="Widget.AppCompat.Button.Colored">
+        <item name="android:layout_marginTop">@dimen/mainmenu_item_margin</item>
+        <item name="android:padding">16dp</item>
+        <item name="android:textAppearance">@style/TextAppearance.AppCompat.Menu</item>
+    </style>
+    <style name="JigsawPuzzle.MainMenu.Text.ListTitle">
+        <item name="android:layout_marginTop">@dimen/mainmenu_item_margin</item>
+        <item name="android:textAppearance">@style/TextAppearance.AppCompat.Medium</item>
+        <item name="android:gravity">center_horizontal</item>
+    </style>
+    <style name="JigsawPuzzle.MainMenu.Text.ListPlaceholder">
+        <item name="android:layout_marginTop">@dimen/mainmenu_item_margin</item>
+        <item name="android:gravity">center_horizontal</item>
+        <item name="android:textColor">@color/color_placeholder_text</item>
+    </style>
+    <style name="JigsawPuzzle.MainMenu.List">
+        <item name="layoutManager">GridLayoutManager</item>
+        <item name="android:nestedScrollingEnabled">true</item>
+        <item name="android:orientation">vertical</item>
+    </style>
+
+    <!--   <style name="JigsawPuzzle_MainMenu_Frame">-->
+    <!--      <item name="android:layout_marginTop">@dimen/mainmenu_item_margin</item>-->
+    <!--      <item name="android:background">@android:drawable/picture_frame</item>-->
+    <!--   </style>-->
+
 </resources>

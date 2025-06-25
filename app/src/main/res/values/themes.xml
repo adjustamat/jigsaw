@@ -1,13 +1,15 @@
-<resources xmlns:tools="http://schemas.android.com/tools">
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
    <!-- Base application theme. -->
    <style name="Base.Theme.JigsawPuzzleFLOSS" parent="Theme.Material3.DayNight.NoActionBar">
       <!-- Customize your light theme here. -->
       <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
    </style>
 
-   <style name="Theme.JigsawPuzzleFLOSS" parent="Base.Theme.JigsawPuzzleFLOSS"/>
-   <style name="ThemeOverlay.JigsawPuzzleFLOSS.FullscreenContainer" parent="">
-      <item name="fullscreenBackgroundColor">@color/light_blue_600</item>
-      <item name="fullscreenTextColor">@color/light_blue_A200</item>
-   </style>
+   <color name="color_placeholder_text">#ffC00003</color>
+
+<!--   <style name="ThemeOverlay.JigsawPuzzleFLOSS.FullscreenContainer" parent="">-->
+<!--      <item name="fullscreenBackgroundColor">@color/light_blue_600</item>-->
+<!--      <item name="fullscreenTextColor">@color/light_blue_A200</item>-->
+<!--   </style>-->
 </resources>

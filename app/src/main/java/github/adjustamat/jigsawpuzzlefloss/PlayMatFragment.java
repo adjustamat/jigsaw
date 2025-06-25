@@ -21,6 +21,7 @@ import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.widget.NestedScrollView;
+import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -37,7 +38,7 @@ import github.adjustamat.jigsawpuzzlefloss.ui.PuzzleGraphics;
  * status bar and navigation/system bar) with user interaction.
  */
 public class PlayMatFragment
- extends Frag
+ extends Fragment implements Frag
 {
 /**
  * Some older devices needs a small delay between UI widget updates
@@ -174,23 +175,23 @@ private Views ui;
 BoxAdapter bigBoxAdapter;
 MiniBoxAdapter miniBoxAdapter;
 
-private boolean hiddenUI;
+private boolean fullscreenMode;
 
 /**
  * Whether or not the system UI should be auto-hidden after
- * {@link #autoHideDelayMillis} milliseconds.
+ * {@link #autoFullscreenDelayMillis} milliseconds.
  */
-private boolean autoHide = true;
+private boolean autoFullscreen = true;
 
 /**
- * If {@link #autoHide} is set, the number of milliseconds to wait after
+ * If {@link #autoFullscreen} is set, the number of milliseconds to wait after
  * user interaction before hiding the system UI.
  */
-private int autoHideDelayMillis = 3000;
+private int autoFullscreenDelayMillis = 3000;
 
-private void unhideUI()
+private void endFullscreen()
 {
-   hiddenUI = false;
+   fullscreenMode = false;
    
    // Show the system bar
    ui.layoutPlayMatFragment.setSystemUiVisibility(
@@ -198,11 +199,11 @@ private void unhideUI()
      | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION);
 }
 
-private final Runnable runHideUIMethod = this::hideUI;
+private final Runnable runStartFullscreen = this::startFullscreen;
 
-private void hideUI()
+private void startFullscreen()
 {
-   hiddenUI = true;
+   fullscreenMode = true;
    
    Activity activity = getActivity();
    if (activity != null && activity.getWindow() != null) {
@@ -225,9 +226,9 @@ private void hideUI()
  */
 private void delayAutoHideUI(long millis)
 {
-   ui.mainHandler.removeCallbacks(runHideUIMethod);
-   if (autoHide)
-      ui.mainHandler.postDelayed(runHideUIMethod, millis);
+   ui.mainHandler.removeCallbacks(runStartFullscreen);
+   if (autoFullscreen)
+      ui.mainHandler.postDelayed(runStartFullscreen, millis);
 }
 
 /**
@@ -238,17 +239,27 @@ private void delayAutoHideUI(long millis)
 @SuppressLint("ClickableViewAccessibility")
 private final View.OnTouchListener autoHideUITouchListener =
  (view, motionEvent)->{
-    delayAutoHideUI(autoHideDelayMillis);
+    delayAutoHideUI(autoFullscreenDelayMillis);
     return false;
  };
 
 public static PlayMatFragment newInstance(/* param1, String param2*/)
 {
-   PlayMatFragment fragment = new PlayMatFragment();
-   Bundle args = new Bundle();
-   //args.put
-   fragment.setArguments(args);
-   return fragment;
+   return new PlayMatFragment();
+}
+
+public void startGame(@NonNull ImagePuzzle imagePuzzle)
+{
+   // initialize PuzzleGraphics
+   PuzzleGraphics.init(startedGame = imagePuzzle);
+   
+   // initialize Box
+   bigBoxAdapter = new BoxAdapter(imagePuzzle.singlePiecesContainer);
+   miniBoxAdapter = new MiniBoxAdapter(imagePuzzle.singlePiecesContainer);
+   retractBox();
+   
+   // show everything (layout is INVISIBLE before startGame)
+   ui.layoutPlayMatFragment.setVisibility(View.VISIBLE);
 }
 
 public PlayMatFragment()
@@ -260,7 +271,7 @@ public PlayMatFragment()
 public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
 {
    // Inflate the layout for this fragment
-   return inflater.inflate(R.layout.fragment_play_mat, container, false);
+   return inflater.inflate(R.layout.fragment_playmat, container, false);
 }
 
 @Override
@@ -268,7 +279,7 @@ public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle sa
 public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState)
 {
    super.onViewCreated(view, savedInstanceState);
-   hiddenUI = false;
+   fullscreenMode = false;
    
    ui = new Views(
     view.findViewById(R.id.zoomAndScrollView),
@@ -291,27 +302,10 @@ public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceStat
 public void onCreate(@Nullable Bundle savedInstanceState)
 {
    super.onCreate(savedInstanceState);
-   Bundle arguments = getArguments();
-   if (arguments != null) {
-//      mParam1 = arguments.get
-   }
+   
 }
 
 private ImagePuzzle startedGame;
-
-public void startGame(@NonNull ImagePuzzle imagePuzzle)
-{
-   // initialize PuzzleGraphics
-   PuzzleGraphics.init(startedGame = imagePuzzle);
-   
-   // initialize Box
-   bigBoxAdapter = new BoxAdapter(imagePuzzle.singlePiecesContainer);
-   miniBoxAdapter = new MiniBoxAdapter(imagePuzzle.singlePiecesContainer);
-   retractBox();
-   
-   // show everything (layout is INVISIBLE before startGame)
-   ui.layoutPlayMatFragment.setVisibility(View.VISIBLE);
-}
 
 @Override
 public void onResume()
@@ -324,7 +318,7 @@ public void onResume()
    // Trigger the initial hide() shortly after the activity has been
    // created, to briefly hint to the user that UI controls
    // are available.
-   if (autoHide)
+   if (autoFullscreen)
       delayAutoHideUI(INITIAL_AUTO_HIDE_DELAY_MILLIS);
 }
 
@@ -338,7 +332,7 @@ public void onPause()
       // Clear the systemUiVisibility flag
       getActivity().getWindow().getDecorView().setSystemUiVisibility(0);
    }
-   unhideUI();
+   endFullscreen();
 }
 
 //@Override
@@ -351,32 +345,32 @@ public void onPause()
 
 private void toggle()
 {
-   if (hiddenUI) {
-      unhideUI();
+   if (fullscreenMode) {
+      endFullscreen();
    }
    else {
-      hideUI();
+      startFullscreen();
    }
 }
 
-public boolean isAutoHide()
+public boolean isAutoFullscreen()
 {
-   return autoHide;
+   return autoFullscreen;
 }
 
-public void setAutoHide(boolean autoHide)
+public void setAutoFullscreen(boolean autoFullscreen)
 {
-   this.autoHide = autoHide;
+   this.autoFullscreen = autoFullscreen;
 }
 
-public int getAutoHideDelayMillis()
+public int getAutoFullscreenDelayMillis()
 {
-   return autoHideDelayMillis;
+   return autoFullscreenDelayMillis;
 }
 
-public void setAutoHideDelayMillis(int autoHideDelayMillis)
+public void setAutoFullscreenDelayMillis(int autoHideDelayMillis)
 {
-   this.autoHideDelayMillis = autoHideDelayMillis;
+   this.autoFullscreenDelayMillis = autoHideDelayMillis;
 }
 
 void expandBox()
@@ -414,7 +408,7 @@ private void save()
 
 }
 
-void handleOnBackPressed(BackCallback callback)
+public void handleOnBackPressed(BackCallback callback)
 {
    save();
    

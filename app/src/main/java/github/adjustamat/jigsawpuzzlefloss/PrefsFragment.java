@@ -9,8 +9,9 @@ import androidx.preference.PreferenceFragmentCompat;
 import androidx.preference.PreferenceScreen;
 import androidx.preference.SwitchPreferenceCompat;
 
-public class SettingsFragment
+public class PrefsFragment
  extends PreferenceFragmentCompat
+ implements Frag
 {
 
 @Override
@@ -49,5 +50,10 @@ Warning: Add the PreferenceCategory to the PreferenceScreen before adding childr
    
    // TODO: see
    //  https://developer.android.com/develop/ui/views/components/settings/programmatic-hierarchy#java
+}
+
+public void handleOnBackPressed(BackCallback callback)
+{
+   callback.goBackToMenu();
 }
 }

@@ -1,5 +1,6 @@
 package github.adjustamat.jigsawpuzzlefloss;
 
+import android.net.Uri;
 import android.os.Bundle;
 
 import androidx.activity.EdgeToEdge;
@@ -48,7 +49,7 @@ protected void onCreate(Bundle savedInstanceState)
    // TODO: check state. maybe not show menu fragment, go directly to playmat.
    showNewMenu();
    
-  
+   
    
    
    //
@@ -60,6 +61,16 @@ void showNewMenu()
 {
    everShowedMenu = true;
    showFrag(MainMenuFragment.newInstance());
+}
+
+void showNewGenerator(Uri image)
+{
+   showFrag(GeneratorFragment.newInstance(image));
+}
+
+void showNewPrefs()
+{
+   showFrag(new PrefsFragment());
 }
 
 void showNewPlayMat(/*TODO!*/)
