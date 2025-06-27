@@ -35,8 +35,9 @@ public void onCreate(@Nullable Bundle savedInstanceState)
    Bundle arguments = getArguments();
    if (arguments != null) {
       Uri uri = arguments.getParcelable(ARG_IMAGE_URI);
+      assert (uri != null);
       Context ctx = requireContext();
-      
+      String mimetype = ctx.getContentResolver().getType(uri);
       //ImageDecoder.createSource(ctx.getContentResolver(),uri);
       //ContentResolver.wrap(contentProvider)
       //MediaStore.Images.Media.
@@ -53,12 +54,12 @@ public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle sa
    return inflater.inflate(R.layout.fragment_generator, container, false);
 }
 
-private Point calculate(Bitmap bitmap, int ca)
+private Point calculate(Bitmap bitmap, int circa)
 {
    double ratio = (float) bitmap.getWidth() / bitmap.getHeight();
-   // equation: A * (ratio*A) = ca   =>
-   // =>   A = sqrt(ca/ratio)
-   double height = Math.sqrt(ca / ratio);
+   // equation: A * (ratio*A) = circa   =>
+   // =>   A = sqrt(circa/ratio)
+   double height = Math.sqrt(circa / ratio);
    double width = ratio * height;
    return new Point((int) Math.round(width), (int) Math.round(height));
 }

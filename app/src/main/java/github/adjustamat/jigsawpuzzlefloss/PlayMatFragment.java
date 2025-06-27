@@ -243,10 +243,10 @@ private final View.OnTouchListener autoHideUITouchListener =
     return false;
  };
 
-public static PlayMatFragment newInstance(/* param1, String param2*/)
-{
-   return new PlayMatFragment();
-}
+//public static PlayMatFragment newInstance(/* param1, String param2*/)
+//{
+//   return new PlayMatFragment();
+//}
 
 public void startGame(@NonNull ImagePuzzle imagePuzzle)
 {

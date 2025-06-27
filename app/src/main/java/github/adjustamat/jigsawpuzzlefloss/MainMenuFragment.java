@@ -24,11 +24,6 @@ public class MainMenuFragment
  implements Frag, ActivityResultCallback<List<Uri>>
 {
 
-public static MainMenuFragment newInstance()
-{
-   return new MainMenuFragment();
-}
-
 public MainMenuFragment()
 {
    // Required empty public constructor
@@ -46,12 +41,7 @@ public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle sa
    // Inflate the layout for this fragment
    return inflater.inflate(R.layout.fragment_mainmenu, container, false);
 }
-/*
- // TODO: use an imagepicker in main menu (or saved games) to start a game. button to show settingsfragment.
-   // TODO: choose bitmap, choose crop and number of pieces!
-   ImagePuzzle puzzle = ImagePuzzle.generateNewPuzzle(7,5,BITMAP,new Random());
-   showNewPlayMat();
- */
+
 
 public void handleOnBackPressed(BackCallback callback)
 {
@@ -72,6 +62,11 @@ private void startPickImagesForResult()
 public void onActivityResult(List<Uri> images)
 {
 
+/*
+  
+   ImagePuzzle puzzle = ImagePuzzle.generateNewPuzzle(7,5,BITMAP,new Random());
+   showNewPlayMat();
+ */
 }
 
 public static class MenuListItemView

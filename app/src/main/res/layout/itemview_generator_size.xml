@@ -10,7 +10,7 @@
         android:id="@+id/btnChooseSize"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/app_name"
+        tools:text="@string/btnChooseSizeSelected"
         />
 
 </FrameLayout>

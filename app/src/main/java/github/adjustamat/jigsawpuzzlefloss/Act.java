@@ -12,10 +12,9 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 
-import java.util.Random;
-
 import github.adjustamat.jigsawpuzzlefloss.Frag.BackCallback;
 import github.adjustamat.jigsawpuzzlefloss.game.ImagePuzzle;
+import github.adjustamat.jigsawpuzzlefloss.prefs.Prefs;
 
 public class Act
  extends AppCompatActivity
@@ -24,6 +23,7 @@ public class Act
 private boolean everShowedMenu = false;
 private Frag currentFrag = null;
 private PlayMatFragment startedGame = null;
+private ImagePuzzle startedPuzzle = null;
 
 private final OnBackPressedCallback onBackPressed = new OnBackPressedCallback(true)
 {
@@ -46,21 +46,20 @@ protected void onCreate(Bundle savedInstanceState)
       v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
       return insets;
    });
-   // TODO: check state. maybe not show menu fragment, go directly to playmat.
+   getOnBackPressedDispatcher().addCallback(onBackPressed);
+   
+   Prefs.init(this);
+   
+   // TODO: check state in prefs, or check intent.
+   //  not always showNewMenu(), sometimes instead go directly to showPuzzle(imagePuzzle).
    showNewMenu();
    
-   
-   
-   
-   //
-   //
-   getOnBackPressedDispatcher().addCallback(onBackPressed);
 }
 
 void showNewMenu()
 {
    everShowedMenu = true;
-   showFrag(MainMenuFragment.newInstance());
+   showFrag(new MainMenuFragment());
 }
 
 void showNewGenerator(Uri image)
@@ -73,19 +72,22 @@ void showNewPrefs()
    showFrag(new PrefsFragment());
 }
 
-void showNewPlayMat(/*TODO!*/)
+void showPuzzle(ImagePuzzle imagePuzzle)
 {
-   startedGame = PlayMatFragment.newInstance();
+   if (startedGame == null)
+      startedGame = new PlayMatFragment();
    showFrag(startedGame);
-   // TODO!
-   startedGame.startGame(/*TODO*/);
+   
+   if (startedPuzzle != imagePuzzle)
+      startedGame.startGame(startedPuzzle = imagePuzzle);
 }
 
 void showFrag(Frag frag)
 {
    FragmentManager manager = getSupportFragmentManager();
    FragmentTransaction transaction = manager.beginTransaction();
-   transaction.replace(R.id.frag, currentFrag = frag);
+   currentFrag = frag;
+   transaction.replace(R.id.frag, currentFrag.thisFragment());
    transaction.addToBackStack(null);
    transaction.commit();
 }
@@ -93,7 +95,9 @@ void showFrag(Frag frag)
 public void goBackToMenu()
 {
    FragmentManager manager = getSupportFragmentManager();
-   manager.popBackStack(); // this shows the menu if everShowedMenu. otherwise it just hides playmat.
+   manager.popBackStack(); // TODO: does it?:  this shows the menu if everShowedMenu. otherwise it just hides playmat.
+   
+   currentFrag = (Frag) manager.findFragmentById(R.id.frag);
    if (!everShowedMenu) {
       showNewMenu();
    }

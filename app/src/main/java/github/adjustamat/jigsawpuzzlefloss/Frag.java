@@ -1,10 +1,15 @@
 package github.adjustamat.jigsawpuzzlefloss;
 
+import androidx.fragment.app.Fragment;
+
 public interface Frag
 {
-interface BackCallback{
+void handleOnBackPressed(BackCallback callback);
+default Fragment thisFragment(){ return (Fragment) this; }
+
+interface BackCallback
+{
    void goBackToMenu();
    void goBackQuit();
 }
-void handleOnBackPressed(BackCallback callback);
 }

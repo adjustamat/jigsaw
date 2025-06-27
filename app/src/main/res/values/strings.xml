@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Jigsaw Puzzle FLOSS</string>
 
@@ -19,20 +20,28 @@
 
     <!-- GeneratorFragment -->
     <string name="btnCrop">Crop</string>
-    <string name="btnStart">Start</string>
+    <string name="btnStart">Start</string>§
+    <string name="lblGeneratorNoSizeSelected"> Select a puzzle size below</string>
     <string name="btnChooseSizeUnselected">~ %d pieces</string>
-    <string name="btnChooseSizeSelected">~ %d pieces (%d X*¤ %d)</string>
+    <string name="btnChooseSizeSelected">~ %d pieces (%d×%d)</string>
+    <string name="btnCustomSize">Custom: </string>
+    <string name="lblCustomWidth">width</string>
+    <string name="lblCustomHeight">height</string>
+    <string name="lblCustomWxH">" × "</string>
+    <string name="lblCustomSize">" = %d pieces"</string>
 
     <!-- Display strings -->
     <string name="group_default_name">Group %d</string>
 
     <!-- Prefs  -->
-    <string name="preftitle_other_download_dir">Location for downloaded images</string>
-    <string name="preftitle_other_download_source">Webpage with images</string>
+    <string name="preftitle_download_dir">Location for downloaded images</string>
+    <string name="preftitle_download_source">Webpage with images</string>
+    <string name="preftitle_size_choices">Puzzle sizes</string>
+    <string name="prefdesc_size_choices">Choose between these sizes when starting a new puzzle (number of pieces, comma-separated)</string>
 
 
     <!-- UNSORTED RESOURCES BELOW THIS -->
-    <dimen name="NEW_RESOURCES_BELOW_THIS">1dp</dimen>
+    <string name="NEW_RESOURCES_BELOW_THIS">UNSORTED strings:</string>
 
 
 </resources>
