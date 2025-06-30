@@ -21,10 +21,10 @@
     <!-- GeneratorFragment -->
     <string name="btnCrop">Crop</string>
     <string name="btnStart">Start</string>§
-    <string name="lblGeneratorNoSizeSelected"> Select a puzzle size below</string>
-    <string name="btnChooseSizeUnselected">~ %d pieces</string>
-    <string name="btnChooseSizeSelected">~ %d pieces (%d×%d)</string>
-    <string name="btnCustomSize">Custom: </string>
+    <string name="lblNoSizeSelected"> Select a puzzle size below</string>
+<!--    <string name="radioChooseSizeUnselected">~ %d pieces</string>-->
+    <string name="radioChooseSize">~ %d pieces (%d×%d)</string>
+    <string name="radioCustomSize">Custom: </string>
     <string name="lblCustomWidth">width</string>
     <string name="lblCustomHeight">height</string>
     <string name="lblCustomWxH">" × "</string>

@@ -1,5 +1,7 @@
 package github.adjustamat.jigsawpuzzlefloss.ui;
 
+import android.content.Context;
+import android.graphics.Bitmap;
 import android.graphics.BitmapShader;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -14,8 +16,13 @@ import android.graphics.PointF;
 import android.graphics.PorterDuff.Mode;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.Shader.TileMode;
+import android.net.Uri;
+import android.provider.MediaStore;
+import android.util.Log;
 
 import androidx.annotation.FloatRange;
+
+import java.io.IOException;
 
 import github.adjustamat.jigsawpuzzlefloss.game.Direction;
 import github.adjustamat.jigsawpuzzlefloss.game.ImagePuzzle;
@@ -25,6 +32,7 @@ import github.adjustamat.jigsawpuzzlefloss.pieces.LargerPiece.LargerPieceEdges;
 public class PuzzleGraphics
 {
 private PuzzleGraphics(){ }
+public static final String DBG="PuzzleGraphics";
 
 private static final MaskFilter embossMaskFilter = new EmbossMaskFilter(
  new float[]{0.5f, 0.5f, 0.5f}, 0.9f, 8, 1);
@@ -40,6 +48,20 @@ private static ImagePuzzle theImagePuzzle;
 //{
 //   outerPaint.setColor(Color.argb(255, r, g, b));
 //}
+
+public static Bitmap loadBitmap(Uri uri, Context ctx){
+   // String mimeType = ctx.getContentResolver().getType(uri);
+   Bitmap ret;
+   // API 28: ImageDecoder.createSource(ctx.getContentResolver(),uri);
+   try {
+      ret = MediaStore.Images.Media.getBitmap(ctx.getContentResolver(), uri);
+   }
+   catch (IOException e) {
+      Log.d(DBG, "loadBitmap("+ uri+") - " + e);
+      ret = null;
+   }
+   return ret;
+}
 
 public static void init(ImagePuzzle imagePuzzle)
 {

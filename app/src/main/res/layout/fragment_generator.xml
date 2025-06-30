@@ -1,65 +1,64 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.core.widget.NestedScrollView
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:gravity="center_vertical"
     android:orientation="vertical"
     tools:context=".GeneratorFragment"
-    tools:ignore="ContentDescription">
+    tools:ignore="ContentDescription"
+    >
+
+    <SurfaceView android:id="@+id/srcCrop"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone"/>
+
     <LinearLayout
+        android:id="@+id/llhCrop"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:gravity="center_vertical"
-        android:orientation="vertical"
+        android:orientation="horizontal"
         >
-
-        <LinearLayout
-            android:id="@+id/llhCrop"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            >
-            <Button android:id="@+id/btnCrop"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_weight="0"
-                android:text="@string/btnCrop"/>
-            <ImageView android:id="@+id/imgCroppedBitmap"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"/>
-            <SurfaceView android:id="@+id/srcCrop"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:visibility="gone"/>
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/llhStart"
+        <Button android:id="@+id/btnCrop"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            >
-            <Button android:id="@+id/btnStart"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:enabled="false"
-                android:text="@string/btnStart"/>
-            <TextView android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/lblGeneratorNoSizeSelected"
-                android:textColor="@color/color_placeholder_text"/>
+            android:layout_weight="0"
+            android:text="@string/btnCrop"/>
+        <ImageView android:id="@+id/imgCroppedBitmap"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"/>
+    </LinearLayout>
 
-        </LinearLayout>
+    <LinearLayout android:id="@+id/llhStart"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        >
+        <Button android:id="@+id/btnStart"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:enabled="false"
+            android:text="@string/btnStart"/>
+        <TextView android:id="@+id/lblNoSizeSelected"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/lblNoSizeSelected"
+            android:textColor="@color/color_placeholder_text"/>
+    </LinearLayout>
 
+    <androidx.core.widget.NestedScrollView android:id="@+id/scrvGeneratorSizes"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="9"
+        android:orientation="vertical">
         <LinearLayout android:id="@+id/llvGeneratorSizes"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical">
-            <!--      TODO: load more options on top after crop.
+            <!--
           GeneratorPrefs
            enum Strs{
               CaPiecesList
@@ -70,7 +69,7 @@
               <string name="btnChooseSizeUnselected">~ %d pieces</string>
             <string name="btnChooseSizeSelected">~ %d pieces (%d X*¤ %d)</string>
           -->
-            <HorizontalScrollView android:id="@+id/scrhCustomSize"
+            <HorizontalScrollView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 >
@@ -80,12 +79,13 @@
                     android:gravity="top"
                     android:orientation="horizontal"
                     >
+
                     <androidx.appcompat.widget.AppCompatRadioButton
-                        android:id="@+id/btnCustomSize"
+                        android:id="@+id/radioCustomSize"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_gravity="center_vertical"
-                        android:text="@string/btnCustomSize"
+                        android:text="@string/radioCustomSize"
                         />
 
                     <LinearLayout
@@ -100,13 +100,16 @@
                         <EditText android:id="@+id/txtCustomWidth"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
+                            android:enabled="false"
                             android:importantForAutofill="no"
                             android:inputType="number"
                             android:minEms="2"/>
                     </LinearLayout>
+
                     <TextView android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/lblCustomWxH"/>
+
                     <LinearLayout
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -119,18 +122,22 @@
                         <EditText android:id="@+id/txtCustomHeight"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
+                            android:enabled="false"
                             android:importantForAutofill="no"
                             android:inputType="number"
                             android:minEms="2"/>
                     </LinearLayout>
+
                     <TextView android:id="@+id/lblCustomSize"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/lblCustomSize"
                         android:visibility="invisible"/>
+
                 </LinearLayout>
             </HorizontalScrollView>
-        </LinearLayout>
 
-    </LinearLayout>
-</androidx.core.widget.NestedScrollView>
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+</LinearLayout>

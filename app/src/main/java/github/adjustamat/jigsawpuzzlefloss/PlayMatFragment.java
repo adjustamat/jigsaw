@@ -13,7 +13,9 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewGroup.LayoutParams;
 import android.view.WindowManager;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -38,7 +40,8 @@ import github.adjustamat.jigsawpuzzlefloss.ui.PuzzleGraphics;
  * status bar and navigation/system bar) with user interaction.
  */
 public class PlayMatFragment
- extends Fragment implements Frag
+ extends Fragment
+ implements Frag
 {
 /**
  * Some older devices needs a small delay between UI widget updates
@@ -52,12 +55,18 @@ private class Views
 {
    final Handler mainHandler;
    
-   final View layoutPlayMatFragment;
-   final NestedScrollView zoomAndScrollView;
-   final SurfaceView srfPlayMat;
+   final FrameLayout frameFullscreenLayout;
+   final LinearLayout llvPlayMatFragment;
+   
+   final NestedScrollView zoomAndScrollView; // TODO: not NestedScrollView, something else!
+   final SurfaceView srcPlayMat;
+   
+   final ImageView imgSeparator;
+   final LinearLayout llhBottom;
+   
    final ImageView imgBoxCover;
    final RecyclerView lstBox;
-   final SurfaceView srfMiniMap;
+   final SurfaceView srcMiniMap;
    
    final RecyclerView.LayoutManager bigBoxLayout;
    final RecyclerView.LayoutManager miniBoxLayout;
@@ -68,20 +77,25 @@ private class Views
    final int miniBoxHeight;
    boolean big = true; // initially true, so setMiniBoxLayout works.
    
-   public Views(NestedScrollView zoomAndScrollView, SurfaceView srfPlayMat,
-    ImageView imgBoxCover, RecyclerView lstBox, SurfaceView srfMiniMap, View layoutPlayMatFragment,
+   public Views(FrameLayout frameFullscreenLayout, LinearLayout llvPlayMatFragment,
+    NestedScrollView zoomAndScrollView, SurfaceView srcPlayMat,
+    ImageView imgSeparator, LinearLayout llhBottom,
+    ImageView imgBoxCover, RecyclerView lstBox, SurfaceView srcMiniMap,
     Context ctx)
    {
+      this.frameFullscreenLayout = frameFullscreenLayout;
+      this.imgSeparator = imgSeparator;
+      this.llhBottom = llhBottom;
       this.mainHandler = new Handler(Looper.getMainLooper());
       
       this.zoomAndScrollView = zoomAndScrollView;
-      this.srfPlayMat = srfPlayMat;
+      this.srcPlayMat = srcPlayMat;
       this.imgBoxCover = imgBoxCover;
       this.lstBox = lstBox;
       this.boxParams = lstBox.getLayoutParams();
       this.miniBoxHeight = boxParams.height;
-      this.srfMiniMap = srfMiniMap;
-      this.layoutPlayMatFragment = layoutPlayMatFragment;
+      this.srcMiniMap = srcMiniMap;
+      this.llvPlayMatFragment = llvPlayMatFragment;
       
       this.bigBoxLayout = new GridLayoutManager(ctx, 3, // TODO: calculate optimal spanCount!
        RecyclerView.VERTICAL, false);
@@ -194,7 +208,7 @@ private void endFullscreen()
    fullscreenMode = false;
    
    // Show the system bar
-   ui.layoutPlayMatFragment.setSystemUiVisibility(
+   ui.llvPlayMatFragment.setSystemUiVisibility(
     View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
      | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION);
 }
@@ -259,7 +273,7 @@ public void startGame(@NonNull ImagePuzzle imagePuzzle)
    retractBox();
    
    // show everything (layout is INVISIBLE before startGame)
-   ui.layoutPlayMatFragment.setVisibility(View.VISIBLE);
+   ui.llvPlayMatFragment.setVisibility(View.VISIBLE);
 }
 
 public PlayMatFragment()
@@ -275,20 +289,24 @@ public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle sa
 }
 
 @Override
-@SuppressLint("ClickableViewAccessibility")
+
 public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState)
 {
    super.onViewCreated(view, savedInstanceState);
    fullscreenMode = false;
    
    ui = new Views(
+    view.findViewById(R.id.frameFullscreenLayout),
+    view.findViewById(R.id.llvPlayMatFragment),
     view.findViewById(R.id.zoomAndScrollView),
     view.findViewById(R.id.srcPlayMat),
+    view.findViewById(R.id.imgSeparator),
+    view.findViewById(R.id.llhBottom),
     view.findViewById(R.id.imgBoxCover),
     view.findViewById(R.id.lstBox),
     view.findViewById(R.id.srcMiniMap),
-    view.findViewById(R.id.layoutPlayMatFragment),
-    requireContext());
+    requireContext()
+   );
    
    // Set up the user interaction to manually show or hide the system UI.
    // TODO: ui.layoutPlayMatFragment.setOnClickListener(v->toggle());
@@ -376,7 +394,7 @@ public void setAutoFullscreenDelayMillis(int autoHideDelayMillis)
 void expandBox()
 {
    ui.imgBoxCover.setVisibility(View.GONE);
-   ui.srfMiniMap.setVisibility(View.GONE);
+   ui.srcMiniMap.setVisibility(View.GONE);
    
    ui.lstBox.setAdapter(bigBoxAdapter);
    ui.setBigBoxLayout(LayoutParams.MATCH_PARENT);
@@ -386,7 +404,7 @@ void retractBox()
 {
    // TODO: check prefs before showing minimap and boxcover
    ui.imgBoxCover.setVisibility(View.VISIBLE);
-   ui.srfMiniMap.setVisibility(View.VISIBLE);
+   ui.srcMiniMap.setVisibility(View.VISIBLE);
    
    ui.lstBox.setAdapter(miniBoxAdapter);
    ui.setMiniBoxLayout();

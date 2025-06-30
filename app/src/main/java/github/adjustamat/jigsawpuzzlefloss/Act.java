@@ -1,5 +1,7 @@
 package github.adjustamat.jigsawpuzzlefloss;
 
+import android.graphics.Bitmap;
+import android.graphics.Point;
 import android.net.Uri;
 import android.os.Bundle;
 
@@ -11,6 +13,8 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
+
+import java.util.Random;
 
 import github.adjustamat.jigsawpuzzlefloss.Frag.BackCallback;
 import github.adjustamat.jigsawpuzzlefloss.game.ImagePuzzle;
@@ -64,6 +68,7 @@ void showNewMenu()
 
 void showNewGenerator(Uri image)
 {
+   // TODO: clicking on image in MainMenuFragment Bitmap list calls this method.
    showFrag(GeneratorFragment.newInstance(image));
 }
 
@@ -72,14 +77,25 @@ void showNewPrefs()
    showFrag(new PrefsFragment());
 }
 
+public void showPuzzleFromGenerator(Point point, Bitmap croppedBitmap)
+{
+   FragmentManager manager = getSupportFragmentManager();
+   manager.popBackStack(); // pop GeneratorFragment
+   
+   ImagePuzzle generated = ImagePuzzle.generateNewPuzzle(point.x, point.y,
+    croppedBitmap, new Random());
+   showPuzzle(generated); // show new PlayMatFragment
+}
+
 void showPuzzle(ImagePuzzle imagePuzzle)
 {
    if (startedGame == null)
       startedGame = new PlayMatFragment();
-   showFrag(startedGame);
    
    if (startedPuzzle != imagePuzzle)
       startedGame.startGame(startedPuzzle = imagePuzzle);
+   
+   showFrag(startedGame);
 }
 
 void showFrag(Frag frag)
@@ -107,4 +123,5 @@ public void goBackQuit()
 {
    finish();
 }
+
 }
