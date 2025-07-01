@@ -16,4 +16,23 @@ public abstract boolean moveGroupFrom(Container other, Group group, Context ctx)
 public abstract void remove(AbstractPiece p);
 
 public abstract void removeGroup(Group group);
+public static class Loading extends Container{
+   public boolean movePieceFrom(Container other, AbstractPiece p)
+   {
+      return false;
+   }
+   
+   public boolean moveGroupFrom(Container other, Group group, Context ctx)
+   {
+      return false;
+   }
+   
+   public void remove(AbstractPiece p)
+   {
+   }
+   
+   public void removeGroup(Group group)
+   {
+   }
+}
 }

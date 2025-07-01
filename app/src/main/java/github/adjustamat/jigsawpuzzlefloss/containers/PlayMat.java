@@ -6,6 +6,7 @@ import android.graphics.RectF;
 
 import androidx.annotation.NonNull;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
 
@@ -20,10 +21,9 @@ public class PlayMat
  extends Container
 {
 float usableMargin;
-List<Group> groups;
-List<LargerPiece> largerPieces;
-List<SinglePiece> singlePieces;
-
+public final List<Group> groups = new ArrayList<>();
+public final List<LargerPiece> largerPieces = new ArrayList<>();
+public final List<SinglePiece> singlePieces = new ArrayList<>();
 //float visibleOuterMargin;
 
 /*
@@ -77,7 +77,7 @@ public boolean moveGroupFrom(Container other, Group group, Context ctx)
    group.setContainer(this, groups.size());
    groups.add(group);
 //   if (other instanceof Group) {
-//      Group temporaryStorage = (Group) other; // other == group !!
+//      Group temporaryContainer = (Group) other; // other == group !!
 //
 //   }
 //   else {
@@ -109,5 +109,16 @@ public void pileUpGroup(Group group, RectF within)
    //  regardless of the width and height of "within".
    
    // TODO: no two pieces can have the exact same coordinates! (absolute position on the play mat)
+}
+
+public void setFromDatabase(List<Group> playMatGroups,
+ List<SinglePiece> playMatSinglePieces, List<LargerPiece> playMatLargerPieces)
+{
+   groups.addAll(playMatGroups);
+   singlePieces.addAll(playMatSinglePieces);
+   largerPieces.addAll(playMatLargerPieces);
+   // TODO: for all list elements, set this as parent container! or maybe their constructors load that from database.
+   // TODO: how save relativePosition?
+   // TODO: how save temporary containers?
 }
 }

@@ -4,12 +4,14 @@ import android.graphics.Path;
 import android.graphics.Point;
 import android.graphics.PointF;
 import android.graphics.RectF;
+import android.os.Parcel;
 
 import androidx.annotation.NonNull;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import github.adjustamat.jigsawpuzzlefloss.containers.Container.Loading;
 import github.adjustamat.jigsawpuzzlefloss.game.Direction;
 import github.adjustamat.jigsawpuzzlefloss.pieces.SinglePiece.SinglePieceEdges;
 import github.adjustamat.jigsawpuzzlefloss.ui.BorderDrawable;
@@ -48,6 +50,21 @@ boolean eastEdge;
 boolean southEdge;
 
 private final RectF edgeWidths = new RectF();
+
+public void writeToParcel(Parcel dest, int flags)
+{
+   // TODO!
+}
+
+public static LargerPiece createFromParcelToPlayMat(Parcel in, Loading loading)
+{
+   // TODO!
+}
+
+public static LargerPiece createFromParcelToGroup(Parcel in, Loading loading)
+{
+   // TODO!
+}
 
 private static class OuterEdgeIndex
 {

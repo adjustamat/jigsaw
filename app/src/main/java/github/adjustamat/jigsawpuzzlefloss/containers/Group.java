@@ -3,6 +3,7 @@ package github.adjustamat.jigsawpuzzlefloss.containers;
 import android.content.Context;
 import android.graphics.PointF;
 import android.graphics.RectF;
+import android.os.Parcel;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
@@ -33,6 +34,26 @@ public class Group
 private static final String DBG = "Group";
 private static int counter = 0;
 
+public void writeToParcel(Parcel dest, int flags)
+{
+   // TODO!
+}
+
+public static Group createFromParcelToBox(Parcel in, Loading loading)
+{
+   // TODO! use SinglePiece.createFromParcelToGroup(), LargerPiece.createFromParcelToGroup()
+}
+
+public static Group createFromParcelToTemp(Parcel in, Loading loading)
+{
+   // TODO! use SinglePiece.createFromParcelToGroup(), LargerPiece.createFromParcelToGroup()
+}
+
+public static Group createFromParcelToPlayMat(Parcel in, Loading loading)
+{
+   // TODO! use SinglePiece.createFromParcelToGroup(), LargerPiece.createFromParcelToGroup()
+}
+
 public class Dirty
 {
    public boolean overlapping = true;
@@ -47,11 +68,11 @@ public final Dirty dirty = new Dirty();
  */
 public final PointF relativePos = new PointF();
 
-private boolean selected;
-private boolean expanded;
+private boolean selected; // = false;
+private boolean expanded; // = false;
 
 private @Nullable String name;
-private final int myNumber;
+private final int groupNumber;
 Container containerParent;
 private int indexInContainer;
 
@@ -60,7 +81,7 @@ int largerPieces = 0;
 
 public Group(Container container, int indexInContainer)
 {
-   myNumber = ++counter;
+   groupNumber = ++counter;
    setContainer(container, indexInContainer);
 }
 
@@ -74,7 +95,7 @@ public Group getNewTemporaryContainer(int newIndex)
 
 private Group(int newIndex)
 {
-   myNumber = 0;
+   groupNumber = 0;
    setContainer(this, newIndex);
 }
 
@@ -87,10 +108,15 @@ public void setContainer(Container newParent, int indexInContainer)
    this.indexInContainer = indexInContainer;
 }
 
+public void replaceLoading(Container loadedContainer)
+{
+   setContainer(loadedContainer, this.indexInContainer);
+}
+
 public @NonNull String getName(Context ctx)
 {
    if (name == null)
-      name = ctx.getString(R.string.group_default_name, myNumber);
+      name = ctx.getString(R.string.group_default_name, groupNumber);
    return name;
 }
 
@@ -213,7 +239,7 @@ public void add(AbstractPiece piece)
 }
 
 /**
- * Move a piece here from another Container - only use when this Group is a temporary storage!
+ * Move a piece here from another Container - only use when this Group is a temporary Container!
  * @param other a Container
  * @param piece the piece
  * @return true
@@ -235,7 +261,7 @@ public boolean movePieceFrom(Container other, AbstractPiece piece)
 }
 
 /**
- * Move a Group of pieces here from another Container - only use when this Group is a temporary storage!
+ * Move a Group of pieces here from another Container - only use when this Group is a temporary Container!
  * @param other a Container
  * @param group the pieces
  * @param ctx a Context
@@ -258,7 +284,7 @@ public void remove(AbstractPiece p)
 {
    pieces.remove(p.getIndexInContainer());
    if (isExpanded()) {
-      // TODO: remove 1 reference from Box.expandedList - maybe have to use Box method ungroupPiece - or is this method only used when moving a piece from a tempstorage to playmat or box?
+      // TODO: remove 1 reference from Box.expandedList - maybe have to use Box method ungroupPiece - or is this method only used when moving a piece from a temporaryContainerGroup to playmat or box?
    }
    // TODO: all objects with higher index must index--!
 }

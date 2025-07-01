@@ -28,27 +28,20 @@ public abstract class AbstractPiece
 {
 public static final float SIDE_SIZE = 120f;
 public static final float HALF_SIZE = 60f;
+// 50 / 1.7f == 29.411764705882355f (from 102 to 60)
+// 100/ 1.7f == 58.82352941176471f (from 102 to 60)
 public static final float MAX_SIZE = (25 + 7.5f + 17.5f) * 2 / 1.7f + SIDE_SIZE;
 public static final int MAX_BUFFER_SIZE = 180;
-// 50 / 1.7f == 29.411764705882355f (from 102 to 60)
-// 100 / 1.7f ==58.82352941176471f (from 102 to 60)
 
-/*
- * The mask of the ImagePuzzle bitmap, equal to the outline "vectorEdges".
- */
-//protected Path imageMask;
-
+private boolean selected;
+public boolean lockedRotation;// = false;
+public boolean lockedInPlace;// = false;
 /**
  * The visual position of this piece, relative to its Group, or if none, to its Container. Can be null in the Box.
  */
 private PointF relativePos;
-private boolean selected;
-public @NonNull Direction currentRotationNorthDirection = Direction.NORTH;
-public boolean lockedRotation = false;
-public boolean lockedInPlace = false;
-
+public @NonNull Direction currentRotationNorthDirection;// = Direction.NORTH;
 protected Point correctPuzzlePosition;
-
 protected @NonNull Container containerParent;
 private int indexInContainer;
 
@@ -64,6 +57,23 @@ protected AbstractPiece(@NonNull Container containerParent, int indexInContainer
 {
    setContainer(containerParent, indexInContainer);
    this.currentRotationNorthDirection = rotation;
+}
+
+// used when loading from database into temporaryContainerGroup or PlayMat
+protected AbstractPiece(Container.Loading loading, int indexInContainer,
+ @NonNull Direction rotation, Point correctPuzzlePosition,
+ float relativeX, float relativeY,
+ boolean lockedRotation, boolean lockedInPlace)
+{
+   this(loading, indexInContainer, rotation, correctPuzzlePosition);
+   setRelativePos(relativeX, relativeY);
+   this.lockedInPlace = lockedInPlace;
+   this.lockedRotation = lockedRotation;
+}
+
+public void replaceLoading(Container loadedContainer)
+{
+   setContainer(loadedContainer, this.indexInContainer);
 }
 
 public void setContainer(@NonNull Container newParent, int indexInContainer)
@@ -149,7 +159,7 @@ public void setGroup(@NonNull Group newGroup, int newIndex)
    if (groupParent != null) {
       groupParent.remove(this);
    }
-   // TODO: do this but not in this method: containerParent.remove(this); // the group needs to be added to containerParent or the group needs to be a temporary storage!
+   // TODO: do this but not in this method: containerParent.remove(this); // the group needs to be added to containerParent or the group needs to be a temporary container!
    groupParent = newGroup;
    indexInContainer = newIndex;
 }

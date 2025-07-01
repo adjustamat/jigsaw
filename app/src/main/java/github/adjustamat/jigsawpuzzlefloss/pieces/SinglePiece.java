@@ -3,15 +3,16 @@ package github.adjustamat.jigsawpuzzlefloss.pieces;
 import android.graphics.Color;
 import android.graphics.Point;
 import android.graphics.RectF;
+import android.os.Parcel;
 
 import androidx.annotation.Nullable;
 
 import github.adjustamat.jigsawpuzzlefloss.containers.Box.GroupOrSinglePiece;
+import github.adjustamat.jigsawpuzzlefloss.containers.Container.Loading;
 import github.adjustamat.jigsawpuzzlefloss.game.Direction;
 import github.adjustamat.jigsawpuzzlefloss.game.ImagePuzzle;
 import github.adjustamat.jigsawpuzzlefloss.pieces.PieceEdge.HalfEdge;
 import github.adjustamat.jigsawpuzzlefloss.pieces.PieceEdge.RandomEdge;
-import github.adjustamat.jigsawpuzzlefloss.ui.BoxAdapter.BoxItemView;
 
 /**
  * A piece of an {@link ImagePuzzle}. Has four edges that are either jigsaw-shaped or flat (at the
@@ -21,26 +22,20 @@ public class SinglePiece
  extends AbstractPiece
  implements GroupOrSinglePiece
 {
-//final RandomEdge westEdge;
-//final RandomEdge northEdge;
-//final RandomEdge eastEdge;
-//final RandomEdge southEdge;
-final RandomEdge[] neswRandomEdges = new RandomEdge[4];
+
+Color edgesColor; // TODO: extract color from the super.imageMask part of the image.
+Color highContrastBgColor;
 
 /**
  * The outline to draw when rotating or when drawing embossed 3D-effect.
  */
 final SinglePieceEdges vectorEdges;
+final RandomEdge[] neswRandomEdges = new RandomEdge[4];
 
 //    PointF shapeSize;
 //   this.shapeSize = new PointF(
 //    imageSize + edgeWidths.left + edgeWidths.right,
 //    imageSize + edgeWidths.top + edgeWidths.bottom);
-
-// ImagePuzzle.Area areaParent // can be calculated when needed, instead of stored in memory.
-
-Color edgesColor; // TODO: extract color from the super.imageMask part of the image.
-Color highContrastBgColor;
 
 class SinglePieceEdges
  extends VectorEdges
@@ -89,6 +84,40 @@ class SinglePieceEdges
    }
 } // class SinglePieceEdges
 
+public void writeToParcel(Parcel dest, int flags)
+{
+   // TODO!
+}
+
+public static SinglePiece createFromParcelToBox(Parcel in, Loading loading)
+{
+   // TODO!
+}
+
+public static SinglePiece createFromParcelToGroup(Parcel in, Loading loading)
+{
+   // TODO!
+}
+
+public static SinglePiece createFromParcelToPlayMat(Parcel in, Loading loading)
+{
+   // TODO!
+}
+
+protected SinglePiece(Loading loading, int indexInContainer,
+ Direction rotation, Point correct, float x, float y, boolean lockedRotation, boolean lockedPlace,
+ @Nullable RandomEdge north, @Nullable RandomEdge east, @Nullable RandomEdge south, @Nullable RandomEdge west,
+ HalfEdge[][] pool
+)
+{
+   super(loading, indexInContainer, rotation, correct, x, y, lockedRotation, lockedPlace);
+   neswRandomEdges[0] = north;
+   neswRandomEdges[1] = east;
+   neswRandomEdges[2] = south;
+   neswRandomEdges[3] = west;
+   vectorEdges = new SinglePieceEdges(pool);
+}
+
 public SinglePiece(ImagePuzzle imagePuzzle, int indexInBox, Point coordinates,
  @Nullable RandomEdge north, @Nullable RandomEdge east, @Nullable RandomEdge south, @Nullable RandomEdge west,
  HalfEdge[][] pool, int randomRotation
@@ -102,7 +131,7 @@ public SinglePiece(ImagePuzzle imagePuzzle, int indexInBox, Point coordinates,
    neswRandomEdges[2] = south;
    neswRandomEdges[3] = west;
    vectorEdges = new SinglePieceEdges(pool);
-   
+
 //   imageOffset = new PointF(coordinates.x * imagePuzzle.pieceImageSize,
 //    coordinates.y * imagePuzzle.pieceImageSize);
 //   zeroOffsetOutline = vectorEdges.drawOuterEdges(0, 0f, 0f);

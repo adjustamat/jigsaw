@@ -1,6 +1,7 @@
 package github.adjustamat.jigsawpuzzlefloss.containers;
 
 import android.content.Context;
+import android.os.Parcel;
 
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -135,7 +136,7 @@ public boolean movePieceFrom(Container other, AbstractPiece p)
    list.add((SinglePiece) p);
    expandedList.add((SinglePiece) p);
 //   if (other instanceof Group) {
-//      Group temporaryStorage = (Group) other;
+//      Group temporaryContainer = (Group) other;
 //
 //   }
 //   else {
@@ -154,8 +155,8 @@ public boolean moveGroupFrom(Container other, Group group, Context ctx)
    group.setContainer(this, list.size());
    list.add(group);
    expandedList.add(group);
-//   if (other instanceof TemporaryStorage) {
-//      TemporaryStorage storage = (TemporaryStorage) other;
+//   if (other instanceof Group) {
+//      Group temporaryContainer = (Group) other;
 //
 //   }
 //   else {
@@ -172,6 +173,8 @@ public interface GroupOrSinglePiece
    void setIndex(int newIndex);
    void decrementIndex();
    void incrementIndex();
-   // MenuListItemView
+   void replaceLoading(Container loadedContainer);
+   void writeToParcel(Parcel dest, int flags);
+
 }
 }

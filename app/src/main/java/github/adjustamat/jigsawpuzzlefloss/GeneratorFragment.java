@@ -22,13 +22,14 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.widget.AppCompatRadioButton;
+import androidx.core.widget.NestedScrollView;
 import androidx.fragment.app.Fragment;
 
 import java.util.LinkedList;
 
+import github.adjustamat.jigsawpuzzlefloss.db.DB;
 import github.adjustamat.jigsawpuzzlefloss.db.Prefs;
 import github.adjustamat.jigsawpuzzlefloss.db.Prefs.GeneratorStr;
-import github.adjustamat.jigsawpuzzlefloss.ui.PuzzleGraphics;
 
 class GeneratorFragment
  extends Fragment
@@ -38,6 +39,7 @@ public static final String DBG = "GeneratorFragment";
 public static final String ARG_BITMAP_URI = "mat.IMAGE_URI";
 public static final String ARG_BITMAP_ID = "mat.IMAGE_ID";
 private Bitmap croppedBitmap;
+private Uri bitmapUri;
 private int defaultPiecesCirca = 200; // TODO: default size (pieces) if no option was chosen before custom!
 private boolean cropped;
 
@@ -72,12 +74,12 @@ private class EditTextListener
       if (i != null) {
          int prev;
          if (width) {
-            prev = ui.selectedSize.point.x;
-            ui.selectedSize.point.x = i;
+            prev = ui.selectedSize.wxh.x;
+            ui.selectedSize.wxh.x = i;
          }
          else {
-            prev = ui.selectedSize.point.y;
-            ui.selectedSize.point.y = i;
+            prev = ui.selectedSize.wxh.y;
+            ui.selectedSize.wxh.y = i;
          }
          if (i != prev) {
             ui.updateCustomSize();
@@ -94,7 +96,7 @@ private class SizeOption
 {
    final AppCompatRadioButton radioButton;
    final int circa;
-   final Point point = new Point();
+   final Point wxh = new Point();
    
    private SizeOption(AppCompatRadioButton radioButton, OnCheckedChangeListener listener)
    {
@@ -119,16 +121,16 @@ private class SizeOption
       // =>   A = sqrt(circa/ratio)
       double height = Math.sqrt(ca / ratio);
       double width = ratio * height;
-      point.x = (int) Math.round(width);
-      point.y = (int) Math.round(height);
+      wxh.x = (int) Math.round(width);
+      wxh.y = (int) Math.round(height);
    }
    
    void calculateWidthAndHeight(Context ctx, Bitmap bitmap, SizeOption prev)
    {
       if (circa == -1) {
          if (prev != null) {
-            point.x = prev.point.x;
-            point.y = prev.point.y;
+            wxh.x = prev.wxh.x;
+            wxh.y = prev.wxh.y;
          }
          else {
             setPoint(bitmap, defaultPiecesCirca);
@@ -137,7 +139,7 @@ private class SizeOption
       else {
          setPoint(bitmap, this.circa);
          radioButton.setText(
-          ctx.getString(R.string.radioChooseSize, circa, point.x, point.y)
+          ctx.getString(R.string.radioChooseSize, circa, wxh.x, wxh.y)
          );
          
       }
@@ -150,11 +152,16 @@ private class Views
    final LinearLayout llhCrop;
    final Button btnCrop;
    final ImageView imgCroppedBitmap;
+   
    final SurfaceView srcCrop;
    
-   final TextView lblNoSizeSelected;
-   final Button btnStart;
+   //  show scrvGeneratorSizes, llhStart, llhCrop.
    
+   final LinearLayout llhStart;
+   final Button btnStart;
+   final TextView lblNoSizeSelected;
+   
+   final NestedScrollView scrvGeneratorSizes;
    final LinearLayout llvGeneratorSizes;
    final LinkedList<SizeOption> sizeOptions = new LinkedList<>();
    final OnCheckedChangeListener radioChangeListener;
@@ -169,7 +176,8 @@ private class Views
    private boolean cropMode = false;
    
    private Views(LinearLayout llhCrop, Button btnCrop, ImageView imgCroppedBitmap, SurfaceView srcCrop,
-    TextView lblNoSizeSelected, Button btnStart, LinearLayout llvGeneratorSizes,
+    LinearLayout llhStart, Button btnStart, TextView lblNoSizeSelected,
+    NestedScrollView scrvGeneratorSizes, LinearLayout llvGeneratorSizes,
     AppCompatRadioButton radioCustomSize, EditText txtCustomWidth, EditText txtCustomHeight, TextView lblCustomSize,
     Context ctx)
    {
@@ -177,8 +185,10 @@ private class Views
       this.btnCrop = btnCrop;
       this.imgCroppedBitmap = imgCroppedBitmap;
       this.srcCrop = srcCrop;
+      this.llhStart = llhStart;
       this.lblNoSizeSelected = lblNoSizeSelected;
       this.btnStart = btnStart;
+      this.scrvGeneratorSizes = scrvGeneratorSizes;
       this.llvGeneratorSizes = llvGeneratorSizes;
       this.radioCustomSize = radioCustomSize;
       this.txtCustomWidth = txtCustomWidth;
@@ -220,7 +230,7 @@ private class Views
       
       btnStart.setOnClickListener(v->{
          Act activity = (Act) requireActivity();
-         activity.showPuzzleFromGenerator(selectedSize.point, croppedBitmap, cropped);
+         activity.generateAndShowNewPuzzle(selectedSize.wxh, croppedBitmap, cropped, bitmapUri);
          //selectedSize
       });
    }
@@ -229,17 +239,24 @@ private class Views
    {
       cropMode = crop;
       if (cropMode) {
-         // TODO: hide scrvGeneratorSizes, llhStart, llhCrop.
-         //  show srcCrop (with correct bitmap).
+         scrvGeneratorSizes.setVisibility(View.GONE);
+         llhStart.setVisibility(View.GONE);
+         llhCrop.setVisibility(View.GONE);
+         
+         // TODO: show srcCrop with correct bitmap and drawing method
+         srcCrop.setVisibility(View.VISIBLE);
       }
       else {
-         //  srcCrop itself can call setCropMode(false)!
+         // TODO: srcCrop itself can call setCropMode(false)!
+         srcCrop.setVisibility(View.GONE);
          
-         // TODO: hide srcCrop.
-         //  show scrvGeneratorSizes, llhStart, llhCrop.
-         //  set cropped=true if changes were made. delete the cropped parts and set croppedBitmap as the rest!
+         // TODO: set cropped=true if changes were made. delete the cropped parts and set croppedBitmap as the rest!
          
-         // TODO: load more options on top of llv after crop, using addChoices(ctx)
+         scrvGeneratorSizes.setVisibility(View.VISIBLE);
+         llhStart.setVisibility(View.VISIBLE);
+         llhCrop.setVisibility(View.VISIBLE);
+         
+         addChoices(requireContext()); // load choices again (on top) after crop
       }
    }
    
@@ -255,19 +272,20 @@ private class Views
    
    void updateCustomSize()
    {
-      txtCustomWidth.setText(String.valueOf(selectedSize.point.x));
-      txtCustomHeight.setText(String.valueOf(selectedSize.point.y));
+      txtCustomWidth.setText(String.valueOf(selectedSize.wxh.x));
+      txtCustomHeight.setText(String.valueOf(selectedSize.wxh.y));
       txtCustomWidth.setEnabled(true);
       txtCustomHeight.setEnabled(true);
       
       lblCustomSize.setText(
-       getString(R.string.lblCustomSize, selectedSize.point.x * selectedSize.point.y)
+       getString(R.string.lblCustomSize, selectedSize.wxh.x * selectedSize.wxh.y)
       );
       lblCustomSize.setVisibility(View.VISIBLE);
    }
    
    void addChoices(Context ctx)
    {
+      // TODO: make sure the string really is separated by ", "
       String[] sizes = Prefs.get(ctx, GeneratorStr.sizeChoices).split(", ");
       int i = 0; // add views to the top of the layout
       for (String sizeChoice: sizes) {
@@ -317,8 +335,10 @@ public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceStat
     view.findViewById(R.id.btnCrop),
     view.findViewById(R.id.imgCroppedBitmap),
     view.findViewById(R.id.srcCrop),
-    view.findViewById(R.id.lblNoSizeSelected),
+    view.findViewById(R.id.llhStart),
     view.findViewById(R.id.btnStart),
+    view.findViewById(R.id.lblNoSizeSelected),
+    view.findViewById(R.id.scrvGeneratorSizes),
     view.findViewById(R.id.llvGeneratorSizes),
     view.findViewById(R.id.radioCustomSize),
     view.findViewById(R.id.txtCustomWidth),
@@ -326,17 +346,20 @@ public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceStat
     view.findViewById(R.id.lblCustomSize),
     requireContext()
    );
+   
    Bundle arguments = getArguments();
    if (arguments != null) {
       int id = arguments.getInt(ARG_BITMAP_ID);
       if (id != 0) {
-      Act act= (Act) requireActivity();
-      croppedBitmap = act.getBitmap(id);
+         Act act = (Act) requireActivity();
+         croppedBitmap = act.getBitmap(id);
+         bitmapUri = act.db().getBitmapUri(id);
       }
       else {
          Uri uri = arguments.getParcelable(ARG_BITMAP_URI);
          if (uri != null) {
-            croppedBitmap = PuzzleGraphics.loadBitmapFromUri(uri, requireContext());
+            croppedBitmap = DB.loadBitmapFromUri(uri, requireContext());
+            bitmapUri = uri;
          }
          else {
             Log.d(DBG, "onViewCreated() - all arguments (ARG_IMAGE_*) are null!");
@@ -358,5 +381,4 @@ public void handleOnBackPressed(BackCallback callback)
    else
       callback.goBackToMenu();
 }
-
 }

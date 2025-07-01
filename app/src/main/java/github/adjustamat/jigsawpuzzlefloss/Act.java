@@ -82,15 +82,19 @@ void showNewPrefs()
    showFrag(new PrefsFragment());
 }
 
-public void showPuzzleFromGenerator(Point point, Bitmap croppedBitmap, boolean cropped)
+public void generateAndShowNewPuzzle(Point puzzleSize, Bitmap croppedBitmap, boolean cropped, Uri bitmapUri)
 {
-   // TODO: save cropped image as a local file.
+   int bitmapID;
+   if (cropped)
+      bitmapID = db().saveCroppedBitmap(bitmapUri, croppedBitmap, this); // save cropped image as a local file
+   else
+      bitmapID = db().getBitmapID(bitmapUri);
    
    FragmentManager manager = getSupportFragmentManager();
-   manager.popBackStack(); // pop GeneratorFragment
+   manager.popBackStack(); // pop GeneratorFragment!
    
-   ImagePuzzle generated = ImagePuzzle.generateNewPuzzle(point.x, point.y,
-    croppedBitmap, new Random());
+   ImagePuzzle generated = ImagePuzzle.generateNewPuzzle(puzzleSize.x, puzzleSize.y,
+    croppedBitmap, bitmapID, new Random());
    
    showPuzzle(generated); // show new PlayMatFragment
 }
@@ -148,6 +152,6 @@ public Bitmap getBitmap(int bitmapID)
    Bitmap bitmap = bitmapCache.get(bitmapID);
    if (bitmap != null)
       return bitmap;
-   bitmap = db().getBitmap(bitmapID,this);
+   return db().getBitmap(bitmapID, this);
 }
 }

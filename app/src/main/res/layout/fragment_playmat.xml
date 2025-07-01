@@ -11,9 +11,9 @@
     android:background="?attr/fullscreenBackgroundColor" is blue. -->
 
     <!--
-    TODO: temporary storage views (view_temporary_storage_oval) can be children of frameFullscreenLayout.
-      add dropzone views along the edges of the screen (transparent but show  when hovering) when starting
-       drag of temporary storage view. -->
+    TODO: temporary views (view_temporary_container_oval) can be children of frameFullscreenLayout.
+      add dropzone views along the edges of the screen (transparent but show signs when hovering) when starting
+       drag of temporary view. -->
 
     <LinearLayout
         android:id="@+id/llvPlayMatFragment"
