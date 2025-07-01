@@ -1,17 +1,15 @@
-package github.adjustamat.jigsawpuzzlefloss.prefs;
+package github.adjustamat.jigsawpuzzlefloss.db;
 
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
-
-import github.adjustamat.jigsawpuzzlefloss.Act;
 
 /**
  * Contains all user preferences for this game.
  */
 public interface Prefs
 {
-static void init(Act ctx)
+static void init(Global ctx)
 {
    SharedPreferences sharedPreferences = getSharedPreferences(ctx);
    if (!sharedPreferences.contains("initialized")) {

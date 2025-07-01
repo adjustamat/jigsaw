@@ -49,7 +49,7 @@ private static ImagePuzzle theImagePuzzle;
 //   outerPaint.setColor(Color.argb(255, r, g, b));
 //}
 
-public static Bitmap loadBitmap(Uri uri, Context ctx){
+public static Bitmap loadBitmapFromUri(Uri uri, Context ctx){
    // String mimeType = ctx.getContentResolver().getType(uri);
    Bitmap ret;
    // API 28: ImageDecoder.createSource(ctx.getContentResolver(),uri);

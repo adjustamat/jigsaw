@@ -14,11 +14,13 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 
+import java.util.HashMap;
 import java.util.Random;
 
 import github.adjustamat.jigsawpuzzlefloss.Frag.BackCallback;
+import github.adjustamat.jigsawpuzzlefloss.db.DB;
+import github.adjustamat.jigsawpuzzlefloss.db.Global;
 import github.adjustamat.jigsawpuzzlefloss.game.ImagePuzzle;
-import github.adjustamat.jigsawpuzzlefloss.prefs.Prefs;
 
 public class Act
  extends AppCompatActivity
@@ -28,6 +30,9 @@ private boolean everShowedMenu = false;
 private Frag currentFrag = null;
 private PlayMatFragment startedGame = null;
 private ImagePuzzle startedPuzzle = null;
+
+// TODO: empty this cache when starting a game. only needed by MainMenu and Generator fragments
+private final HashMap<Integer, Bitmap> bitmapCache = new HashMap<>();
 
 private final OnBackPressedCallback onBackPressed = new OnBackPressedCallback(true)
 {
@@ -52,7 +57,7 @@ protected void onCreate(Bundle savedInstanceState)
    });
    getOnBackPressedDispatcher().addCallback(onBackPressed);
    
-   Prefs.init(this);
+   Global.initEverything(this);
    
    // TODO: check state in prefs, or check intent.
    //  not always showNewMenu(), sometimes instead go directly to showPuzzle(imagePuzzle).
@@ -77,13 +82,16 @@ void showNewPrefs()
    showFrag(new PrefsFragment());
 }
 
-public void showPuzzleFromGenerator(Point point, Bitmap croppedBitmap)
+public void showPuzzleFromGenerator(Point point, Bitmap croppedBitmap, boolean cropped)
 {
+   // TODO: save cropped image as a local file.
+   
    FragmentManager manager = getSupportFragmentManager();
    manager.popBackStack(); // pop GeneratorFragment
    
    ImagePuzzle generated = ImagePuzzle.generateNewPuzzle(point.x, point.y,
     croppedBitmap, new Random());
+   
    showPuzzle(generated); // show new PlayMatFragment
 }
 
@@ -96,6 +104,7 @@ void showPuzzle(ImagePuzzle imagePuzzle)
       startedGame.startGame(startedPuzzle = imagePuzzle);
    
    showFrag(startedGame);
+   bitmapCache.clear();
 }
 
 void showFrag(Frag frag)
@@ -124,4 +133,21 @@ public void goBackQuit()
    finish();
 }
 
+private DB dbInstance;
+
+public DB db()
+{
+   if (dbInstance == null) {
+      dbInstance = new DB(this);
+   }
+   return dbInstance;
+}
+
+public Bitmap getBitmap(int bitmapID)
+{
+   Bitmap bitmap = bitmapCache.get(bitmapID);
+   if (bitmap != null)
+      return bitmap;
+   bitmap = db().getBitmap(bitmapID,this);
+}
 }

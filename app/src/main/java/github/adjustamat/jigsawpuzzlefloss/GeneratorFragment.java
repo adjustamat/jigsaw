@@ -26,8 +26,8 @@ import androidx.fragment.app.Fragment;
 
 import java.util.LinkedList;
 
-import github.adjustamat.jigsawpuzzlefloss.prefs.Prefs;
-import github.adjustamat.jigsawpuzzlefloss.prefs.Prefs.GeneratorStr;
+import github.adjustamat.jigsawpuzzlefloss.db.Prefs;
+import github.adjustamat.jigsawpuzzlefloss.db.Prefs.GeneratorStr;
 import github.adjustamat.jigsawpuzzlefloss.ui.PuzzleGraphics;
 
 class GeneratorFragment
@@ -35,9 +35,11 @@ class GeneratorFragment
  implements Frag
 {
 public static final String DBG = "GeneratorFragment";
-public static final String ARG_IMAGE_URI = "mat.IMAGE_URI";
+public static final String ARG_BITMAP_URI = "mat.IMAGE_URI";
+public static final String ARG_BITMAP_ID = "mat.IMAGE_ID";
 private Bitmap croppedBitmap;
 private int defaultPiecesCirca = 200; // TODO: default size (pieces) if no option was chosen before custom!
+private boolean cropped;
 
 private class EditTextListener
  implements TextWatcher
@@ -218,18 +220,25 @@ private class Views
       
       btnStart.setOnClickListener(v->{
          Act activity = (Act) requireActivity();
-         activity.showPuzzleFromGenerator(selectedSize.point, croppedBitmap);
+         activity.showPuzzleFromGenerator(selectedSize.point, croppedBitmap, cropped);
          //selectedSize
       });
    }
    
-   void setCropMode(boolean crop){
+   void setCropMode(boolean crop)
+   {
       cropMode = crop;
-      if(cropMode){
-         // TODO: hide scrvGeneratorSizes, llhStart, llhCrop. show srcCrop with correct bitmap.
+      if (cropMode) {
+         // TODO: hide scrvGeneratorSizes, llhStart, llhCrop.
+         //  show srcCrop (with correct bitmap).
       }
-      else{
-         // TODO: save crop! (also srcCrop itself can call setCropMode(false)!) hide srccrop. show scrvGeneratorSizes, llhStart, llhCrop.
+      else {
+         //  srcCrop itself can call setCropMode(false)!
+         
+         // TODO: hide srcCrop.
+         //  show scrvGeneratorSizes, llhStart, llhCrop.
+         //  set cropped=true if changes were made. delete the cropped parts and set croppedBitmap as the rest!
+         
          // TODO: load more options on top of llv after crop, using addChoices(ctx)
       }
    }
@@ -272,11 +281,20 @@ private class Views
 
 private Views ui;
 
+public static GeneratorFragment newInstance(int imageID)
+{
+   GeneratorFragment fragment = new GeneratorFragment();
+   Bundle args = new Bundle();
+   args.putInt(ARG_BITMAP_ID, imageID);
+   fragment.setArguments(args);
+   return fragment;
+}
+
 public static GeneratorFragment newInstance(Uri image)
 {
    GeneratorFragment fragment = new GeneratorFragment();
    Bundle args = new Bundle();
-   args.putParcelable(ARG_IMAGE_URI, image);
+   args.putParcelable(ARG_BITMAP_URI, image);
    fragment.setArguments(args);
    return fragment;
 }
@@ -284,12 +302,6 @@ public static GeneratorFragment newInstance(Uri image)
 public GeneratorFragment()
 {
    // Required empty public constructor
-}
-
-public void onCreate(@Nullable Bundle savedInstanceState)
-{
-   super.onCreate(savedInstanceState);
-   
 }
 
 public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
@@ -316,14 +328,26 @@ public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceStat
    );
    Bundle arguments = getArguments();
    if (arguments != null) {
-      Uri uri = arguments.getParcelable(ARG_IMAGE_URI);
-      if (uri != null) {
-         croppedBitmap = PuzzleGraphics.loadBitmap(uri, requireContext());
-         ui.imgCroppedBitmap.setImageBitmap(croppedBitmap);
+      int id = arguments.getInt(ARG_BITMAP_ID);
+      if (id != 0) {
+      Act act= (Act) requireActivity();
+      croppedBitmap = act.getBitmap(id);
       }
-      else Log.d(DBG, "onCreate() - Uri image (" + ARG_IMAGE_URI + ") is null!");
+      else {
+         Uri uri = arguments.getParcelable(ARG_BITMAP_URI);
+         if (uri != null) {
+            croppedBitmap = PuzzleGraphics.loadBitmapFromUri(uri, requireContext());
+         }
+         else {
+            Log.d(DBG, "onViewCreated() - all arguments (ARG_IMAGE_*) are null!");
+         }
+      }
+      if (croppedBitmap == null)
+         Log.d(DBG, "croppedBitmap is null");
+      else
+         ui.imgCroppedBitmap.setImageBitmap(croppedBitmap);
    }
-   else Log.d(DBG, "onCreate() - Bundle getArguments() returns null!");
+   else Log.d(DBG, "onViewCreated() - Bundle getArguments() returns null!");
 }
 
 public void handleOnBackPressed(BackCallback callback)
