@@ -22,6 +22,7 @@
             app:drawableBottomCompat="@android:drawable/button_onoff_indicator_on"
             app:drawableStartCompat="@mipmap/ic_launcher"
             />
+<!--   TODO: replace placeholder images with pretty header image and horizontal line (and launcher icon)     -->
 
         <TextView
             style="@style/JigsawPuzzle.MainMenu.Text.ListTitle"

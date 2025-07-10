@@ -232,7 +232,8 @@ private class Views implements SurfaceHolder.Callback
       addChoices(ctx);
       
       btnCrop.setOnClickListener(v->{
-         setCropMode(true);
+         // TODO: crop library
+         //setCropMode(true);
       });
       
       btnStart.setOnClickListener(v->{
@@ -241,30 +242,32 @@ private class Views implements SurfaceHolder.Callback
       });
    }
    
-   void setCropMode(boolean crop)
-   {
-      cropMode = crop;
-      if (cropMode) {
-         scrvGeneratorSizes.setVisibility(View.GONE);
-         llhStart.setVisibility(View.GONE);
-         llhCrop.setVisibility(View.GONE);
-         
-         // TODO: show srcCrop with correct bitmap and drawing method
-         srcCrop.setVisibility(View.VISIBLE);
-      }
-      else {
-         // TODO: srcCrop itself can call setCropMode(false)!
-         srcCrop.setVisibility(View.GONE);
-         
-         // TODO: set cropped=true if changes were made. delete the cropped parts and set croppedBitmap as the rest!
-         
-         scrvGeneratorSizes.setVisibility(View.VISIBLE);
-         llhStart.setVisibility(View.VISIBLE);
-         llhCrop.setVisibility(View.VISIBLE);
-         
-         addChoices(requireContext()); // load choices again (on top) after crop
-      }
-   }
+   
+// TODO: test both! use library: either uCrop or CanHub/Android-Image-Cropper! intent or fragment?
+//  void setCropMode(boolean crop)
+//   {
+//      cropMode = crop;
+//      if (cropMode) {
+//         scrvGeneratorSizes.setVisibility(View.GONE);
+//         llhStart.setVisibility(View.GONE);
+//         llhCrop.setVisibility(View.GONE);
+//
+//         // TODO: show srcCrop with correct bitmap and drawing method
+//         srcCrop.setVisibility(View.VISIBLE);
+//      }
+//      else {
+//         // TODO: srcCrop itself can call setCropMode(false)!
+//         srcCrop.setVisibility(View.GONE);
+//
+//         // TODO: set cropped=true if changes were made. delete the cropped parts and set croppedBitmap as the rest!
+//
+//         scrvGeneratorSizes.setVisibility(View.VISIBLE);
+//         llhStart.setVisibility(View.VISIBLE);
+//         llhCrop.setVisibility(View.VISIBLE);
+//
+//         addChoices(requireContext()); // load choices again (on top) after crop
+//      }
+//   }
    
    void clearCustomSize()
    {
@@ -390,7 +393,7 @@ public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceStat
 
 public void handleOnBackPressed(BackCallback callback)
 {
-   if (ui.cropMode) {
+   if (ui.cropMode) { // TODO: delete ui.cropMode field
       ui.setCropMode(false);
    }
    else

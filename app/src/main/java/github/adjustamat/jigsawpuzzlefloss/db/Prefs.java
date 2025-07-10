@@ -30,7 +30,8 @@ static SharedPreferences getSharedPreferences(Context ctx)
 
 static SharedPreferences getGamePreferences(Context ctx, int gameID)
 {
-   return ctx.getSharedPreferences("Prefs", 0);
+   return ctx.getSharedPreferences("Started" + gameID, 0);
+   // TODO: how to delete these files after finished game?
 }
 
 interface BoolPref

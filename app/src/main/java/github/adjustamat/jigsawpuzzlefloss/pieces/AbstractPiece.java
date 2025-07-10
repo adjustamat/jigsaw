@@ -156,9 +156,8 @@ protected Bitmap buffer;
 
 public Bitmap getUnrotatedFullSizeGraphics()
 {
-   VectorJedges vectorJedges = getVectorJedges();
-   
    if (buffer == null) { // TODO: for LargerPieces: make buffer=null when it grows!
+      VectorJedges vectorJedges = getVectorJedges();
       buffer = Bitmap.createBitmap(vectorJedges.width(), vectorJedges.height(), Config.ARGB_8888);
       Canvas canvas = new Canvas(buffer);
       PuzzleGraphics.drawPiece(canvas, vectorJedges);

@@ -202,7 +202,7 @@ public static BorderDrawable innerShapeU(int x, int y, Direction dir)
 public static BorderDrawable innerShapeUShort(int x, int y, Direction dir)
 {
    // also contains 3 quarter backgrounds:
-//     /c    c\   // ends here, StraightEdges left and right!
+//     /c    c\   // ends here, StraightEdges (EdgeJedge) left and right!
 //    /*|    |*\
 //    \*|    |*/
 //     \i\__/i/

@@ -102,14 +102,17 @@ public void generateAndShowNewPuzzle(Point puzzleSize, Bitmap croppedBitmap, boo
 
 void showPuzzle(ImagePuzzle imagePuzzle)
 {
+   // TODO: Use a separate Activity for PlayMat, not a fragment!
+   //  we don't want to keep a bunch of views in memory when user won't switch between fragments.
    if (startedGame == null)
       startedGame = new PlayMatFragment();
-   
    if (startedPuzzle != imagePuzzle)
       startedGame.startGame(startedPuzzle = imagePuzzle);
    
+   // TODO: is this how I can make the same image show in lots of different sizes/scales? Maybe I need a Global Application class or ViewModel to keep the bitmapCache in. https://developer.android.com/develop/ui/compose/graphics/images/customize
+   
    showFrag(startedGame);
-   bitmapCache.clear();
+   bitmapCache.clear(); // TODO: this should be done automatically by OS if we switch to a different Activity.
 }
 
 void showFrag(Frag frag)

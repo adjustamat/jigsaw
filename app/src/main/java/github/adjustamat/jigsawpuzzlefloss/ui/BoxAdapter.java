@@ -29,7 +29,7 @@ public BoxAdapter(Box box)
    this.box = box;
 }
 
-// TODO: store item sizes from Resources with static method
+// TODO: store thumbnail sizes from Resources with static method!
 public static int bigBoxItemWidth, bigBoxItemHeight, miniBoxItemWidth, miniBoxItemHeight;
 
 public @NonNull BoxItemView onCreateViewHolder(@NonNull ViewGroup parent, int viewType)
@@ -101,6 +101,8 @@ public void onBindViewHolder(@NonNull BoxItemView holder, int position)
 private void onBind(@NonNull BoxItemView holder, SinglePiece piece)
 {
    Bitmap unrotatedFullSize = piece.getUnrotatedFullSizeGraphics();
+   // save thumbnail as a BitmapDrawable? no! ViewHolders are recycled!!
+   //  Thus, we have to rotate and shrink the buffered unrotatedFullSize every time.
 
 //   if (holder.bufferedThumbnail == null)
 //      holder.bufferedThumbnail = createThumbnailBitmap();
@@ -115,8 +117,7 @@ private void onBind(@NonNull BoxItemView holder, SinglePiece piece)
    // TODO: left and top might not be 0 if the rotated unrotatedFullSize is smaller in some dimension than thumbnail
    thumbnailCanvas.drawBitmap(unrotatedFullSize,0f,0f,null);
    
-   // save thumbnail as a BitmapDrawable? I don't think so. MenuListItemView is recycled!! thus,
-   //  we have to rotate and shrink the buffered unrotatedFullSize every time.
+   
 
    holder.imgBoxItem.setImageBitmap(thumbnail);
 }

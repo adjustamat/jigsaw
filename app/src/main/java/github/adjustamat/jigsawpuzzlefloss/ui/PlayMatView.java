@@ -8,7 +8,9 @@ import android.view.View;
 
 import androidx.annotation.NonNull;
 
-public class PlayMatView extends View // TODO: extend open source ZoomView
+public class PlayMatView
+ extends View
+// TODO: extend open source ZoomView or put inside such a view.
 {
 public static final float MIN_ZOOM_FACTOR = 0.1f;
 public static final float MAX_ZOOM_FACTOR = 5.0f;
@@ -27,6 +29,8 @@ public PlayMatView(Context context)
 @Override
 public boolean onTouchEvent(MotionEvent ev)
 {
+   // TODO: see AndroidManifest for EVENTS (gestures) and ACTIONS that need pairing
+   
    // Let the ScaleGestureDetector inspect all events.
    zoomDetect.onTouchEvent(ev);
    return true;

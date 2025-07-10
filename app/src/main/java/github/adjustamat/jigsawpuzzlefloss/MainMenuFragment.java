@@ -39,16 +39,15 @@ private class Views
    final Button btnOpenBitmap;
    final Button btnSettings;
    
-   private Views(TextView lblNoStartedPuzzles, RecyclerView lstStartedPuzzles, TextView lblNoBitmaps,
-    RecyclerView lstBitmaps, Button btnDownloadBitmap, Button btnOpenBitmap, Button btnSettings)
+   private Views(View view)
    {
-      this.lblNoStartedPuzzles = lblNoStartedPuzzles;
-      this.lstStartedPuzzles = lstStartedPuzzles;
-      this.lblNoBitmaps = lblNoBitmaps;
-      this.lstBitmaps = lstBitmaps;
-      this.btnDownloadBitmap = btnDownloadBitmap;
-      this.btnOpenBitmap = btnOpenBitmap;
-      this.btnSettings = btnSettings;
+      this.lblNoStartedPuzzles = view.findViewById(R.id.lblNoStartedPuzzles);
+      this.lstStartedPuzzles = view.findViewById(R.id.lstStartedPuzzles);
+      this.lblNoBitmaps = view.findViewById(R.id.lblNoBitmaps);
+      this.lstBitmaps = view.findViewById(R.id.lstBitmaps);
+      this.btnDownloadBitmap = view.findViewById(R.id.btnDownloadBitmap);
+      this.btnOpenBitmap = view.findViewById(R.id.btnOpenBitmap);
+      this.btnSettings = view.findViewById(R.id.btnSettings);
    }
 }
 
@@ -76,15 +75,7 @@ public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle sa
 public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState)
 {
    super.onViewCreated(view, savedInstanceState);
-   ui = new Views(
-    view.findViewById(R.id.lblNoStartedPuzzles),
-    view.findViewById(R.id.lstStartedPuzzles),
-    view.findViewById(R.id.lblNoBitmaps),
-    view.findViewById(R.id.lstBitmaps),
-    view.findViewById(R.id.btnDownloadBitmap),
-    view.findViewById(R.id.btnOpenBitmap),
-    view.findViewById(R.id.btnSettings)
-   );
+   ui = new Views(view);
 }
 
 public void handleOnBackPressed(BackCallback callback)
@@ -105,9 +96,9 @@ private void startPickImagesForResult()
 
 public void onActivityResult(List<Uri> images)
 {
-
 /*
-  
+  TODO: go to generatorfragment?
+ 
    ImagePuzzle puzzle = ImagePuzzle.generateNewPuzzle(7,5,BITMAP,new Random());
    showNewPlayMat();
  */

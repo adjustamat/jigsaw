@@ -26,7 +26,7 @@ public enum Direction
          return NORTH;
       }
    };
-   public final int degrees;
+public final int degrees;
 public final int initWidth;
 public final int initHeight;
 public final int initX1;
@@ -49,7 +49,7 @@ Direction(int degrees, int initWidth, int initHeight,
    this.initY1 = initY1;
    this.initX2 = initX2;
    this.initY2 = initY2;
-
+   
    this.x = initX2 - initX1;
    // North, South: 0
    // East: 1, if flipped to y, would be south (cw)
