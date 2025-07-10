@@ -9,6 +9,7 @@ import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
@@ -98,6 +99,11 @@ private class SizeOption
    final int circa;
    final Point wxh = new Point();
    
+   /**
+    * Constructor for custom size
+    * @param radioButton radioCustomSize
+    * @param listener radioChangeListener
+    */
    private SizeOption(AppCompatRadioButton radioButton, OnCheckedChangeListener listener)
    {
       this.circa = -1;
@@ -105,16 +111,23 @@ private class SizeOption
       radioButton.setOnCheckedChangeListener(listener);
    }
    
+   /**
+    * Constructor for size option from user prefs
+    * @param ctx a Context
+    * @param circa a size from user prefs
+    * @param listener radioChangeListener
+    * @param bitmap the current bitmap
+    */
    private SizeOption(Context ctx, int circa, OnCheckedChangeListener listener, Bitmap bitmap)
    {
       this.circa = circa;
       this.radioButton = new AppCompatRadioButton(ctx);
       radioButton.setOnCheckedChangeListener(listener);
-      calculateWidthAndHeight(ctx, bitmap, null);
+      setWidthXHeight(ctx, bitmap, null);
       //radioButton.setText(ctx.getString(R.string.radioChooseSizeUnselected, circa));
    }
    
-   private void setPoint(Bitmap bitmap, int ca)
+   private void calculateWidthXHeight(Bitmap bitmap, int ca)
    {
       double ratio = (double) bitmap.getWidth() / bitmap.getHeight();
       // equation: A * (ratio*A) = circa   =>
@@ -125,19 +138,19 @@ private class SizeOption
       wxh.y = (int) Math.round(height);
    }
    
-   void calculateWidthAndHeight(Context ctx, Bitmap bitmap, SizeOption prev)
+   void setWidthXHeight(Context ctx, Bitmap bitmap, SizeOption prev)
    {
-      if (circa == -1) {
-         if (prev != null) {
+      if (circa == -1) { // custom size (radioCustomSize)
+         if (prev != null) { // copy last selected option
             wxh.x = prev.wxh.x;
             wxh.y = prev.wxh.y;
          }
-         else {
-            setPoint(bitmap, defaultPiecesCirca);
+         else { // if custom size is the first selected option
+            calculateWidthXHeight(bitmap, defaultPiecesCirca);
          }
       }
-      else {
-         setPoint(bitmap, this.circa);
+      else { // not custom size
+         calculateWidthXHeight(bitmap, this.circa);
          radioButton.setText(
           ctx.getString(R.string.radioChooseSize, circa, wxh.x, wxh.y)
          );
@@ -147,15 +160,18 @@ private class SizeOption
    
 }
 
-private class Views
+private class Views implements SurfaceHolder.Callback
 {
    final LinearLayout llhCrop;
    final Button btnCrop;
    final ImageView imgCroppedBitmap;
    
    final SurfaceView srcCrop;
+   private boolean cropMode = false;
+   SurfaceHolder srcCropHolder;
    
-   //  show scrvGeneratorSizes, llhStart, llhCrop.
+   
+  
    
    final LinearLayout llhStart;
    final Button btnStart;
@@ -164,6 +180,7 @@ private class Views
    final NestedScrollView scrvGeneratorSizes;
    final LinearLayout llvGeneratorSizes;
    final LinkedList<SizeOption> sizeOptions = new LinkedList<>();
+   private SizeOption selectedSize;
    final OnCheckedChangeListener radioChangeListener;
    
    final AppCompatRadioButton radioCustomSize;
@@ -171,30 +188,21 @@ private class Views
    final EditText txtCustomHeight;
    final TextView lblCustomSize;
    
-   SizeOption selectedSize;
-   
-   private boolean cropMode = false;
-   
-   private Views(LinearLayout llhCrop, Button btnCrop, ImageView imgCroppedBitmap, SurfaceView srcCrop,
-    LinearLayout llhStart, Button btnStart, TextView lblNoSizeSelected,
-    NestedScrollView scrvGeneratorSizes, LinearLayout llvGeneratorSizes,
-    AppCompatRadioButton radioCustomSize, EditText txtCustomWidth, EditText txtCustomHeight, TextView lblCustomSize,
-    Context ctx)
+   private Views(View view, Context ctx)
    {
-      this.llhCrop = llhCrop;
-      this.btnCrop = btnCrop;
-      this.imgCroppedBitmap = imgCroppedBitmap;
-      this.srcCrop = srcCrop;
-      this.llhStart = llhStart;
-      this.lblNoSizeSelected = lblNoSizeSelected;
-      this.btnStart = btnStart;
-      this.scrvGeneratorSizes = scrvGeneratorSizes;
-      this.llvGeneratorSizes = llvGeneratorSizes;
-      this.radioCustomSize = radioCustomSize;
-      this.txtCustomWidth = txtCustomWidth;
-      this.txtCustomHeight = txtCustomHeight;
-      this.lblCustomSize = lblCustomSize;
-      
+      this.llhCrop = view.findViewById(R.id.llhCrop);
+      this.btnCrop = view.findViewById(R.id.btnCrop);
+      this.imgCroppedBitmap = view.findViewById(R.id.imgCroppedBitmap);
+      this.srcCrop = view.findViewById(R.id.srcCrop);
+      this.llhStart = view.findViewById(R.id.llhStart);
+      this.btnStart = view.findViewById(R.id.btnStart);
+      this.lblNoSizeSelected = view.findViewById(R.id.lblNoSizeSelected);
+      this.scrvGeneratorSizes = view.findViewById(R.id.scrvGeneratorSizes);
+      this.llvGeneratorSizes = view.findViewById(R.id.llvGeneratorSizes);
+      this.radioCustomSize = view.findViewById(R.id.radioCustomSize);
+      this.txtCustomWidth = view.findViewById(R.id.txtCustomWidth);
+      this.txtCustomHeight = view.findViewById(R.id.txtCustomHeight);
+      this.lblCustomSize = view.findViewById(R.id.lblCustomSize);
       
       txtCustomWidth.addTextChangedListener(new EditTextListener(true));
       txtCustomHeight.addTextChangedListener(new EditTextListener(false));
@@ -203,17 +211,16 @@ private class Views
          if (isChecked) {
             btnStart.setEnabled(true);
             lblNoSizeSelected.setVisibility(View.GONE);
-            SizeOption previous = null;
+            SizeOption previous = selectedSize;
             for (SizeOption sizeOption: sizeOptions) {
                if (sizeOption.radioButton != buttonView) {
                   sizeOption.radioButton.setChecked(false);
                }
                else {
-                  previous = selectedSize;
                   selectedSize = sizeOption;
                }
             }
-            selectedSize.calculateWidthAndHeight(ctx, croppedBitmap, previous);
+            selectedSize.setWidthXHeight(ctx, croppedBitmap, previous);
             if (buttonView == radioCustomSize)
                updateCustomSize();
             else
@@ -231,7 +238,6 @@ private class Views
       btnStart.setOnClickListener(v->{
          Act activity = (Act) requireActivity();
          activity.generateAndShowNewPuzzle(selectedSize.wxh, croppedBitmap, cropped, bitmapUri);
-         //selectedSize
       });
    }
    
@@ -285,8 +291,7 @@ private class Views
    
    void addChoices(Context ctx)
    {
-      // TODO: make sure the string really is separated by ", "
-      String[] sizes = Prefs.get(ctx, GeneratorStr.sizeChoices).split(", ");
+      String[] sizes = Prefs.get(ctx, GeneratorStr.sizeChoices).split(Prefs.sizeChoicesSplit);
       int i = 0; // add views to the top of the layout
       for (String sizeChoice: sizes) {
          int circaSize = Integer.parseInt(sizeChoice);
@@ -295,6 +300,31 @@ private class Views
          llvGeneratorSizes.addView(option.radioButton, i++);
       }
    }
+   
+   public void surfaceCreated(@NonNull SurfaceHolder holder)
+   {
+   
+   }
+   
+   public void surfaceChanged(@NonNull SurfaceHolder holder, int format, int width, int height)
+   {
+   
+   }
+   
+   public void surfaceDestroyed(@NonNull SurfaceHolder holder)
+   {
+   
+   }
+   
+//   public void surfaceRedrawNeeded(@NonNull SurfaceHolder holder)
+//   {
+//
+//   }
+//
+//   public void surfaceRedrawNeededAsync(@NonNull SurfaceHolder holder, @NonNull Runnable drawingFinished)
+//   {
+//      Callback2.super.surfaceRedrawNeededAsync(holder, drawingFinished);
+//   }
 }
 
 private Views ui;
@@ -330,22 +360,7 @@ public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle sa
 public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState)
 {
    super.onViewCreated(view, savedInstanceState);
-   ui = new Views(
-    view.findViewById(R.id.llhCrop),
-    view.findViewById(R.id.btnCrop),
-    view.findViewById(R.id.imgCroppedBitmap),
-    view.findViewById(R.id.srcCrop),
-    view.findViewById(R.id.llhStart),
-    view.findViewById(R.id.btnStart),
-    view.findViewById(R.id.lblNoSizeSelected),
-    view.findViewById(R.id.scrvGeneratorSizes),
-    view.findViewById(R.id.llvGeneratorSizes),
-    view.findViewById(R.id.radioCustomSize),
-    view.findViewById(R.id.txtCustomWidth),
-    view.findViewById(R.id.txtCustomHeight),
-    view.findViewById(R.id.lblCustomSize),
-    requireContext()
-   );
+   ui = new Views(view, requireContext());
    
    Bundle arguments = getArguments();
    if (arguments != null) {
@@ -362,7 +377,7 @@ public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceStat
             bitmapUri = uri;
          }
          else {
-            Log.d(DBG, "onViewCreated() - all arguments (ARG_IMAGE_*) are null!");
+            Log.d(DBG, "onViewCreated() - all arguments (ARG_BITMAP_*) are null!");
          }
       }
       if (croppedBitmap == null)

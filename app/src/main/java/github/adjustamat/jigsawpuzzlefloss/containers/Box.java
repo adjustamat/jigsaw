@@ -52,10 +52,9 @@ void setExpanded(Group group, boolean expand)
    }
 }
 
-public Group createGroup(List<SinglePiece> selectedPieces, int atIndex)
+public Group createBoxGroup(List<SinglePiece> selectedPieces, int atIndex)
 {
-   Group group = new Group(this, atIndex);
-   
+   Group group = new Group(this, atIndex, imagePuzzle.getNewGroupNumber());
    
    int atExpandedIndex = atIndex;
    for (Entry<Integer, Group> expandedGroup: expanded.entrySet()) {
@@ -68,14 +67,14 @@ public Group createGroup(List<SinglePiece> selectedPieces, int atIndex)
    return group;
 }
 
-public void ungroupGroup(Group group)
+public void ungroupBoxGroup(Group group)
 {
-
+// TODO!
 }
 
 public void ungroupPiece(Group group, int indexInGroup)
 {
-
+// TODO!
 }
 
 public void reorder(int fromIndex, int toIndex)
@@ -105,6 +104,7 @@ public void reorder(int fromIndex, int toIndex)
       if (toIndex > expandedGroup.getKey())
          toExpandedIndex += expandedGroup.getValue().size();
    }
+   // TODO: fromexpanded toexpanded???
    
 }
 
@@ -174,7 +174,7 @@ public interface GroupOrSinglePiece
    void decrementIndex();
    void incrementIndex();
    void replaceLoading(Container loadedContainer);
-   void writeToParcel(Parcel dest, int flags);
+   void writeToParcel(Parcel dest);
 
 }
 }

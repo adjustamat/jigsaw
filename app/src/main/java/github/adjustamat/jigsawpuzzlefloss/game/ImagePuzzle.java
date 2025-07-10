@@ -17,9 +17,9 @@ import github.adjustamat.jigsawpuzzlefloss.containers.Group;
 import github.adjustamat.jigsawpuzzlefloss.containers.PlayMat;
 import github.adjustamat.jigsawpuzzlefloss.db.DB;
 import github.adjustamat.jigsawpuzzlefloss.pieces.LargerPiece;
-import github.adjustamat.jigsawpuzzlefloss.pieces.PieceEdge;
-import github.adjustamat.jigsawpuzzlefloss.pieces.PieceEdge.HalfEdge;
-import github.adjustamat.jigsawpuzzlefloss.pieces.PieceEdge.RandomEdge;
+import github.adjustamat.jigsawpuzzlefloss.pieces.PieceJedge;
+import github.adjustamat.jigsawpuzzlefloss.pieces.PieceJedge.HalfJedge;
+import github.adjustamat.jigsawpuzzlefloss.pieces.PieceJedge.JedgeParams;
 import github.adjustamat.jigsawpuzzlefloss.pieces.SinglePiece;
 
 /**
@@ -28,6 +28,7 @@ import github.adjustamat.jigsawpuzzlefloss.pieces.SinglePiece;
  */
 public class ImagePuzzle
 {
+private int groupCounter = 0;
 
 public final int width;
 public final int height;
@@ -44,7 +45,7 @@ public final PlayMat playMatContainer;
 
 public final List<Group> temporaryContainers = new ArrayList<>();
 
-public void writeToParcel(Parcel dest, int flags)
+public void writeToParcel(Parcel dest)
 {
    dest.writeInt(width);
    dest.writeInt(height);
@@ -53,35 +54,35 @@ public void writeToParcel(Parcel dest, int flags)
    dest.writeInt(singlePiecesContainer.list.size());
    for (GroupOrSinglePiece groupOrSinglePiece: singlePiecesContainer.list) {
       dest.writeInt(groupOrSinglePiece instanceof Group ?1 :0);
-      groupOrSinglePiece.writeToParcel(dest, flags);
+      groupOrSinglePiece.writeToParcel(dest);
 //      if () {
 //
-//         ((Group) groupOrSinglePiece).writeToParcel(dest, flags);
+//         ((Group) groupOrSinglePiece).writeToParcel(dest);
 //      }
 //      else {
 //         dest.writeInt(0);
-//         ((SinglePiece) groupOrSinglePiece).writeToParcel(dest, flags);
+//         ((SinglePiece) groupOrSinglePiece).writeToParcel(dest);
 //      }
    }
    
    dest.writeInt(temporaryContainers.size());
    for (Group group: temporaryContainers) {
-      group.writeToParcel(dest, flags);
+      group.writeToParcel(dest);
    }
    
    dest.writeInt(playMatContainer.groups.size());
    for (Group group: playMatContainer.groups) {
-      group.writeToParcel(dest, flags);
+      group.writeToParcel(dest);
    }
    
    dest.writeInt(playMatContainer.singlePieces.size());
    for (SinglePiece piece: playMatContainer.singlePieces) {
-      piece.writeToParcel(dest, flags);
+      piece.writeToParcel(dest);
    }
    
    dest.writeInt(playMatContainer.largerPieces.size());
    for (LargerPiece piece: playMatContainer.largerPieces) {
-      piece.writeToParcel(dest, flags);
+      piece.writeToParcel(dest);
    }
 }
 
@@ -191,23 +192,23 @@ public static ImagePuzzle generateNewPuzzle(int pWidth, int pHeight, Bitmap crop
 {
    LinkedList<GroupOrSinglePiece> singlePieces = new LinkedList<>();
    ImagePuzzle ret = new ImagePuzzle(pWidth, pHeight, croppedImage, bitmapID, singlePieces);
-   HalfEdge[][] pool = PieceEdge.generateAllJigsawEdges();
+   HalfJedge[][] pool = PieceJedge.generateAllJigsawEdges();
    
-   RandomEdge[] wests = new RandomEdge[pHeight];
+   JedgeParams[] wests = new JedgeParams[pHeight];
    for (int x = 0; x < pWidth; x++) {
-      RandomEdge north = null;
+      JedgeParams north = null;
       for (int y = 0; y < pHeight; y++) {
-         RandomEdge east, south;
+         JedgeParams east, south;
          
          if (x == pWidth - 1)
             east = null;
          else
-            east = new RandomEdge(rng);
+            east = new JedgeParams(rng);
          
          if (y == pHeight - 1)
             south = null;
          else
-            south = new RandomEdge(rng);
+            south = new JedgeParams(rng);
          
          singlePieces.add(new SinglePiece(
           ret,
@@ -225,6 +226,10 @@ public static ImagePuzzle generateNewPuzzle(int pWidth, int pHeight, Bitmap crop
       } // for(y)
    } // for(x)
    return ret;
+}
+
+public int getNewGroupNumber(){
+   return ++groupCounter;
 }
 
 // /**

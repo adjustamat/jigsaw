@@ -9,15 +9,18 @@ import android.graphics.Path.FillType;
 import android.graphics.Point;
 import android.graphics.PointF;
 import android.graphics.RectF;
+import android.os.Parcel;
 
+import androidx.annotation.CallSuper;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import github.adjustamat.jigsawpuzzlefloss.containers.Container;
+import github.adjustamat.jigsawpuzzlefloss.containers.Container.Loading;
 import github.adjustamat.jigsawpuzzlefloss.containers.Group;
 import github.adjustamat.jigsawpuzzlefloss.game.Direction;
 import github.adjustamat.jigsawpuzzlefloss.game.ImagePuzzle;
-import github.adjustamat.jigsawpuzzlefloss.pieces.PieceEdge.DoubleEdge;
+import github.adjustamat.jigsawpuzzlefloss.pieces.PieceJedge.DoubleJedge;
 import github.adjustamat.jigsawpuzzlefloss.ui.PuzzleGraphics;
 
 /**
@@ -59,14 +62,27 @@ protected AbstractPiece(@NonNull Container containerParent, int indexInContainer
    this.currentRotationNorthDirection = rotation;
 }
 
-// used when loading from database into temporaryContainerGroup or PlayMat
-protected AbstractPiece(Container.Loading loading, int indexInContainer,
+public @CallSuper void writeToParcel(Parcel dest)
+{
+   dest.writeInt(currentRotationNorthDirection.ordinal());
+   dest.writeInt(correctPuzzlePosition.x);
+   dest.writeInt(correctPuzzlePosition.y);
+   dest.writeInt(relativePos == null ?0 :1);
+   if (relativePos != null) {
+      dest.writeFloat(relativePos.x);
+      dest.writeFloat(relativePos.y);
+   }
+   dest.writeInt(lockedRotation ?0 :1);
+   dest.writeInt(lockedInPlace ?0 :1);
+}
+
+// used when loading from database
+protected AbstractPiece(Loading loading, int indexInContainer,
  @NonNull Direction rotation, Point correctPuzzlePosition,
- float relativeX, float relativeY,
- boolean lockedRotation, boolean lockedInPlace)
+ PointF relative, boolean lockedRotation, boolean lockedInPlace)
 {
    this(loading, indexInContainer, rotation, correctPuzzlePosition);
-   setRelativePos(relativeX, relativeY);
+   relativePos = relative;
    this.lockedInPlace = lockedInPlace;
    this.lockedRotation = lockedRotation;
 }
@@ -140,12 +156,12 @@ protected Bitmap buffer;
 
 public Bitmap getUnrotatedFullSizeGraphics()
 {
-   VectorEdges vectorEdges = getVectorEdges();
+   VectorJedges vectorJedges = getVectorJedges();
    
    if (buffer == null) { // TODO: for LargerPieces: make buffer=null when it grows!
-      buffer = Bitmap.createBitmap(vectorEdges.width(), vectorEdges.height(), Config.ARGB_8888);
+      buffer = Bitmap.createBitmap(vectorJedges.width(), vectorJedges.height(), Config.ARGB_8888);
       Canvas canvas = new Canvas(buffer);
-      PuzzleGraphics.drawPiece(canvas, vectorEdges);
+      PuzzleGraphics.drawPiece(canvas, vectorJedges);
    }
    return buffer;
 }
@@ -185,11 +201,11 @@ public boolean isGrouped()
 
 // edges:
 
-public abstract RectF getEdgeWidths();
+public abstract RectF getJigBreadth();
 
-public PointF getCurrentEdgeWidths()
+public PointF getCurrentJigBreadth()
 {
-   RectF edges = getEdgeWidths();
+   RectF edges = getJigBreadth();
    switch (currentRotationNorthDirection) {
    case NORTH: case SOUTH:
       return new PointF(edges.left + edges.right, edges.top + edges.bottom);
@@ -198,12 +214,12 @@ public PointF getCurrentEdgeWidths()
    }
 }
 
-protected abstract VectorEdges getVectorEdges();
+protected abstract VectorJedges getVectorJedges();
 
-public abstract boolean isWestEdge();
-public abstract boolean isNorthEdge();
-public abstract boolean isEastEdge();
-public abstract boolean isSouthEdge();
+public abstract boolean isWestPEdge();
+public abstract boolean isNorthPEdge();
+public abstract boolean isEastPEdge();
+public abstract boolean isSouthPEdge();
 
 /**
  * @return whether or not this piece is, or contains at least, one "edge piece" - a piece at one of the outermost rows
@@ -211,10 +227,10 @@ public abstract boolean isSouthEdge();
  */
 public boolean isEdgePiece()
 {
-   return isWestEdge() || isNorthEdge() || isEastEdge() || isSouthEdge();
+   return isWestPEdge() || isNorthPEdge() || isEastPEdge() || isSouthPEdge();
 }
 
-public abstract class VectorEdges
+public abstract class VectorJedges
 {
    /**
     * Create a closed vector graphics Path of the outer edge of this AbstractPiece, with the supplied top-left corner.
@@ -245,7 +261,7 @@ public abstract class VectorEdges
       return bufferedPath;
    }
    
-   protected /*static*/ Path getPath(/*float startX, float startY,*/ PieceEdge firstEdge)
+   protected /*static*/ Path getPath(/*float startX, float startY,*/ PieceJedge firstEdge)
    {
       Path ret = new Path();
       ret.moveTo(0f, 0f);//startX, startY);
@@ -254,14 +270,14 @@ public abstract class VectorEdges
       return ret;
    }
    
-   protected /*static*/ void toPath(Path path, PieceEdge firstEdge)
+   protected /*static*/ void toPath(Path path, PieceJedge firstEdge)
    {
-      // in SinglePiece: for(PieceEdge edge:nesw) edge.appendSegmentsTo(path);
+      // in SinglePiece: for(PieceJedge edge:nesw) edge.appendSegmentsTo(path);
       // in LargerPiece: loop with getNext(), not index in the list!
-      PieceEdge nextEdge = firstEdge;
+      PieceJedge nextEdge = firstEdge;
       do {
          path.incReserve(
-          nextEdge instanceof DoubleEdge
+          nextEdge instanceof DoubleJedge
            ?8 // increase with 4 points per half edge
            :1 // increase with 1 point per straight edge
          );
@@ -273,13 +289,13 @@ public abstract class VectorEdges
    public Matrix getImageTranslateMatrix(ImagePuzzle imagePuzzle)
    {
       Matrix matrix = new Matrix();
-      RectF edgeWidths = getEdgeWidths();
-      matrix.preTranslate(correctPuzzlePosition.x * imagePuzzle.pieceImageSize - edgeWidths.left,
-       correctPuzzlePosition.y * imagePuzzle.pieceImageSize - edgeWidths.top);
+      RectF jigBreadth = getJigBreadth();
+      matrix.preTranslate(correctPuzzlePosition.x * imagePuzzle.pieceImageSize - jigBreadth.left,
+       correctPuzzlePosition.y * imagePuzzle.pieceImageSize - jigBreadth.top);
       return matrix;
    }
    
-   protected abstract PieceEdge getFirstEdge(int hole);
+   protected abstract PieceJedge getFirstEdge(int hole);
    
    public abstract int getOuterEdgesCount();
    

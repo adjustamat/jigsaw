@@ -86,7 +86,8 @@ public void generateAndShowNewPuzzle(Point puzzleSize, Bitmap croppedBitmap, boo
 {
    int bitmapID;
    if (cropped)
-      bitmapID = db().saveCroppedBitmap(bitmapUri, croppedBitmap, this); // save cropped image as a local file
+      // save cropped image in ctx.getFilesDir()
+      bitmapID = db().saveCroppedBitmap(bitmapUri, croppedBitmap, this);
    else
       bitmapID = db().getBitmapID(bitmapUri);
    
@@ -147,11 +148,20 @@ public DB db()
    return dbInstance;
 }
 
+/**
+ * If the bitmap ID is cached, returns the cached Bitmap.
+ * Otherwise gets the bitmapUri from the database, loads the Bitmap from the Uri, and caches it before returning.
+ * @param bitmapID a bitmapID
+ * @return a cached Bitmap
+ */
 public Bitmap getBitmap(int bitmapID)
 {
    Bitmap bitmap = bitmapCache.get(bitmapID);
    if (bitmap != null)
       return bitmap;
-   return db().getBitmap(bitmapID, this);
+   bitmap = db().getBitmap(bitmapID, this);
+   if (bitmap != null)
+      bitmapCache.put(bitmapID, bitmap);
+   return bitmap;
 }
 }

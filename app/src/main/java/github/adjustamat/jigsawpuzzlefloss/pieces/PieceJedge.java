@@ -2,6 +2,7 @@ package github.adjustamat.jigsawpuzzlefloss.pieces;
 
 import android.graphics.Path;
 import android.graphics.Point;
+import android.os.Parcel;
 
 import java.util.ArrayList;
 import java.util.Random;
@@ -9,27 +10,27 @@ import java.util.Random;
 import github.adjustamat.jigsawpuzzlefloss.game.Direction;
 
 /**
- * A jigsaw edge, or straight edge for an "edge piece" (see {@link AbstractPiece#isEdgePiece()}), being one of four sides of a SinglePiece.
+ * A jigsaw edge, or straight edge for a puzzle "edge piece" (see {@link AbstractPiece#isEdgePiece()}), being one of four sides of a SinglePiece.
  */
-public abstract class PieceEdge
+public abstract class PieceJedge
 {
-private static final StraightLine STRAIGHT_NORTH = new StraightLine(new float[]{120f, 0f});
-private static final StraightLine STRAIGHT_EAST = new StraightLine(new float[]{0f, 120f});
-private static final StraightLine STRAIGHT_SOUTH = new StraightLine(new float[]{-120f, 0f});
-private static final StraightLine STRAIGHT_WEST = new StraightLine(new float[]{0f, -120f});
+private static final Line STRAIGHT_NORTH = new Line(new float[]{120f, 0f});
+private static final Line STRAIGHT_EAST = new Line(new float[]{0f, 120f});
+private static final Line STRAIGHT_SOUTH = new Line(new float[]{-120f, 0f});
+private static final Line STRAIGHT_WEST = new Line(new float[]{0f, -120f});
 public static final float STRAIGHT_EDGE_WIDTH = 0f;
 
-public static StraightEdge getStraightEdge(Direction d)
+public static EdgeJedge getEdgeJedge(Direction d)
 {
    switch (d) {
    case NORTH:
-      return new StraightEdge(STRAIGHT_NORTH);
+      return new EdgeJedge(STRAIGHT_NORTH);
    case EAST:
-      return new StraightEdge(STRAIGHT_EAST);
+      return new EdgeJedge(STRAIGHT_EAST);
    case SOUTH:
-      return new StraightEdge(STRAIGHT_SOUTH);
+      return new EdgeJedge(STRAIGHT_SOUTH);
    default: // case WEST:
-      return new StraightEdge(STRAIGHT_WEST);
+      return new EdgeJedge(STRAIGHT_WEST);
    }
 }
 
@@ -38,9 +39,9 @@ public static StraightEdge getStraightEdge(Direction d)
  * pool [ NECK*6 + CURV*2 + (secondHalf?1:0) ]  [ (inward?4:0) + direction_ordinal ]
  * @return the pool of pre-rotated jigsaw edges, first and second half, pointing inward and outward.
  */
-public static HalfEdge[][] generateAllJigsawEdges()
+public static HalfJedge[][] generateAllJigsawEdges()
 {
-   HalfEdge[][] ret = new HalfEdge[3 * 3 * 2][];
+   HalfJedge[][] ret = new HalfJedge[3 * 3 * 2][];
    int reti = 0;
    for (float neckWidth = 0f; neckWidth < 13f; neckWidth += 5f) { // from narrow to wide
       for (float curvature = 0f; curvature < 6.25f; curvature += 2.5f) { // from straight to bent
@@ -51,9 +52,9 @@ public static HalfEdge[][] generateAllJigsawEdges()
    return ret;
 }
 
-private static HalfEdge[] generateFirstHalf(float neckWidth, float curvature)
+private static HalfJedge[] generateFirstHalf(float neckWidth, float curvature)
 {
-   HalfEdge cfirst_north_out = new HalfEdge(
+   HalfJedge cfirst_north_out = new HalfJedge(
     new float[]{0f, 0f, // <- control from
      40f, curvature, // <- control to
      45f, curvature, // <- endPoint 1
@@ -72,23 +73,23 @@ private static HalfEdge[] generateFirstHalf(float neckWidth, float curvature)
     },
     25 + 7.5f + 17.5f
    );
-   HalfEdge cfirst_east_out = cfirst_north_out.getTransformed(Direction.EAST);
-   HalfEdge cfirst_south_out = cfirst_north_out.getTransformed(Direction.SOUTH);
-   HalfEdge cfirst_west_out = cfirst_north_out.getTransformed(Direction.WEST);
+   HalfJedge cfirst_east_out = cfirst_north_out.getTransformed(Direction.EAST);
+   HalfJedge cfirst_south_out = cfirst_north_out.getTransformed(Direction.SOUTH);
+   HalfJedge cfirst_west_out = cfirst_north_out.getTransformed(Direction.WEST);
    
-   HalfEdge cfirst_north_in = cfirst_north_out.getTransformed(Direction.NORTH);
-   cfirst_north_in.edgeWidth = curvature;
-   HalfEdge cfirst_east_in = cfirst_north_in.getTransformed(Direction.EAST);
-   HalfEdge cfirst_south_in = cfirst_north_in.getTransformed(Direction.SOUTH);
-   HalfEdge cfirst_west_in = cfirst_north_in.getTransformed(Direction.WEST);
+   HalfJedge cfirst_north_in = cfirst_north_out.getTransformed(Direction.NORTH);
+   cfirst_north_in.jigBreadth = curvature;
+   HalfJedge cfirst_east_in = cfirst_north_in.getTransformed(Direction.EAST);
+   HalfJedge cfirst_south_in = cfirst_north_in.getTransformed(Direction.SOUTH);
+   HalfJedge cfirst_west_in = cfirst_north_in.getTransformed(Direction.WEST);
    
-   return new HalfEdge[]{cfirst_north_out, cfirst_east_out, cfirst_south_out, cfirst_west_out,
+   return new HalfJedge[]{cfirst_north_out, cfirst_east_out, cfirst_south_out, cfirst_west_out,
     cfirst_north_in, cfirst_east_in, cfirst_south_in, cfirst_west_in};
 }
 
-private static HalfEdge[] generateSecondHalf(float neckWidth, float curvature)
+private static HalfJedge[] generateSecondHalf(float neckWidth, float curvature)
 {
-   HalfEdge csecond_north_out = new HalfEdge(
+   HalfJedge csecond_north_out = new HalfJedge(
     new float[]{15f, 0f, // <- control from
      22.5f, 7.5f, // <- control to
      22.5f, 17.5f, // <- endPoint 1
@@ -107,17 +108,17 @@ private static HalfEdge[] generateSecondHalf(float neckWidth, float curvature)
     },
     25 + 7.5f + 17.5f
    );
-   HalfEdge csecond_east_out = csecond_north_out.getTransformed(Direction.EAST);
-   HalfEdge csecond_south_out = csecond_north_out.getTransformed(Direction.SOUTH);
-   HalfEdge csecond_west_out = csecond_north_out.getTransformed(Direction.WEST);
+   HalfJedge csecond_east_out = csecond_north_out.getTransformed(Direction.EAST);
+   HalfJedge csecond_south_out = csecond_north_out.getTransformed(Direction.SOUTH);
+   HalfJedge csecond_west_out = csecond_north_out.getTransformed(Direction.WEST);
    
-   HalfEdge csecond_north_in = csecond_north_out.getTransformed(Direction.NORTH);
-   csecond_north_in.edgeWidth = curvature;
-   HalfEdge csecond_east_in = csecond_north_in.getTransformed(Direction.EAST);
-   HalfEdge csecond_south_in = csecond_north_in.getTransformed(Direction.SOUTH);
-   HalfEdge csecond_west_in = csecond_north_in.getTransformed(Direction.WEST);
+   HalfJedge csecond_north_in = csecond_north_out.getTransformed(Direction.NORTH);
+   csecond_north_in.jigBreadth = curvature;
+   HalfJedge csecond_east_in = csecond_north_in.getTransformed(Direction.EAST);
+   HalfJedge csecond_south_in = csecond_north_in.getTransformed(Direction.SOUTH);
+   HalfJedge csecond_west_in = csecond_north_in.getTransformed(Direction.WEST);
    
-   return new HalfEdge[]{csecond_north_out, csecond_east_out, csecond_south_out, csecond_west_out,
+   return new HalfJedge[]{csecond_north_out, csecond_east_out, csecond_south_out, csecond_west_out,
     csecond_north_in, csecond_east_in, csecond_south_in, csecond_west_in};
 }
 
@@ -148,27 +149,27 @@ public Direction getRealDirection(Direction rotate)
    }
 }
 
-public PieceEdge setSubPiece(Point subPiece, Direction dir)
+public PieceJedge setSubPiece(Point subPiece, Direction dir)
 {
    this.subPiece = subPiece;
    this.subPieceDir = dir;
    return this;
 }
 
-private PieceEdge nextLink;
-private PieceEdge prevLink;
+private PieceJedge nextLink;
+private PieceJedge prevLink;
 
-public PieceEdge getNext()
+public PieceJedge getNext()
 {
    return nextLink;
 }
 
-public PieceEdge getPrev()
+public PieceJedge getPrev()
 {
    return prevLink;
 }
 
-public PieceEdge linkNext(PieceEdge next)
+public PieceJedge linkNext(PieceJedge next)
 {
    this.nextLink = next;
    next.prevLink = this;
@@ -176,17 +177,17 @@ public PieceEdge linkNext(PieceEdge next)
 }
 
 public abstract void appendSegmentsTo(Path path);
-public abstract float getEdgeWidth();
+public abstract float getJigBreadth();
 
 /**
- * Two HalfEdges makes a DoubleEdge.
+ * Two HalfEdges makes a DoubleJedge.
  */
-public static class DoubleEdge
- extends PieceEdge
+public static class DoubleJedge
+ extends PieceJedge
 {
-   private final HalfEdge half1, half2;
+   private final HalfJedge half1, half2;
    
-   public DoubleEdge(HalfEdge firstHalf, HalfEdge secondHalf)
+   public DoubleJedge(HalfJedge firstHalf, HalfJedge secondHalf)
    {
       half1 = firstHalf;
       half2 = secondHalf;
@@ -198,9 +199,9 @@ public static class DoubleEdge
       half2.appendHalfEdgeTo(path);
    }
    
-   public float getEdgeWidth()
+   public float getJigBreadth()
    {
-      return Math.max(half1.edgeWidth, half2.edgeWidth);
+      return Math.max(half1.jigBreadth, half2.jigBreadth);
    }
 }
 
@@ -208,62 +209,64 @@ public static class DoubleEdge
  * The straight edge of an "edge piece"
  * @see AbstractPiece#isEdgePiece()
  */
-public static class StraightEdge
- extends PieceEdge
+public static class EdgeJedge
+ extends PieceJedge
 {
-   StraightLine impl;
+   Line segm;
    
-   private StraightEdge(StraightLine data)
+   private EdgeJedge(Line data)
    {
-      this.impl = data;
+      this.segm = data;
    }
    
    public void appendSegmentsTo(Path path)
    {
-      path.rLineTo(impl.data[0], impl.data[1]);
+      path.rLineTo(segm.data[0], segm.data[1]);
    }
    
-   public float getEdgeWidth()
+   public float getJigBreadth()
    {
       return STRAIGHT_EDGE_WIDTH;
    }
 }
 
-private static class StraightLine
+/**
+ * A Line is a horizontal or vertical SVG line segment.
+ */
+private static class Line
 {
    private final float[] data;
    
-   private StraightLine(float[] data)
+   private Line(float[] data)
    {
       this.data = data;
    }
 }
 
 /**
- * A HalfEdge is a jigsaw edge, generated for the pool, made up of Cubic SVG segments. It is one half of a PieceEdge.
+ * A HalfJedge is a jigsaw edge, generated for the pool, made up of Cubic SVG segments. It is one half of a DoubleJedge.
  */
-public static class HalfEdge
+public static class HalfJedge
 {
    private final ArrayList<Cubic> segments;
-   
-   float edgeWidth;
+   float jigBreadth;
    
    /**
-    * Create a NORTH OUT HalfEdge.
-    * @param allData data for all Cubic segments of this HalfEdge.
+    * Create a NORTH OUT HalfJedge.
+    * @param allData data for all Cubic segments of this HalfJedge.
     */
-   private HalfEdge(float[] allData, float edgeWidth)
+   private HalfJedge(float[] allData, float jigBreadth)
    {
-      this.edgeWidth = edgeWidth;
+      this.jigBreadth = jigBreadth;
       segments = new ArrayList<>(4); // 4 segments
       for (int i = 0; i < allData.length; i += 6) { // 6 float values per segment (rCubicTo)
          segments.add(new Cubic(allData, i));
       }
    }
    
-   private HalfEdge(ArrayList<Cubic> segments, float edgeWidth)
+   private HalfJedge(ArrayList<Cubic> segments, float jigBreadth)
    {
-      this.edgeWidth = edgeWidth;
+      this.jigBreadth = jigBreadth;
       this.segments = segments;
    }
    
@@ -274,7 +277,7 @@ public static class HalfEdge
       }
    }
    
-   private HalfEdge getTransformed(Direction dir)
+   private HalfJedge getTransformed(Direction dir)
    {
       ArrayList<Cubic> ret = new ArrayList<>(4);
       for (Cubic segm: segments) {
@@ -294,10 +297,13 @@ public static class HalfEdge
          }
          ret.add(newSegment);
       }
-      return new HalfEdge(ret, edgeWidth);
+      return new HalfJedge(ret, jigBreadth);
    }
-} // class HalfEdge
+} // class HalfJedge
 
+/**
+ * A Cubic is a cubic SVG curve segment. Four such segments make up a HalfJedge.
+ */
 private static class Cubic
 {
    final float[] data;
@@ -347,13 +353,13 @@ private static class Cubic
    }
 } // class Cubic
 
-public static class RandomEdge
+public static class JedgeParams
 {
    public final boolean in;
    public final int curv1, curv2;
    public final int neck1, neck2;
    
-   public RandomEdge(Random rng)
+   public JedgeParams(Random rng)
    {
       in = rng.nextBoolean();
       curv1 = rng.nextInt(3);
@@ -362,13 +368,13 @@ public static class RandomEdge
       neck2 = rng.nextInt(3);
    }
    
-   public DoubleEdge getPieceEdge(HalfEdge[][] pool, Direction dir)
+   public DoubleJedge getDoubleJedge(HalfJedge[][] pool, Direction dir)
    {
       int rotationIndex;
       switch (dir) {
       case EAST: case SOUTH:
          rotationIndex = (in ?4 :0) + dir.ordinal();
-         return new DoubleEdge(
+         return new DoubleJedge(
           // pool [ NECK*6 + CURV*2 + (secondHalf?1:0) ]  [ (inward ?4 :0) + direction.ordinal ]
           pool[neck1 * 6 + curv1 * 2][rotationIndex],
           pool[neck2 * 6 + curv2 * 2 + 1][rotationIndex]
@@ -376,12 +382,17 @@ public static class RandomEdge
       default: // WEST: NORTH:
          // in/out is flipped:
          rotationIndex = (in ?0 :4) + dir.ordinal();
-         return new DoubleEdge(
+         return new DoubleJedge(
           // first/second is flipped:
           pool[neck2 * 6 + curv2 * 2][rotationIndex],
           pool[neck1 * 6 + curv1 * 2 + 1][rotationIndex]
          );
       }
    }
-} // class RandomEdge
+   
+   public void writeToParcel(Parcel dest)
+   {
+      // TODO!
+   }
+} // class JedgeParams
 }

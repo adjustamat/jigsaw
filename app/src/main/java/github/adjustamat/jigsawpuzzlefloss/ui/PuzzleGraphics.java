@@ -19,8 +19,8 @@ import androidx.annotation.FloatRange;
 
 import github.adjustamat.jigsawpuzzlefloss.game.Direction;
 import github.adjustamat.jigsawpuzzlefloss.game.ImagePuzzle;
-import github.adjustamat.jigsawpuzzlefloss.pieces.AbstractPiece.VectorEdges;
-import github.adjustamat.jigsawpuzzlefloss.pieces.LargerPiece.LargerPieceEdges;
+import github.adjustamat.jigsawpuzzlefloss.pieces.AbstractPiece.VectorJedges;
+import github.adjustamat.jigsawpuzzlefloss.pieces.LargerPiece.LargerPieceJedges;
 
 public class PuzzleGraphics
 {
@@ -68,11 +68,11 @@ public static void init(ImagePuzzle imagePuzzle)
    innerPaint.setStrokeCap(Cap.BUTT);
 }
 
-public static void drawRotatingPiece(Canvas playMatCanvas, VectorEdges vectorEdges,
+public static void drawRotatingPiece(Canvas playMatCanvas, VectorJedges vectorJedges,
  PointF mousePoint, PointF position,
  Direction originalRotation, boolean clockwise, @FloatRange(from=0, to=1) float amount)
 {
-   Path pieceShapePath = vectorEdges.drawOuterEdges();
+   Path pieceShapePath = vectorJedges.drawOuterEdges();
    
    // move to the playMat-coordinates of the piece:
    playMatCanvas.translate(position.x, position.y);
@@ -91,22 +91,22 @@ public static void drawRotatingPiece(Canvas playMatCanvas, VectorEdges vectorEdg
  * or drawn shrunken as a thumbnail for BoxAdapter. The buffer canvas can be saved until the piece is attached (made
  * larger).
  * @param pieceBufferCanvas the buffer canvas
- * @param vectorEdges the shape of an AbstractPiece from the ImagePuzzle supplied to {@link #init(ImagePuzzle)}.
+ * @param vectorJedges the shape of an AbstractPiece from the ImagePuzzle supplied to {@link #init(ImagePuzzle)}.
  */
-public static void drawPiece(Canvas pieceBufferCanvas, VectorEdges vectorEdges)
+public static void drawPiece(Canvas pieceBufferCanvas, VectorJedges vectorJedges)
 {
-   Path pieceShapePath = vectorEdges.drawOuterEdges();
+   Path pieceShapePath = vectorJedges.drawOuterEdges();
    
    // offset (translate) BitmapShader to the correct part of the puzzle image:
-   shader.setLocalMatrix(vectorEdges.getImageTranslateMatrix(theImagePuzzle));
+   shader.setLocalMatrix(vectorJedges.getImageTranslateMatrix(theImagePuzzle));
    //piecePaint.setShader(shader); // TODO: is it necessary to do this again?
    
    // draw the puzzle piece:
    pieceBufferCanvas.drawPath(pieceShapePath, piecePaint);
    
    // draw innerEdges of LargerPiece:
-   if (vectorEdges instanceof LargerPieceEdges) {
-      Path path = ((LargerPieceEdges) vectorEdges).drawInnerEdges(0f, 0f);
+   if (vectorJedges instanceof LargerPieceJedges) {
+      Path path = ((LargerPieceJedges) vectorJedges).drawInnerEdges(0f, 0f);
       pieceBufferCanvas.drawPath(path, innerPaint);
    }
 }

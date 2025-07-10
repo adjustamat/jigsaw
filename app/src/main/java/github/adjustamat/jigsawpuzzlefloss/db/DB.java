@@ -7,11 +7,13 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.CompressFormat;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.provider.MediaStore;
 import android.util.Log;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.security.MessageDigest;
@@ -27,8 +29,8 @@ public static final String DB_FILENAME = "DB";
 
 public static final String BITMAP_TABLE_NAME = "BM";
 public static final String C_INT_BITMAP_ID = "BMID";
-//public static final String C_STR_BITMAP_FILE = "LOCAL";
 public static final String C_STR_BITMAP_URI = "URI";
+public static final String SCHEME_CROPPED_BITMAP = "cropped";
 
 public static final String GAME_TABLE_NAME = "PZ";
 public static final String C_INT_GAME_ID = "PZID";
@@ -47,7 +49,6 @@ public void onCreate(SQLiteDatabase sdb)
    sdb.execSQL(
     "CREATE TABLE " + BITMAP_TABLE_NAME + "(" +
      C_INT_BITMAP_ID + " INTEGER PRIMARY KEY," +
-     //     C_STR_BITMAP_FILE + "TEXT," +
      C_STR_BITMAP_URI + " TEXT)"
    );
    sdb.execSQL(
@@ -56,6 +57,11 @@ public void onCreate(SQLiteDatabase sdb)
      C_INT_GAME_BITMAP_ID + " INTEGER," +
      C_BLOB_GAME_DATA + " BLOB)"
    );
+}
+
+public boolean isLoaded()
+{
+   return loaded;
 }
 
 public void loadOnBackgroundThread()
@@ -73,10 +79,9 @@ public void onUpgrade(SQLiteDatabase sdb, int oldVersion, int newVersion)
    onCreate(sdb);
 }
 
-private static File makeFilename(Uri uri, Context ctx)
+private static File makeNewPNGFilename(Uri originalUri, Context ctx)
 {
-   
-   String tooLongName = uri.toString() + System.currentTimeMillis();
+   String tooLongName = originalUri.toString() + System.currentTimeMillis();
    StringBuilder sha256 = new StringBuilder();
    try {
       byte[] shabytes = MessageDigest.getInstance("SHA-256")
@@ -89,40 +94,56 @@ private static File makeFilename(Uri uri, Context ctx)
       }
    }
    catch (Exception e) {
-      Log.e(DBG, "makeFilename()", e);
-      return null;
+      Log.e(DBG, "makeNewPNGFilename() - Exception", e);
+      sha256.append("error");
    }
    sha256.append(".png");
-   return new File(ctx.getCacheDir(), sha256.toString());
+   return new File(ctx.getFilesDir()/*ctx.getCacheDir()*/, sha256.toString());
 }
 
-public int saveCroppedBitmap(Uri uri, Bitmap bitmap, Context ctx)
+/**
+ * Saves bitmap as PNG in ctx.getFilesDir(). Creates new bitmapUri and saves it in the database.
+ * @param originalUri the bitmapUri of the uncropped bitmap
+ * @param bitmap the cropped bitmap
+ * @param ctx a Context
+ * @return a new bitmapID
+ */
+public int saveCroppedBitmap(Uri originalUri, Bitmap bitmap, Context ctx)
 {
-   File file = makeFilename(uri, ctx);
+   File pngFilename = makeNewPNGFilename(originalUri, ctx);
    try {
-      FileOutputStream outputStream = new FileOutputStream(file);
-      //ctx.openFileOutput(file, Context.MODE_PRIVATE);
-      bitmap.compress(CompressFormat.PNG, 100, outputStream); // write file!
+      FileOutputStream outputStream = new FileOutputStream(pngFilename);
+      //ctx.openFileOutput(pngFilename, Context.MODE_PRIVATE);
+      bitmap.compress(CompressFormat.PNG, 100, outputStream); // write to file!
       outputStream.flush();
       outputStream.close();
    }
    catch (IOException e) {
       Log.e("DBG", "saveCroppedBitmap() - IOException", e);
    }
-   
-   return saveBitmap(Uri.fromFile(file));
+   return saveBitmapUri(
+    new Uri.Builder().scheme(SCHEME_CROPPED_BITMAP)
+     .opaquePart(pngFilename.getName()).build()
+   ); // Uri is like "cropped:p8jzs5ob717v4hsh.png"
+   //return saveBitmapUri(Uri.fromFile(pngFilename)); // Uri has file: scheme. (if file moves, there will be an error later)
 }
 
-public int saveBitmap(Uri uri)
+/**
+ * Saves a bitmapUri in the database.
+ * @param newBitmapUri a new bitmapUri
+ * @return a new bitmapID
+ */
+public int saveBitmapUri(Uri newBitmapUri)
 {
+   // getNewBitmapID() AKA saveBitmapUri()
    SQLiteDatabase sdb = getWritableDatabase();
    ContentValues values = new ContentValues();
-   values.put(C_STR_BITMAP_URI, uri.toString()); // save filename as Uri
+   values.put(C_STR_BITMAP_URI, newBitmapUri.toString());
    
-   long row = sdb.insert(BITMAP_TABLE_NAME, null, values);
+   long rowID = sdb.insert(BITMAP_TABLE_NAME, null, values);
    
    sdb.close();
-   return (int) row; // return bitmapID = new rowid
+   return (int) rowID; // returned bitmapID is new row ID
 }
 
 public int getBitmapID(Uri bitmapUri)
@@ -143,21 +164,11 @@ public Uri getBitmapUri(int bitmapID)
 {
    Uri ret = null;
    SQLiteDatabase sdb = getReadableDatabase();
-   Cursor cursor = sdb.query(BITMAP_TABLE_NAME, new String[]{C_STR_BITMAP_URI
-     // , C_STR_BITMAP_FILE
-    },
+   Cursor cursor = sdb.query(BITMAP_TABLE_NAME, new String[]{C_STR_BITMAP_URI},
     C_INT_BITMAP_ID + " = " + bitmapID, null, null, null, null);
    if (cursor.moveToFirst()) {
-//      String filestr = cursor.getString(cursor.getColumnIndexOrThrow(C_STR_BITMAP_FILE));
-//      if (filestr != null && !filestr.isEmpty()) {
-//         Uri.fromFile(new File(filestr));
-//      }
-//      else {
       String uriString = cursor.getString(cursor.getColumnIndexOrThrow(C_STR_BITMAP_URI));
       ret = Uri.parse(uriString);
-
-//      }
-   
    }
    cursor.close();
    sdb.close();
@@ -171,17 +182,37 @@ public Bitmap getBitmap(int bitmapID, Context ctx)
 
 public static Bitmap loadBitmapFromUri(Uri uri, Context ctx)
 {
-   // String mimeType = ctx.getContentResolver().getType(uri);
-   Bitmap ret;
-   // API 28: ImageDecoder.createSource(ctx.getContentResolver(),uri);
+   Bitmap ret = null;
+   
+   if (SCHEME_CROPPED_BITMAP.equals(uri.getScheme())) {
+      return loadCroppedBitmap(uri.getSchemeSpecificPart(), ctx);
+   }
+   
    try {
+      // API 28: ImageDecoder.createSource(ctx.getContentResolver(),uri);
       ret = MediaStore.Images.Media.getBitmap(ctx.getContentResolver(), uri);
    }
    catch (IOException e) {
-      Log.d(PuzzleGraphics.DBG, "loadBitmap(" + uri + ") - " + e);
-      ret = null;
+      Log.d(PuzzleGraphics.DBG, "loadBitmapFromUri(" + uri + ") - IOException", e);
    }
    return ret;
 }
 
+private static Bitmap loadCroppedBitmap(String pngFilename, Context ctx)
+{
+   Bitmap ret = null;
+   try {
+      File file = new File(ctx.getFilesDir(), pngFilename);
+      if (file.isFile()) {
+         FileInputStream inputStream = new FileInputStream(file);
+         //ctx.openFileInput(file);
+         ret = BitmapFactory.decodeStream(inputStream);
+         inputStream.close();
+      }
+   }
+   catch (IOException e) {
+      Log.e(DBG, "loadCroppedBitmap(" + pngFilename + ") - IOException", e);
+   }
+   return ret;
+}
 }

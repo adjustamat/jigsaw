@@ -32,27 +32,6 @@ public class Group
  implements GroupOrSinglePiece
 {
 private static final String DBG = "Group";
-private static int counter = 0;
-
-public void writeToParcel(Parcel dest, int flags)
-{
-   // TODO!
-}
-
-public static Group createFromParcelToBox(Parcel in, Loading loading)
-{
-   // TODO! use SinglePiece.createFromParcelToGroup(), LargerPiece.createFromParcelToGroup()
-}
-
-public static Group createFromParcelToTemp(Parcel in, Loading loading)
-{
-   // TODO! use SinglePiece.createFromParcelToGroup(), LargerPiece.createFromParcelToGroup()
-}
-
-public static Group createFromParcelToPlayMat(Parcel in, Loading loading)
-{
-   // TODO! use SinglePiece.createFromParcelToGroup(), LargerPiece.createFromParcelToGroup()
-}
 
 public class Dirty
 {
@@ -79,9 +58,39 @@ private int indexInContainer;
 final List<AbstractPiece> pieces = new LinkedList<>();
 int largerPieces = 0;
 
-public Group(Container container, int indexInContainer)
+public void writeToParcel(Parcel dest)
 {
-   groupNumber = ++counter;
+   dest.writeFloat(relativePos.x);
+   dest.writeFloat(relativePos.y);
+   dest.writeInt(name == null ?0 :1);
+   if (name != null)
+      dest.writeString(name);
+   dest.writeInt(groupNumber);
+   dest.writeInt(largerPieces);
+   dest.writeInt(pieces.size());
+   for (AbstractPiece piece: pieces) {
+      piece.writeToParcel(dest); // TODO: writeToParcelFromGroup maybe?
+   }
+}
+
+public static Group createFromParcelToBox(Parcel in, Loading loading)
+{
+   // TODO! use SinglePiece.createFromParcelToGroup(), LargerPiece.createFromParcelToGroup()
+}
+
+public static Group createFromParcelToTemp(Parcel in, Loading loading)
+{
+   // TODO! use SinglePiece.createFromParcelToGroup(), LargerPiece.createFromParcelToGroup()
+}
+
+public static Group createFromParcelToPlayMat(Parcel in, Loading loading)
+{
+   // TODO! use SinglePiece.createFromParcelToGroup(), LargerPiece.createFromParcelToGroup()
+}
+
+public Group(Container container, int indexInContainer, int number)
+{
+   groupNumber = number;
    setContainer(container, indexInContainer);
 }
 
@@ -116,8 +125,13 @@ public void replaceLoading(Container loadedContainer)
 public @NonNull String getName(Context ctx)
 {
    if (name == null)
-      name = ctx.getString(R.string.group_default_name, groupNumber);
+      return /*name =*/ctx.getString(R.string.group_default_name, groupNumber);
    return name;
+}
+
+public boolean isNameSet()
+{
+   return name != null;
 }
 
 /**
@@ -139,7 +153,7 @@ public static void layoutPiecesNoOverlap(Collection<AbstractPiece> pieces, float
 {
    Iterator<AbstractPiece> pieceIterator = pieces.iterator();
    AbstractPiece piece;
-   PointF edgeWidths;
+   PointF jigBreadth;
    int c = 0;
    float widthSum = 0f, heightSum = 0f, edgeHeightsMax = 0f;
    if (within != null) {
@@ -154,9 +168,9 @@ public static void layoutPiecesNoOverlap(Collection<AbstractPiece> pieces, float
                if (!pieceIterator.hasNext())
                   break outer;
                piece = pieceIterator.next();
-               edgeWidths = piece.getCurrentEdgeWidths();
-               widthSum += edgeWidths.x + (AbstractPiece.SIDE_SIZE + minMargin);
-               edgeHeightsMax = Math.max(edgeHeightsMax, edgeWidths.y);
+               jigBreadth = piece.getCurrentJigBreadth();
+               widthSum += jigBreadth.x + (AbstractPiece.SIDE_SIZE + minMargin);
+               edgeHeightsMax = Math.max(edgeHeightsMax, jigBreadth.y);
                piece.setRelativePos(widthSum + within[i].left, heightSum + within[i].top);
                c++;
             }
@@ -175,9 +189,9 @@ public static void layoutPiecesNoOverlap(Collection<AbstractPiece> pieces, float
    int cols = (size <= 12) ?3 :(size <= 30) ?5 :(size <= 56) ?7 :9;
    while (pieceIterator.hasNext()) {
       piece = pieceIterator.next();
-      edgeWidths = piece.getCurrentEdgeWidths();
-      widthSum += edgeWidths.x + (AbstractPiece.SIDE_SIZE + minMargin);
-      edgeHeightsMax = Math.max(edgeHeightsMax, edgeWidths.y);
+      jigBreadth = piece.getCurrentJigBreadth();
+      widthSum += jigBreadth.x + (AbstractPiece.SIDE_SIZE + minMargin);
+      edgeHeightsMax = Math.max(edgeHeightsMax, jigBreadth.y);
       piece.setRelativePos(widthSum, heightSum);
       c++;
       if (c == cols) {

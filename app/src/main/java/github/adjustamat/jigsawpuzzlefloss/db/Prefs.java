@@ -4,11 +4,14 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 
+import java.util.regex.Pattern;
+
 /**
  * Contains all user preferences for this game.
  */
 public interface Prefs
 {
+
 static void init(Global ctx)
 {
    SharedPreferences sharedPreferences = getSharedPreferences(ctx);
@@ -22,7 +25,12 @@ static void init(Global ctx)
 
 static SharedPreferences getSharedPreferences(Context ctx)
 {
-   return ctx.getSharedPreferences(Prefs.class.getSimpleName(), 0);
+   return ctx.getSharedPreferences("Prefs", 0);
+}
+
+static SharedPreferences getGamePreferences(Context ctx, int gameID)
+{
+   return ctx.getSharedPreferences("Prefs", 0);
 }
 
 interface BoolPref
@@ -54,6 +62,18 @@ enum GeneratorStr
  implements StrPref
 {
    sizeChoices
+}
+
+// TODO: only compile these if starting SettingsFragment
+Pattern sizeChoicesFilter = Pattern.compile("(\\d+\\s*,\\s*)*\\d+");
+Pattern sizeChoicesSeparator = Pattern.compile("\\s*,\\s*");
+String sizeChoicesSplit = ", ";
+
+static String filterSizeChoices(String input){
+   if(sizeChoicesFilter.matcher(input).matches()){
+      return sizeChoicesSeparator.matcher(input).replaceAll(sizeChoicesSplit);
+   }
+   return null;
 }
 
 //interface BgImagePrefs
