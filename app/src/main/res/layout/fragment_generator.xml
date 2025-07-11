@@ -9,27 +9,18 @@
     tools:ignore="ContentDescription"
     >
 
-    <SurfaceView android:id="@+id/srcCrop"
+<!--  TODO: set CropImageOptions -->
+    <com.canhub.cropper.CropImageView android:id="@+id/viewCrop"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:visibility="gone"/>
+        android:layout_height="0dp"
+        android:layout_weight="0.5"/>
 
-    <LinearLayout
-        android:id="@+id/llhCrop"
-        android:layout_width="match_parent"
+
+    <!--  maybe btnCropOnly is ImageButton with ic_fullscreen  -->
+    <Button android:id="@+id/btnCropOnly"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        >
-        <Button android:id="@+id/btnCrop"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="0"
-            android:text="@string/btnCrop"/>
-        <ImageView android:id="@+id/imgCroppedBitmap"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"/>
-    </LinearLayout>
+        android:text="@string/btnCropOnly"/>
 
     <LinearLayout android:id="@+id/llhStart"
         android:layout_width="wrap_content"
@@ -44,6 +35,7 @@
             android:text="@string/btnStart"/>
         <TextView android:id="@+id/lblNoSizeSelected"
             android:layout_width="wrap_content"
+            android:layout_marginStart="4dp"
             android:layout_height="wrap_content"
             android:text="@string/lblNoSizeSelected"
             android:textColor="@color/color_placeholder_text"/>
@@ -52,7 +44,7 @@
     <androidx.core.widget.NestedScrollView android:id="@+id/scrvGeneratorSizes"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="9"
+        android:layout_weight="0.9"
         android:orientation="vertical">
         <LinearLayout android:id="@+id/llvGeneratorSizes"
             android:layout_width="match_parent"

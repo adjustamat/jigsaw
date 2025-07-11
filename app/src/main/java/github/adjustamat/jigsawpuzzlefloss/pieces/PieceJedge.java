@@ -137,16 +137,7 @@ public Direction getSubPieceDir()
 
 public Direction getRealDirection(Direction rotate)
 {
-   switch (rotate) {
-   case EAST:
-      return subPieceDir.next();
-   case SOUTH:
-      return subPieceDir.opposite();
-   case WEST:
-      return subPieceDir.prev();
-   default: //    case NORTH:
-      return subPieceDir;
-   }
+   return subPieceDir.rotated(rotate);
 }
 
 public PieceJedge setSubPiece(Point subPiece, Direction dir)

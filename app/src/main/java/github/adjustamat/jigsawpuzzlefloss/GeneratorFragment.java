@@ -10,13 +10,11 @@ import android.text.TextWatcher;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.SurfaceHolder;
-import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.EditText;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
@@ -25,6 +23,9 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.widget.AppCompatRadioButton;
 import androidx.core.widget.NestedScrollView;
 import androidx.fragment.app.Fragment;
+
+import com.canhub.cropper.CropImageOptions;
+import com.canhub.cropper.CropImageView;
 
 import java.util.LinkedList;
 
@@ -41,15 +42,15 @@ public static final String ARG_BITMAP_URI = "mat.IMAGE_URI";
 public static final String ARG_BITMAP_ID = "mat.IMAGE_ID";
 private Bitmap croppedBitmap;
 private Uri bitmapUri;
-private int defaultPiecesCirca = 200; // TODO: default size (pieces) if no option was chosen before custom!
+private static final int defaultPiecesCirca = 200; // TODO: default size (pieces) if no option was chosen before custom!
 private boolean cropped;
 
-private class EditTextListener
+private class CustomSizeListener
  implements TextWatcher
 {
-   private final boolean width;
+   private final boolean isWidth;
    
-   private EditTextListener(boolean width){ this.width = width; }
+   private CustomSizeListener(boolean isWidth){ this.isWidth = isWidth; }
    
    public void beforeTextChanged(CharSequence s, int start, int count, int after)
    {
@@ -57,7 +58,7 @@ private class EditTextListener
    
    public void onTextChanged(CharSequence s, int start, int before, int count)
    {
-      if (width) {
+      if (isWidth) {
          if (!ui.txtCustomWidth.isEnabled())
             return;
       }
@@ -68,13 +69,15 @@ private class EditTextListener
       Integer i;
       try {
          i = Integer.parseInt(s.toString());
+         (isWidth ?ui.txtCustomWidth :ui.txtCustomHeight).setTextColor(ui.normalTextColor);
       }
       catch (NumberFormatException exception) {
          i = null;
+         (isWidth ?ui.txtCustomWidth :ui.txtCustomHeight).setTextColor(ui.errorTextColor);
       }
       if (i != null) {
          int prev;
-         if (width) {
+         if (isWidth) {
             prev = ui.selectedSize.wxh.x;
             ui.selectedSize.wxh.x = i;
          }
@@ -136,6 +139,9 @@ private class SizeOption
       double width = ratio * height;
       wxh.x = (int) Math.round(width);
       wxh.y = (int) Math.round(height);
+      // TODO: !! cropping is mandatory! show on cropview what happens when choosing options or changing custom size.
+      //  how do we calculate where to remove margins from? can pieceSquareSize only be an integer? can the ratio?
+      
    }
    
    void setWidthXHeight(Context ctx, Bitmap bitmap, SizeOption prev)
@@ -160,18 +166,12 @@ private class SizeOption
    
 }
 
-private class Views implements SurfaceHolder.Callback
+private class Views
+ implements SurfaceHolder.Callback
 {
-   final LinearLayout llhCrop;
-   final Button btnCrop;
-   final ImageView imgCroppedBitmap;
-   
-   final SurfaceView srcCrop;
+   final CropImageView viewCrop;
+   final Button btnCropOnly;
    private boolean cropMode = false;
-   SurfaceHolder srcCropHolder;
-   
-   
-  
    
    final LinearLayout llhStart;
    final Button btnStart;
@@ -187,13 +187,13 @@ private class Views implements SurfaceHolder.Callback
    final EditText txtCustomWidth;
    final EditText txtCustomHeight;
    final TextView lblCustomSize;
+   final int normalTextColor;
+   final int errorTextColor;
    
    private Views(View view, Context ctx)
    {
-      this.llhCrop = view.findViewById(R.id.llhCrop);
-      this.btnCrop = view.findViewById(R.id.btnCrop);
-      this.imgCroppedBitmap = view.findViewById(R.id.imgCroppedBitmap);
-      this.srcCrop = view.findViewById(R.id.srcCrop);
+      this.viewCrop = view.findViewById(R.id.viewCrop);
+      this.btnCropOnly = view.findViewById(R.id.btnCropOnly);
       this.llhStart = view.findViewById(R.id.llhStart);
       this.btnStart = view.findViewById(R.id.btnStart);
       this.lblNoSizeSelected = view.findViewById(R.id.lblNoSizeSelected);
@@ -204,8 +204,11 @@ private class Views implements SurfaceHolder.Callback
       this.txtCustomHeight = view.findViewById(R.id.txtCustomHeight);
       this.lblCustomSize = view.findViewById(R.id.lblCustomSize);
       
-      txtCustomWidth.addTextChangedListener(new EditTextListener(true));
-      txtCustomHeight.addTextChangedListener(new EditTextListener(false));
+      normalTextColor = txtCustomHeight.getCurrentTextColor();
+      errorTextColor = ctx.getResources().getColor(R.color.color_placeholder_text);
+      
+      txtCustomWidth.addTextChangedListener(new CustomSizeListener(true));
+      txtCustomHeight.addTextChangedListener(new CustomSizeListener(false));
       
       radioChangeListener = (buttonView, isChecked)->{
          if (isChecked) {
@@ -231,43 +234,49 @@ private class Views implements SurfaceHolder.Callback
       sizeOptions.add(new SizeOption(radioCustomSize, radioChangeListener));
       addChoices(ctx);
       
-      btnCrop.setOnClickListener(v->{
-         // TODO: crop library
-         //setCropMode(true);
+      btnCropOnly.setOnClickListener(v->{
+         setCropMode(true);
       });
       
       btnStart.setOnClickListener(v->{
          Act activity = (Act) requireActivity();
+         // TODO: // Subscribe to async event using cropImageView.setOnCropImageCompleteListener(listener)
+         // cropImageView.getCroppedImageAsync()
          activity.generateAndShowNewPuzzle(selectedSize.wxh, croppedBitmap, cropped, bitmapUri);
       });
    }
    
-   
-// TODO: test both! use library: either uCrop or CanHub/Android-Image-Cropper! intent or fragment?
-//  void setCropMode(boolean crop)
-//   {
-//      cropMode = crop;
-//      if (cropMode) {
-//         scrvGeneratorSizes.setVisibility(View.GONE);
-//         llhStart.setVisibility(View.GONE);
-//         llhCrop.setVisibility(View.GONE);
-//
-//         // TODO: show srcCrop with correct bitmap and drawing method
-//         srcCrop.setVisibility(View.VISIBLE);
-//      }
-//      else {
-//         // TODO: srcCrop itself can call setCropMode(false)!
-//         srcCrop.setVisibility(View.GONE);
-//
-//         // TODO: set cropped=true if changes were made. delete the cropped parts and set croppedBitmap as the rest!
-//
-//         scrvGeneratorSizes.setVisibility(View.VISIBLE);
-//         llhStart.setVisibility(View.VISIBLE);
-//         llhCrop.setVisibility(View.VISIBLE);
-//
-//         addChoices(requireContext()); // load choices again (on top) after crop
-//      }
-//   }
+   /**
+    * TODO: see {@link CropImageOptions}
+    * @param crop
+    */
+   // TODO: test both! use library: either uCrop or CanHub/Android-Image-Cropper! intent or fragment?
+   void setCropMode(boolean crop)
+   {
+      cropMode = crop;
+      if (cropMode) {
+         scrvGeneratorSizes.setVisibility(View.GONE);
+         llhStart.setVisibility(View.GONE);
+         btnCropOnly.setVisibility(View.GONE);
+         
+         // TODO: show srcCrop with correct bitmap and drawing method
+         // TODO: do this when creating fragment!! -> viewCrop.setImageBitmap(croppedBitmap);
+         //viewCrop.setVisibility(View.VISIBLE);
+         //viewCrop TODO: maybe change some settings of the view
+      }
+      else {
+         // TODO: srcCrop itself can call setCropMode(false)!
+         //viewCrop.setVisibility(View.GONE);
+         
+         // TODO: set cropped=true if changes were made. delete the cropped parts and set croppedBitmap as the rest!
+         
+         scrvGeneratorSizes.setVisibility(View.VISIBLE);
+         llhStart.setVisibility(View.VISIBLE);
+         btnCropOnly.setVisibility(View.VISIBLE);
+         
+         addChoices(requireContext()); // load choices again (on top) after crop
+      }
+   }
    
    void clearCustomSize()
    {
@@ -283,6 +292,8 @@ private class Views implements SurfaceHolder.Callback
    {
       txtCustomWidth.setText(String.valueOf(selectedSize.wxh.x));
       txtCustomHeight.setText(String.valueOf(selectedSize.wxh.y));
+      txtCustomWidth.setTextColor(normalTextColor);
+      txtCustomHeight.setTextColor(normalTextColor);
       txtCustomWidth.setEnabled(true);
       txtCustomHeight.setEnabled(true);
       
@@ -318,7 +329,7 @@ private class Views implements SurfaceHolder.Callback
    {
    
    }
-   
+
 //   public void surfaceRedrawNeeded(@NonNull SurfaceHolder holder)
 //   {
 //
@@ -386,7 +397,7 @@ public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceStat
       if (croppedBitmap == null)
          Log.d(DBG, "croppedBitmap is null");
       else
-         ui.imgCroppedBitmap.setImageBitmap(croppedBitmap);
+         ui.viewCrop.setImageBitmap(croppedBitmap); //ui.imgCroppedBitmap.setImageBitmap(croppedBitmap);
    }
    else Log.d(DBG, "onViewCreated() - Bundle getArguments() returns null!");
 }

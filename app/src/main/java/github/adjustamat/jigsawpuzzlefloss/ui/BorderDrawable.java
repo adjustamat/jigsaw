@@ -21,8 +21,17 @@ public static int
 private final @DrawableRes int drawable;
 private final Point location;
 private BorderDrawable next;
+public int rotateCorner = 0; // TODO: (rotateCorner % 4)
+public int rotateAndMove = 0; // TODO: ((rotateAndMove + rotateAllFromWest) % 4)
+public int rotateAndMoveAllFromWest = 0;
+//public @NonNull Direction rotationFromNW = Direction.NORTH;
+//public @NonNull Direction turnAndMove = Direction.NORTH;
+//public @NonNull Direction iHeadingTurnAndMoveAll = Direction.WEST;
 
-private BorderDrawable(//@DrawableRes
+// TODO: create methods drawMe(int rotateAndMoveAll) and drawAll()
+
+private BorderDrawable(
+ //TODO: @DrawableRes
  int drawable, int x, int y)
 {
    this.drawable = drawable;
@@ -43,24 +52,48 @@ private BorderDrawable concat(BorderDrawable other)
    return this;
 }
 
-private BorderDrawable rotateCW()
+private BorderDrawable rotateMeCW()
 {
    // TODO! only rotate around center of drawable, not center of SinglePiece!
+   rotateCorner++;//rotationFromNW = rotationFromNW.next();
    return this;
 }
 
-private BorderDrawable rotateCCW()
+private BorderDrawable rotateMeCCW()
 {
    // TODO! only rotate around center of drawable, not center of SinglePiece!
+   rotateCorner--;//rotationFromNW = rotationFromNW.prev();
    return this;
 }
 
-private BorderDrawable turn(Direction direction)
+private BorderDrawable turnMe(Direction turnMove)
+{
+   // TODO! make sure to have the correct top-left coordinates - depends not only on x and y!
+   //  rotate/flip around center of SinglePiece, not center of drawable!
+   rotateAndMove += turnMove.ordinal();//turnAndMove = turnAndMove.rotated(turnMove);
+   
+   // TODO: if the drawable (CORNER or INNERCORNER) is NW then:
+   //  NORTH is no rotation
+   //  EAST is rotate CW or flip horizontally (to NE)
+   //  WEST is rotate CCW or flip vertically (to SW)
+   //  SOUTH is rotate 180 or flip twice (to SE).
+   
+   // TODO: if the drawable (I1, I2, I3) is W then:
+   //  NORTH is no rotation
+   //  EAST is rotate CW (to N) (and move)
+   //  WEST is rotate CCW (to S) (and move)
+   //  SOUTH is rotate 180 (to E) (and move).
+   return this;
+}
+
+private BorderDrawable allIHeadedTowards_AndPrev(Direction direction)
 {
    // TODO!
    //  rotate/flip around center of SinglePiece, not center of drawable!
    
-   // original position and rotation for primitives: (this is "NORTH" == "no rotation")
+   rotateAndMoveAllFromWest = direction.next().ordinal();//iHeadingTurnAndMoveAll = direction;
+   
+   // original position and rotation for primitives: // TODO: ?? (this is "NORTH" == "no rotation")
    // NW: PRIMITIVE_CORNER,
    //     PRIMITIVE_INNERCORNER,
    // W: PRIMITIVE_SIDE_I3 /* length 120 = 50 + 20 + 50 */,
@@ -68,91 +101,70 @@ private BorderDrawable turn(Direction direction)
    //    PRIMITIVE_SHORT_I2_CW /* length 70 = 20 + 50 */,
    //    PRIMITIVE_INNER_I1 /* length 20 */,
    // E: PRIMITIVE_BGSIDE;
-   
-   if (next != null)
-      next.turn(direction);
+
+//   if (next != null)
+//      next.turnAll(direction);
    return this;
 }
 
-private BorderDrawable flip(boolean northSouth, boolean westEast)
+// PRIVATE: crnr (primitive + turnMe)
+private static BorderDrawable crnr(int x, int y, Direction turnFromNW/*boolean north, boolean west*/)
 {
-   // TODO! make sure to have the correct top-left coordinates - depends not only on x and y! (see corner method)
-   //  rotate/flip around center of SinglePiece, not center of drawable!
-   
-   // TODO: if the drawable is nw then:
-   //  false,false is no rotation
-   //  false,true is flip horizontally (to ne)
-   //  true,false is flip vertically (to sw)
-   //  true,true is rotate 180 or flip twice (to se).
+   return cornerNW(x, y)
+    .turnMe(turnFromNW);
+}
 
-//   if (next != null)
-//      next.flip(northSouth, westEast);
-   return this;
+public static BorderDrawable cornerSE(int x, int y)
+{
+   return crnr(x, y, Direction.SOUTH);
+}
+
+public static BorderDrawable cornerSW(int x, int y)
+{
+   return crnr(x, y, Direction.WEST);
+}
+
+public static BorderDrawable cornerNE(int x, int y)
+{
+   return crnr(x, y, Direction.EAST);
+}
+
+public static BorderDrawable cornerNW(int x, int y)
+{
+   return new BorderDrawable(PRIMITIVE_CORNER, x, y);
+   //crnr(x, y, Direction.NORTH);
 }
 
 public static BorderDrawable side(int x, int y, Direction dir)
 {
    return new BorderDrawable(PRIMITIVE_SIDE_I3, x, y)
     .concat(new BorderDrawable(PRIMITIVE_BGSIDE, x + dir.x, y + dir.y))
-    .turn(dir);
+    .allIHeadedTowards_AndPrev(dir);
 }
 
 public static BorderDrawable sideShortLeft(int x, int y, Direction dir)
 {
    return new BorderDrawable(PRIMITIVE_SHORT_I2_CCW, x, y)
-    .concat(new BorderDrawable(PRIMITIVE_CORNER, x, y).rotateCCW())
+    .concat(new BorderDrawable(PRIMITIVE_CORNER, x, y).rotateMeCCW()) // TODO: corner?
+    
     .concat(new BorderDrawable(PRIMITIVE_BGSIDE, x + dir.x, y + dir.y))
-    .turn(dir);
+    .allIHeadedTowards_AndPrev(dir);
 }
 
 public static BorderDrawable sideShortRight(int x, int y, Direction dir)
 {
    return new BorderDrawable(PRIMITIVE_SHORT_I2_CW, x, y)
-    .concat(corner(x, y, false, true).rotateCW())
-    
-    // new BorderDrawable(PRIMITIVE_CORNER, x, y).rotateCW().turn(Direction.WEST)
+    .concat(crnr(x, y, Direction.WEST).rotateMeCW()) // TODO: ?
+    // new BorderDrawable(PRIMITIVE_CORNER, x, y).rotateCW().turn(Direction.WEST) // TODO: ?
     .concat(new BorderDrawable(PRIMITIVE_BGSIDE, x + dir.x, y + dir.y))
-    .turn(dir);
+    .allIHeadedTowards_AndPrev(dir);
 }
 
-private static BorderDrawable corner(int x, int y, boolean north, boolean west)
+// PRIVATE: i1side (i1 + bgside + 2x turnMe)
+private static BorderDrawable i1side(int x, int y, Direction dir)
 {
-   // TODO: if the drawable is nw then:
-   //  true,true is no rotation
-   //  true,false is flip horizontally (to ne, rotate CW)
-   //  false,true is flip vertically (to sw, rotate CCW)
-   //  false,false is rotate 180 or flip twice (to se).
-   
-   // TODO in flip: make sure to have the correct top-left coordinates - depends not only on x and y!
-   return new BorderDrawable(PRIMITIVE_CORNER, x, y)
-    .flip(!north, !west);
-}
-
-public static BorderDrawable cornerSE(int x, int y)
-{
-   return corner(x, y, false, false);
-}
-
-public static BorderDrawable cornerSW(int x, int y)
-{
-   return corner(x, y, false, true);
-}
-
-public static BorderDrawable cornerNE(int x, int y)
-{
-   return corner(x, y, true, false);
-}
-
-public static BorderDrawable cornerNW(int x, int y)
-{
-   return corner(x, y, true, true);
-}
-
-private static BorderDrawable innerSide(int x, int y, Direction dir)
-{
-   return new BorderDrawable(PRIMITIVE_INNER_I1, x, y)
-    .concat(new BorderDrawable(PRIMITIVE_BGSIDE, x + dir.x, y + dir.y))
-    .turn(dir);
+   return new BorderDrawable(PRIMITIVE_INNER_I1, x, y).turnMe(dir)
+    .concat(new BorderDrawable(PRIMITIVE_BGSIDE, x + dir.x, y + dir.y).turnMe(dir));
 }
 
 public static BorderDrawable innerShapeO(int x, int y)
@@ -167,14 +179,14 @@ public static BorderDrawable innerShapeO(int x, int y)
 //       \**/
 //        \/
    // TODO: or have a SHAPE_O primitive
-   return innerSide(x, y, Direction.NORTH) // "NORTH" == no rotation == W
-    .concat(innerSide(x, y, Direction.WEST)) // turn CCW ==> S
-    .concat(innerSide(x, y, Direction.SOUTH)) // turn twice ==> E
-    .concat(innerSide(x, y, Direction.EAST)) // turn CW ==> N
+   return i1side(x, y, Direction.NORTH)
+    .concat(i1side(x, y, Direction.EAST))
+    .concat(i1side(x, y, Direction.WEST))
+    .concat(i1side(x, y, Direction.SOUTH))
     .concat(new BorderDrawable(PRIMITIVE_INNERCORNER, x, y)) // NW
-    .concat(new BorderDrawable(PRIMITIVE_INNERCORNER, x, y).flip(false, true)) // NE
-    .concat(new BorderDrawable(PRIMITIVE_INNERCORNER, x, y).flip(true, false)) // SW
-    .concat(new BorderDrawable(PRIMITIVE_INNERCORNER, x, y).flip(true, true)); // SE
+    .concat(new BorderDrawable(PRIMITIVE_INNERCORNER, x, y).turnMe(Direction.EAST)) // NE
+    .concat(new BorderDrawable(PRIMITIVE_INNERCORNER, x, y).turnMe(Direction.WEST)) // SW
+    .concat(new BorderDrawable(PRIMITIVE_INNERCORNER, x, y).turnMe(Direction.SOUTH)); // SE
 }
 
 public static BorderDrawable innerShapeU(int x, int y, Direction dir)
@@ -189,14 +201,14 @@ public static BorderDrawable innerShapeU(int x, int y, Direction dir)
    // TODO: or have a SHAPE_U primitive
    Direction prev = dir.prev();
    Direction next = dir.next();
-   return new BorderDrawable(PRIMITIVE_SHORT_I2_CW, x, y).turn(Direction.WEST) // CCW == S
+   return new BorderDrawable(PRIMITIVE_SHORT_I2_CW, x, y).turnMe(Direction.WEST) // CCW == S
     .concat(new BorderDrawable(PRIMITIVE_BGSIDE, x + prev.x, y + prev.y))
-    .concat(new BorderDrawable(PRIMITIVE_SHORT_I2_CW, x, y).turn(Direction.EAST)) // CW == N
+    .concat(new BorderDrawable(PRIMITIVE_SHORT_I2_CW, x, y).turnMe(Direction.EAST)) // CW == N
     .concat(new BorderDrawable(PRIMITIVE_BGSIDE, x + next.x, y + next.y))
-    .concat(new BorderDrawable(PRIMITIVE_INNERCORNER, x, y).flip(false, true)) // NE
-    .concat(new BorderDrawable(PRIMITIVE_INNERCORNER, x, y).flip(true, true)) // SE
-    .turn(dir)
-    .concat(innerSide(x, y, dir.opposite()));
+    .concat(new BorderDrawable(PRIMITIVE_INNERCORNER, x, y).turnMe(Direction.EAST)) // NE
+    .concat(new BorderDrawable(PRIMITIVE_INNERCORNER, x, y).turnMe(Direction.SOUTH)) // SE
+    .allIHeadedTowards_AndPrev(dir) // TODO: turnAll should be last!
+    .concat(i1side(x, y, dir.opposite()));
 }
 
 public static BorderDrawable innerShapeUShort(int x, int y, Direction dir)
@@ -208,27 +220,28 @@ public static BorderDrawable innerShapeUShort(int x, int y, Direction dir)
 //     \i\__/i/
 //      \****/
 //       \**/
+   // TODO: or have a SHAPE_U_SHORT primitive
    Direction prev = dir.prev();
    Direction next = dir.next();
-   return new BorderDrawable(PRIMITIVE_CORNER, x, y).rotateCW()
-    .concat(corner(x, y, false, true).rotateCCW())
-    .concat(new BorderDrawable(PRIMITIVE_INNERCORNER, x, y).flip(false, true)) // NE
-    .concat(new BorderDrawable(PRIMITIVE_INNERCORNER, x, y).flip(true, true)) // SE
-    .turn(dir)
-    .concat(innerSide(x, y, prev))
-    .concat(innerSide(x, y, next))
-    .concat(innerSide(x, y, dir.opposite()));
+   return new BorderDrawable(PRIMITIVE_CORNER, x, y).rotateMeCW() // TODO: corner?
+    .concat(crnr(x, y, Direction.WEST).rotateMeCCW()) // TODO: ?
+    .concat(new BorderDrawable(PRIMITIVE_INNERCORNER, x, y).turnMe(Direction.EAST)) // NE
+    .concat(new BorderDrawable(PRIMITIVE_INNERCORNER, x, y).turnMe(Direction.SOUTH)) // SE
+    .allIHeadedTowards_AndPrev(dir) // TODO: turnAll should be last!
+    .concat(i1side(x, y, prev))
+    .concat(i1side(x, y, next))
+    .concat(i1side(x, y, dir.opposite()));
 }
 
 public static BorderDrawable innerShapeL(int x, int y, Direction dirAndPrev)
 {
    Direction prev = dirAndPrev.prev();
-   return new BorderDrawable(PRIMITIVE_SHORT_I2_CCW, x, y).turn(Direction.WEST) // CCW == S
-    .concat(new BorderDrawable(PRIMITIVE_INNERCORNER, x, y).flip(true, false)) // SW
+   return new BorderDrawable(PRIMITIVE_SHORT_I2_CCW, x, y).turnMe(Direction.WEST) // CCW == S
+    .concat(new BorderDrawable(PRIMITIVE_INNERCORNER, x, y).turnMe(Direction.WEST)) // SW
     .concat(new BorderDrawable(PRIMITIVE_SHORT_I2_CW, x, y))
     .concat(new BorderDrawable(PRIMITIVE_BGSIDE, x + prev.x, y + prev.y))
     .concat(new BorderDrawable(PRIMITIVE_BGSIDE, x + dirAndPrev.x, y + dirAndPrev.y))
-    .turn(dirAndPrev);
+    .allIHeadedTowards_AndPrev(dirAndPrev);
 }
 
 public static BorderDrawable innerShapeLShortLeft(int x, int y, Direction dirAndPrev)
@@ -237,8 +250,8 @@ public static BorderDrawable innerShapeLShortLeft(int x, int y, Direction dirAnd
    Direction prev = dirAndPrev.prev();
    return new BorderDrawable()
     
-    .turn(dirAndPrev)
-    .concat(innerSide(x, y, dirAndPrev));
+    .allIHeadedTowards_AndPrev(dirAndPrev) // TODO: turnAll should be last!
+    .concat(i1side(x, y, dirAndPrev));
 }
 
 public static BorderDrawable innerShapeLShortRight(int x, int y, Direction dirAndPrev)
@@ -247,7 +260,7 @@ public static BorderDrawable innerShapeLShortRight(int x, int y, Direction dirAn
    Direction prev = dirAndPrev.prev();
    return new BorderDrawable()
     
-    .turn(dirAndPrev);
-    .concat(innerSide(x, y, prev));
+    .allIHeadedTowards_AndPrev(dirAndPrev) // TODO: turnAll should be last!
+    .concat(i1side(x, y, prev));
 }
 }

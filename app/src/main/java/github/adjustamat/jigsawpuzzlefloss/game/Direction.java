@@ -95,6 +95,19 @@ public Direction opposite()
    }
 }
 
+public Direction rotated(Direction by){
+   switch (by) {
+   case EAST:
+      return next();
+   case SOUTH:
+      return opposite();
+   case WEST:
+      return prev();
+   default: //    case NORTH:
+      return this;
+   }
+}
+
 public Direction positive()
 {
    switch (this) {

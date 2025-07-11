@@ -19,7 +19,7 @@
         (Download or open an image with the buttons below)</string>
 
     <!-- GeneratorFragment -->
-    <string name="btnCrop">Crop</string>
+    <string name="btnCropOnly">Show Larger Image</string>
     <string name="btnStart">Start</string>§
     <string name="lblNoSizeSelected"> Select a puzzle size below</string>
 <!--    <string name="radioChooseSizeUnselected">~ %d pieces</string>-->
