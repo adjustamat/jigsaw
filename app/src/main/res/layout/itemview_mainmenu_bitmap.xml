@@ -5,16 +5,19 @@
     android:layout_height="wrap_content"
     android:background="@android:drawable/picture_frame"
     tools:ignore="ContentDescription"
+    android:padding="12dp"
     >
-
-    <androidx.appcompat.widget.AppCompatImageButton
+    <ImageView
+        android:id="@+id/imgMenuItem"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:minWidth="100dp"
         android:minHeight="100dp"
+        android:maxWidth="500dp"
+        android:maxHeight="500dp"
         />
 
-    <ProgressBar android:id="@+id/determinateBar"
+    <ProgressBar android:id="@+id/puzzleProgressBar"
         style="@android:style/Widget.ProgressBar.Horizontal"
         android:layout_width="match_parent"
         android:layout_height="20dp"

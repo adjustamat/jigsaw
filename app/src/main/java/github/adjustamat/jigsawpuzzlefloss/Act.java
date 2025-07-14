@@ -157,6 +157,18 @@ public DB db()
  * @param bitmapID a bitmapID
  * @return a cached Bitmap
  */
+// TODO: don't use this method! use Glide!
+/*
+Temporary size changes.
+To temporarily allow Glide to use more or less memory in certain parts of your app, you can use setMemoryCategory:
+
+Glide.get(context).setMemoryCategory(MemoryCategory.LOW);
+// Or:
+Glide.get(context).setMemoryCategory(MemoryCategory.HIGH); TODO: this is for the other activity, with PlayMat in it.
+Make sure to reset the memory category back when you leave the memory or performance sensitive area of your app:
+
+Glide.get(context).setMemoryCategory(MemoryCategory.NORMAL);
+ */
 public Bitmap getBitmap(int bitmapID)
 {
    Bitmap bitmap = bitmapCache.get(bitmapID);

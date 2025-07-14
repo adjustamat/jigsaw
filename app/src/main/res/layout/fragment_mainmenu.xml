@@ -64,7 +64,6 @@
             android:layout_height="wrap_content"
             android:text="@string/btnDownloadBitmap"/>
 
-        <!--  TODO: btnOpenBitmap: contentproviders API ! -->
         <Button android:id="@+id/btnOpenBitmap"
             style="@style/JigsawPuzzle.MainMenu.Button"
             android:layout_width="wrap_content"

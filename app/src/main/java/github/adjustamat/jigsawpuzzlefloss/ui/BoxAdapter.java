@@ -21,7 +21,6 @@ import github.adjustamat.jigsawpuzzlefloss.ui.BoxAdapter.BoxItemView;
 public class BoxAdapter
  extends RecyclerView.Adapter<BoxItemView>
 {
-//private RecyclerView recyclerView;
 protected final Box box;
 
 public BoxAdapter(Box box)
@@ -35,10 +34,9 @@ public static int bigBoxItemWidth, bigBoxItemHeight, miniBoxItemWidth, miniBoxIt
 public @NonNull BoxItemView onCreateViewHolder(@NonNull ViewGroup parent, int viewType)
 {
    LayoutInflater inflater = LayoutInflater.from(parent.getContext());
-   BoxItemView ret = new BoxItemView(
+   return new BoxItemView(
     inflater.inflate(R.layout.itemview_box_item, parent, false)
    );
-   return ret;
 }
 
 public int getItemCount()

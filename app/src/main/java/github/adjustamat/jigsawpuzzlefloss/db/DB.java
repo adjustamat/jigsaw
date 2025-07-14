@@ -34,8 +34,11 @@ public static final String SCHEME_CROPPED_BITMAP = "cropped";
 
 public static final String GAME_TABLE_NAME = "PZ";
 public static final String C_INT_GAME_ID = "PZID";
-public static final String C_INT_GAME_BITMAP_ID = C_INT_BITMAP_ID;
+public static final String C_STR_GAME_BITMAP_URI = C_STR_BITMAP_URI;
+public static final String C_INT_GAME_PROGRESS = "DONE";
 public static final String C_BLOB_GAME_DATA = "DATA";
+
+public static final String[] GET_COUNT = {"count(*)"};
 
 private boolean loaded;
 
@@ -54,9 +57,16 @@ public void onCreate(SQLiteDatabase sdb)
    sdb.execSQL(
     "CREATE TABLE " + GAME_TABLE_NAME + "(" +
      C_INT_GAME_ID + " INTEGER PRIMARY KEY," +
-     C_INT_GAME_BITMAP_ID + " INTEGER," +
+     C_STR_GAME_BITMAP_URI + " TEXT," +
+     C_INT_GAME_PROGRESS + " INTEGER," +
      C_BLOB_GAME_DATA + " BLOB)"
    );
+}
+
+public void onUpgrade(SQLiteDatabase sdb, int oldVersion, int newVersion)
+{
+   // no upgrade yet
+   onCreate(sdb);
 }
 
 public boolean isLoaded()
@@ -71,12 +81,6 @@ public void loadOnBackgroundThread()
    SQLiteDatabase sdb = getWritableDatabase();
    sdb.close();
    loaded = true;
-}
-
-public void onUpgrade(SQLiteDatabase sdb, int oldVersion, int newVersion)
-{
-   // no upgrade yet
-   onCreate(sdb);
 }
 
 private static File makeNewPNGFilename(Uri originalUri, Context ctx)
@@ -114,6 +118,7 @@ public int saveCroppedBitmap(Uri originalUri, Bitmap bitmap, Context ctx)
    try {
       FileOutputStream outputStream = new FileOutputStream(pngFilename);
       //ctx.openFileOutput(pngFilename, Context.MODE_PRIVATE);
+      // TODO: use glide library
       bitmap.compress(CompressFormat.PNG, 100, outputStream); // write to file!
       outputStream.flush();
       outputStream.close();
@@ -175,14 +180,82 @@ public Uri getBitmapUri(int bitmapID)
    return ret;
 }
 
+public int getBitmapCount()
+{
+   int count = 0;
+   SQLiteDatabase sdb = this.getReadableDatabase();
+   try (
+    Cursor cursor = sdb.query(BITMAP_TABLE_NAME, GET_COUNT,
+     null, null,
+     null, null, null)
+   ) {
+      if (cursor.moveToNext()) {
+         count = cursor.getInt(0);
+      }
+   }
+   return count;
+}
+
+public int getStartedGameCount()
+{
+   int count = 0;
+   SQLiteDatabase sdb = this.getReadableDatabase();
+   Cursor cursor =
+    sdb.query(GAME_TABLE_NAME, GET_COUNT,
+     null, null,
+     null, null, null
+    );
+//   try {
+   if (cursor.moveToNext()) {
+      count = cursor.getInt(0);
+   }
+//   }
+//   finally {
+   cursor.close();
+//   }
+   return count;
+}
+
+public Uri getGameBitmapUri(int gameID)
+{
+   Uri ret = null;
+   SQLiteDatabase sdb = getReadableDatabase();
+   Cursor cursor = sdb.query(GAME_TABLE_NAME, new String[]{C_STR_GAME_BITMAP_URI},
+    C_INT_GAME_ID + " = " + gameID, null, null, null, null);
+   if (cursor.moveToFirst()) {
+      String uriString = cursor.getString(cursor.getColumnIndexOrThrow(C_STR_GAME_BITMAP_URI));
+      ret = Uri.parse(uriString);
+   }
+   cursor.close();
+   sdb.close();
+   return ret;
+}
+
+public Integer getGameProgress(int gameID)
+{
+   Integer ret = null;
+   SQLiteDatabase sdb = getReadableDatabase();
+   Cursor cursor = sdb.query(GAME_TABLE_NAME, new String[]{C_INT_GAME_PROGRESS},
+    C_INT_GAME_ID + " = " + gameID, null, null, null, null);
+   if (cursor.moveToFirst()) {
+      ret = cursor.getInt(cursor.getColumnIndexOrThrow(C_INT_GAME_PROGRESS));
+   }
+   cursor.close();
+   sdb.close();
+   return ret;
+}
+
+// TODO: use image loader library instead - several methods: getThumbnail, getHighResBitmap
 public Bitmap getBitmap(int bitmapID, Context ctx)
 {
+   // TODO: use image loader library instead
    return loadBitmapFromUri(getBitmapUri(bitmapID), ctx);
 }
 
 public static Bitmap loadBitmapFromUri(Uri uri, Context ctx)
 {
    Bitmap ret = null;
+   // TODO: use image loader library instead - instead of SCHEME_CROPPED_BITMAP, use its cache! or cropper's Uri output.
    
    if (SCHEME_CROPPED_BITMAP.equals(uri.getScheme())) {
       return loadCroppedBitmap(uri.getSchemeSpecificPart(), ctx);
@@ -200,6 +273,7 @@ public static Bitmap loadBitmapFromUri(Uri uri, Context ctx)
 
 private static Bitmap loadCroppedBitmap(String pngFilename, Context ctx)
 {
+   // TODO: use image loader library instead - and use cropper library with Uri instead of Bitmap!
    Bitmap ret = null;
    try {
       File file = new File(ctx.getFilesDir(), pngFilename);
