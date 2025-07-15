@@ -5,39 +5,37 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:keepScreenOn="true"
-    tools:context=".PlayMatFragment"
+    tools:context=".PuzzleActivity"
     tools:ignore="ContentDescription">
     <!-- android:theme="@style/ThemeOverlay.JigsawPuzzleFLOSS.FullscreenContainer"
     android:background="?attr/fullscreenBackgroundColor" is blue. -->
 
     <!--
     TODO: temporary views (view_temporary_container_oval) can be children of frameFullscreenLayout.
-      add dropzone views along the edges of the screen (transparent but show signs when hovering) when starting
+      add dropzone views along the edges of the screen (transparent but show indicators when hovering) when starting
        drag of temporary view. -->
 
     <LinearLayout
-        android:id="@+id/llvPlayMatFragment"
+        android:id="@+id/llvPuzzleActivity"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical">
-        <!--        android:visibility="invisible" -->
 
-        <!--      android:textStyle="bold"-->
-        <!--      android:textSize="50sp"-->
-        <!--      android:gravity="center"-->
-
-<!--       TODO: another class, not NestedScrollView -->
-        <androidx.core.widget.NestedScrollView
-            android:id="@+id/zoomAndScrollView"
+        <!--       another class, not NestedScrollView -->
+        <!--        <androidx.core.widget.NestedScrollView-->
+        <!--            android:id="@+id/zoomAndScrollView"-->
+        <!--            android:layout_width="match_parent"-->
+        <!--            android:layout_height="0dp"-->
+        <!--            android:layout_weight="1">-->
+        <github.adjustamat.jigsawpuzzlefloss.ui.PlayMatView
+            android:id="@+id/viewPlayMat"
             android:layout_width="match_parent"
             android:layout_height="0dp"
-            android:layout_weight="100">
-
-            <SurfaceView
-                android:id="@+id/srcPlayMat"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
-        </androidx.core.widget.NestedScrollView>
+            android:layout_weight="1"
+           />
+<!--        android:layout_width="wrap_content"-->
+<!--        android:layout_height="wrap_content"-->
+        <!-- </androidx.core.widget.NestedScrollView>-->
 
         <ImageView
             android:id="@+id/imgSeparator"
@@ -45,8 +43,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:foregroundGravity="center_horizontal"
-            android:src="@drawable/ic_arrow_up_down" />
-        <!--        android:minHeight="48dp" -->
+            android:src="@drawable/ic_arrow_up_down"/>
+        <!-- android:minHeight="48dp" -->
 
         <LinearLayout
             android:id="@+id/llhBottom"
@@ -57,31 +55,25 @@
 
             <ImageView
                 android:id="@+id/imgBoxCover"
-                android:layout_width="wrap_content"
-                android:layout_height="match_parent"
-                android:foregroundGravity="fill_horizontal|bottom"
-                android:maxWidth="60dp"
-                android:minWidth="30dp"
-                android:minHeight="30dp" />
-            <!--            tools:src="@mipmap/ic_launcher_round"-->
+                android:layout_width="60dp"
+                android:layout_height="wrap_content"
+                />
+            <!-- android:foregroundGravity="fill_horizontal|bottom" -->
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/lstBox"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="4"
-                android:minHeight="70dp" />
-            <!--            tools:listitem="@layout/item_box_item_view"-->
-
-            <SurfaceView
-                android:id="@+id/srcMiniMap"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:maxWidth="100dp"
-                android:minWidth="40dp"
-                android:minHeight="40dp" />
+                tools:listitem="@layout/itemview_box_item"/>
+
+            <github.adjustamat.jigsawpuzzlefloss.ui.MiniMapView
+                android:id="@+id/viewMiniMap"
+                android:layout_width="100dp"
+                android:layout_height="wrap_content"
+                android:minHeight="40dp"/>
         </LinearLayout>
+
     </LinearLayout>
 
 </FrameLayout>

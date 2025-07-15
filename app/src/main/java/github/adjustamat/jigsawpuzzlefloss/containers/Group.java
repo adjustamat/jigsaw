@@ -232,7 +232,7 @@ private void add(Collection<AbstractPiece> pieces, boolean isContainer)
 
 public void add(AbstractPiece piece)
 {
-   int size = size();
+   int size = getPieceCount();
    PointF piecePos = piece.getRelativePos();
    if (piecePos == null)
       dirty.layout = true;
@@ -320,6 +320,11 @@ public boolean hasLargerPieces()
    return largerPieces > 0;
 }
 
+public int getLargerPieceCount()
+{
+   return largerPieces;
+}
+
 public boolean isLonelyPiece()
 {
    return pieces.size() == 1;
@@ -330,7 +335,7 @@ public boolean isEmpty()
    return pieces.isEmpty();
 }
 
-public int size()
+public int getPieceCount()
 {
    return pieces.size();
 }

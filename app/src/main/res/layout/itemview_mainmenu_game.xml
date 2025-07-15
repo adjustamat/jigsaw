@@ -19,4 +19,14 @@
         android:minWidth="100dp"
         android:minHeight="100dp"
         />
+
+    <ProgressBar android:id="@+id/puzzleProgressBar"
+        style="@android:style/Widget.ProgressBar.Horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="20dp"
+        android:layout_gravity="bottom"
+        android:alpha="0.6"
+        android:max="100"
+        />
+
 </FrameLayout>

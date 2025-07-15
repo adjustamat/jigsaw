@@ -1,9 +1,10 @@
 package github.adjustamat.jigsawpuzzlefloss.game;
 
 import android.content.Context;
-import android.graphics.Bitmap;
 import android.graphics.Point;
+import android.net.Uri;
 import android.os.Parcel;
+import android.util.Size;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -34,9 +35,10 @@ public final int width;
 public final int height;
 public final int totalPieces;
 
-public final Bitmap image;
+public final int gameID;
 
-public final int bitmapID;
+public final Uri bitmapUri;
+public final Size bitmapSize;
 
 public final float pieceImageSize;
 
@@ -49,7 +51,6 @@ public void writeToParcel(Parcel dest)
 {
    dest.writeInt(width);
    dest.writeInt(height);
-   dest.writeInt(bitmapID);
    
    dest.writeInt(singlePiecesContainer.list.size());
    for (GroupOrSinglePiece groupOrSinglePiece: singlePiecesContainer.list) {
@@ -86,15 +87,26 @@ public void writeToParcel(Parcel dest)
    }
 }
 
-public static ImagePuzzle createFromParcel(Parcel in, Context ctx, DB db)
+public static ImagePuzzle loadFromDatabase(int gameID, Context ctx, DB db)
 {
    Loading loading = new Loading();
    
+   Parcel in = db.getGameData(gameID);
+   
+   
+   
+   
    int width = in.readInt();
    int height = in.readInt();
+   
+   Size bitmapSize = new Size(in.readInt(), in.readInt()); // TODO: writeInt!
+   Uri bitmapUri = db.getGameBitmapUri(gameID);
+   
+   int progressPercent = db.getGameProgress(gameID);
+   
    int bitmapID = in.readInt();
    
-   Bitmap bitmap = db.getBitmap(bitmapID, ctx);
+   //Bitmap bitmap = db.getBitmap(bitmapID, ctx); TODO: image loader
    
    int size = in.readInt();
    List<GroupOrSinglePiece> box = new ArrayList<>(size);
@@ -130,32 +142,31 @@ public static ImagePuzzle createFromParcel(Parcel in, Context ctx, DB db)
       playMatLargerPieces.add(LargerPiece.createFromParcelToPlayMat(in, loading));
    }
    
-   return ImagePuzzle.getPuzzleFromDatabase(width, height, bitmap, bitmapID,
-    box, temporaryContainers,
-    playMatGroups, playMatSinglePieces, playMatLargerPieces);
-}
-
-public static ImagePuzzle getPuzzleFromDatabase(int pWidth, int pHeight, Bitmap bitmap, int bitmapID,
- List<GroupOrSinglePiece> box, List<Group> temporaryContainers,
- List<Group> playMatGroups, List<SinglePiece> playMatSinglePieces, List<LargerPiece> playMatLargerPieces)
-{
-   ImagePuzzle ret = new ImagePuzzle(pWidth, pHeight, bitmap, bitmapID, box);
+   
+   
+   in.recycle();
+   
+   ImagePuzzle ret = new ImagePuzzle(width, height, gameID,
+    bitmapSize, bitmapUri, box);
    ret.playMatContainer.setFromDatabase(playMatGroups, playMatSinglePieces, playMatLargerPieces);
    ret.temporaryContainers.addAll(temporaryContainers);
    ret.replaceLoadingWithRealContainers();
    return ret;
 }
 
-private ImagePuzzle(int width, int height, Bitmap croppedImage, int bitmapID, List<GroupOrSinglePiece> pieceList)
+private ImagePuzzle(int width, int height, int gameID,
+ Size bitmapSize, Uri bitmapUri, List<GroupOrSinglePiece> pieceList)
 {
    this.width = width;
    this.height = height;
    this.totalPieces = width * height;
+   this.gameID = gameID;
    
-   this.image = croppedImage;
-   this.bitmapID = bitmapID;
+   //this.image = croppedImage; TODO: use image loader!
+   this.bitmapSize = bitmapSize;
+   this.bitmapUri = bitmapUri;
    
-   this.pieceImageSize = (float) croppedImage.getHeight() / height;
+   this.pieceImageSize = (float) bitmapSize.getHeight() / height;
    
    this.singlePiecesContainer = new Box(pieceList, this);
    this.playMatContainer = new PlayMat();
@@ -184,14 +195,18 @@ private void replaceLoadingWithRealContainers()
  * Generate a random jigsaw pattern for the given image and size of the ImagePuzzle.
  * @param pWidth the width, in number of pieces
  * @param pHeight the height, in number of pieces
- * @param croppedImage the image
+ * @param bitmapUri the image
+ * @param bitmapSize the image size in pixels
  * @param rng a random number generator
  * @return a new ImagePuzzle with the given size and image
  */
-public static ImagePuzzle generateNewPuzzle(int pWidth, int pHeight, Bitmap croppedImage, int bitmapID, Random rng)
+public static ImagePuzzle generateNewPuzzle(int pWidth, int pHeight,
+ Uri bitmapUri, Size bitmapSize,
+ Random rng, int newGameID)
 {
    LinkedList<GroupOrSinglePiece> singlePieces = new LinkedList<>();
-   ImagePuzzle ret = new ImagePuzzle(pWidth, pHeight, croppedImage, bitmapID, singlePieces);
+   ImagePuzzle ret = new ImagePuzzle(pWidth, pHeight, newGameID,
+    bitmapSize, bitmapUri, singlePieces);
    HalfJedge[][] pool = PieceJedge.generateAllJigsawEdges();
    
    JedgeParams[] wests = new JedgeParams[pHeight];
@@ -228,8 +243,79 @@ public static ImagePuzzle generateNewPuzzle(int pWidth, int pHeight, Bitmap crop
    return ret;
 }
 
-public int getNewGroupNumber(){
+public int getNewGroupNumber()
+{
    return ++groupCounter;
+}
+
+public int getProgressPercent()
+{
+   int total = playMatContainer.largerPieces.size();
+   int singles = playMatContainer.singlePieces.size();
+   total += singles;
+   for (Group group: playMatContainer.groups) {
+      int size = group.getPieceCount();
+      total += size;
+      singles += size - group.getLargerPieceCount();
+   }
+   for (Group group: temporaryContainers) {
+      int size = group.getPieceCount();
+      total += size;
+      singles += size - group.getLargerPieceCount();
+   }
+   
+   int inBox = 0;
+   int ungroupedInBox = 0;
+   for (GroupOrSinglePiece groupOrSinglePiece: singlePiecesContainer.list) {
+      if (groupOrSinglePiece instanceof SinglePiece) {
+         inBox++;
+         ungroupedInBox++;
+      }
+      else {
+         Group boxGroup = (Group) groupOrSinglePiece;
+         inBox += boxGroup.getPieceCount();
+      }
+   }
+   
+   total += inBox;
+   if (total == 1)
+      return 100;
+   singles += inBox;
+   
+   float tot = total * 33f / totalPieces;
+   int totInt = Math.round(tot);
+//   if (totInt == 33 && total < totalPieces)
+//      totInt = 32;
+   
+   float single = singles * 33f / totalPieces;
+   int singleInt = Math.round(single);
+   if (singleInt == 33 && singles < totalPieces)
+      singleInt = 32;
+   else if (singleInt == 0 && singles > 0)
+      singleInt = 1;
+   
+   float boxed = inBox * 23f / totalPieces;
+   int boxedInt = Math.round(boxed);
+   if (boxedInt == 23 && inBox < totalPieces)
+      boxedInt = 22;
+   else if (boxedInt == 0 && inBox > 0)
+      boxedInt = 1;
+   
+   float ungrouped = ungroupedInBox * 10f / totalPieces;
+   int ungroupedInt = Math.round(ungrouped);
+   if (ungroupedInt == 10 && ungroupedInBox < totalPieces)
+      ungroupedInt = 9;
+   
+   /*
+   calculate progress like this:
+   10%: how many pieces are ungrouped in the box
+   23%: how many pieces are in the box
+   33%: how many pieces are single (in or not in groups)
+   33%: how many pieces there are total, down to 2
+   1%: there is only 1 piece.
+   // 99 - (int) (tot + single + boxed + ungrouped);
+    */
+   return 99 - ungroupedInt - boxedInt - singleInt - totInt;
 }
 
 // /**

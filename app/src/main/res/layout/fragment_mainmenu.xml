@@ -13,6 +13,10 @@
         android:gravity="center_horizontal"
         android:orientation="vertical">
 
+        <!--      android:textStyle="bold"-->
+        <!--      android:textSize="50sp"-->
+        <!--      android:gravity="center"-->
+
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -22,7 +26,7 @@
             app:drawableBottomCompat="@android:drawable/button_onoff_indicator_on"
             app:drawableStartCompat="@mipmap/ic_launcher"
             />
-<!--   TODO: replace placeholder images with pretty header image and horizontal line (and launcher icon)     -->
+<!-- TODO: replace placeholder images with pretty header image and horizontal line (and replace launcher icon) -->
 
         <TextView
             style="@style/JigsawPuzzle.MainMenu.Text.ListTitle"

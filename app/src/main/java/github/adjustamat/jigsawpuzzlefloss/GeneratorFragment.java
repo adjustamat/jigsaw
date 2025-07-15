@@ -1,8 +1,9 @@
 package github.adjustamat.jigsawpuzzlefloss;
 
 import android.content.Context;
-import android.graphics.Bitmap;
+import android.graphics.Bitmap.CompressFormat;
 import android.graphics.Point;
+import android.graphics.Rect;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.Editable;
@@ -26,10 +27,11 @@ import androidx.fragment.app.Fragment;
 
 import com.canhub.cropper.CropImageOptions;
 import com.canhub.cropper.CropImageView;
+import com.canhub.cropper.CropImageView.RequestSizeOptions;
 
 import java.util.LinkedList;
+import java.util.Objects;
 
-import github.adjustamat.jigsawpuzzlefloss.db.DB;
 import github.adjustamat.jigsawpuzzlefloss.db.Prefs;
 import github.adjustamat.jigsawpuzzlefloss.db.Prefs.GeneratorStr;
 
@@ -40,10 +42,11 @@ class GeneratorFragment
 public static final String DBG = "GeneratorFragment";
 public static final String ARG_BITMAP_URI = "mat.IMAGE_URI";
 public static final String ARG_BITMAP_ID = "mat.IMAGE_ID";
-private Bitmap croppedBitmap;
+//private Bitmap croppedBitmap;
 private Uri bitmapUri;
 private static final int defaultPiecesCirca = 200; // TODO: default size (pieces) if no option was chosen before custom!
-private boolean cropped;
+
+private boolean cropped; // TODO
 
 private class CustomSizeListener
  implements TextWatcher
@@ -119,20 +122,21 @@ private class SizeOption
     * @param ctx a Context
     * @param circa a size from user prefs
     * @param listener radioChangeListener
-    * @param bitmap the current bitmap
+    * @param rect the current (cropped) image size
     */
-   private SizeOption(Context ctx, int circa, OnCheckedChangeListener listener, Bitmap bitmap)
+   private SizeOption(Context ctx, int circa, OnCheckedChangeListener listener, /*Bitmap bitmap*/ Rect rect)
    {
       this.circa = circa;
       this.radioButton = new AppCompatRadioButton(ctx);
       radioButton.setOnCheckedChangeListener(listener);
-      setWidthXHeight(ctx, bitmap, null);
+      setWidthXHeight(ctx, rect, null);
       //radioButton.setText(ctx.getString(R.string.radioChooseSizeUnselected, circa));
    }
    
-   private void calculateWidthXHeight(Bitmap bitmap, int ca)
+   private void calculateWidthXHeight(/*Bitmap bitmap*/Rect rect, int ca)
    {
-      double ratio = (double) bitmap.getWidth() / bitmap.getHeight();
+//      double ratio = (double) bitmap.getWidth() / bitmap.getHeight();
+      double ratio = (double) rect.width() / rect.height();
       // equation: A * (ratio*A) = circa   =>
       // =>   A = sqrt(circa/ratio)
       double height = Math.sqrt(ca / ratio);
@@ -144,26 +148,27 @@ private class SizeOption
       
    }
    
-   void setWidthXHeight(Context ctx, Bitmap bitmap, SizeOption prev)
+   void setWidthXHeight(Context ctx, Rect rect/*Bitmap bitmap*/, SizeOption prev)
    {
+      // TODO: when clicking on size option, change crop rect and freeze aspect ratio!
+      
       if (circa == -1) { // custom size (radioCustomSize)
          if (prev != null) { // copy last selected option
             wxh.x = prev.wxh.x;
             wxh.y = prev.wxh.y;
          }
          else { // if custom size is the first selected option
-            calculateWidthXHeight(bitmap, defaultPiecesCirca);
+            calculateWidthXHeight(rect, defaultPiecesCirca);
          }
       }
       else { // not custom size
-         calculateWidthXHeight(bitmap, this.circa);
+         calculateWidthXHeight(rect, this.circa);
          radioButton.setText(
           ctx.getString(R.string.radioChooseSize, circa, wxh.x, wxh.y)
          );
          
       }
    }
-   
 }
 
 private class Views
@@ -223,57 +228,105 @@ private class Views
                   selectedSize = sizeOption;
                }
             }
-            selectedSize.setWidthXHeight(ctx, croppedBitmap, previous);
+            selectedSize.setWidthXHeight(ctx, viewCrop.getCropRect(), previous);
             if (buttonView == radioCustomSize)
                updateCustomSize();
             else
                clearCustomSize();
-         } // isChecked
+            // TODO: when clicking on size option, change crop rect and freeze aspect ratio!
+            //viewCrop.setAspectRatio();
+            //viewCrop.setFixedAspectRatio(true);
+            
+         } // isChecked == true
       };
       
       sizeOptions.add(new SizeOption(radioCustomSize, radioChangeListener));
       addChoices(ctx);
+      
+      viewCrop.setOnCropImageCompleteListener((cropImageView, cropResult)->{
+         Act act = (Act) requireActivity();
+         Rect rect = Objects.requireNonNull(cropResult.getCropRect());
+         
+         // show new PuzzleActivity
+         act.gotoPuzzleFromGenerator(cropResult.getUriContent(),
+          selectedSize.wxh.x, selectedSize.wxh.y,
+          rect.width(), rect.height()
+         );
+      });
       
       btnCropOnly.setOnClickListener(v->{
          setCropMode(true);
       });
       
       btnStart.setOnClickListener(v->{
-         Act activity = (Act) requireActivity();
-         // TODO: // Subscribe to async event using cropImageView.setOnCropImageCompleteListener(listener)
-         // cropImageView.getCroppedImageAsync()
-         activity.generateAndShowNewPuzzle(selectedSize.wxh, croppedBitmap, cropped, bitmapUri);
+         btnStart.setEnabled(false);
+         Act act = (Act) requireActivity();
+         Rect rect = viewCrop.getCropRect();
+         if (rect == null) {
+            rect = Objects.requireNonNull(viewCrop.getWholeImageRect());
+            act.gotoPuzzleFromGenerator(bitmapUri,
+             selectedSize.wxh.x, selectedSize.wxh.y,
+             rect.width(), rect.height()
+            );
+         }
+         else {
+            // TODO: // Subscribe to async event using cropImageView.setOnCropImageCompleteListener(listener)
+            viewCrop.croppedImageAsync(
+             CompressFormat.PNG, 100,
+             rect.width(), rect.height(), RequestSizeOptions.NONE,
+             act.db().makeCroppedPNGFilename(ctx)
+            );
+         }
+
+//         DB db = act.db();
+//         int bitmapID;
+//         if (cropped)
+//            // save cropped image in ctx.getFilesDir()
+//            bitmapID = db.saveCroppedBitmap(bitmapUri, croppedBitmap, act);
+//         else
+//            bitmapID = db.getBitmapID(bitmapUri);
+
+//         ImagePuzzle generated = ImagePuzzle.generateNewPuzzle(
+//          selectedSize.wxh.x, selectedSize.wxh.y,
+//          croppedBitmap, bitmapID, new Random());
+      
+      
+      
+      
       });
    }
    
    /**
-    * TODO: see {@link CropImageOptions}
+    * TODO: maybe change some settings of the view, see {@link CropImageOptions}
     * @param crop
     */
-   // TODO: test both! use library: either uCrop or CanHub/Android-Image-Cropper! intent or fragment?
    void setCropMode(boolean crop)
    {
       cropMode = crop;
       if (cropMode) {
+         // remove forced ratio in cropMode.
+         viewCrop.clearAspectRatio();
+         
          scrvGeneratorSizes.setVisibility(View.GONE);
          llhStart.setVisibility(View.GONE);
          btnCropOnly.setVisibility(View.GONE);
-         
-         // TODO: show srcCrop with correct bitmap and drawing method
-         // TODO: do this when creating fragment!! -> viewCrop.setImageBitmap(croppedBitmap);
-         //viewCrop.setVisibility(View.VISIBLE);
-         //viewCrop TODO: maybe change some settings of the view
       }
       else {
-         // TODO: srcCrop itself can call setCropMode(false)!
-         //viewCrop.setVisibility(View.GONE);
+         // TODO: make viewCrop force the ratio of the selected puzzle size when not in cropMode.
          
-         // TODO: set cropped=true if changes were made. delete the cropped parts and set croppedBitmap as the rest!
+         // TODO: unselect size when returning from cropMode!
+         
+         if (selectedSize != null) {
+            //viewCrop.setAspectRatio();
+            //viewCrop.setFixedAspectRatio(true);
+         }
+         
          
          scrvGeneratorSizes.setVisibility(View.VISIBLE);
          llhStart.setVisibility(View.VISIBLE);
          btnCropOnly.setVisibility(View.VISIBLE);
          
+         // TODO: only addChoices if changes were made to ratio!
          addChoices(requireContext()); // load choices again (on top) after crop
       }
    }
@@ -309,7 +362,7 @@ private class Views
       int i = 0; // add views to the top of the layout
       for (String sizeChoice: sizes) {
          int circaSize = Integer.parseInt(sizeChoice);
-         SizeOption option = new SizeOption(ctx, circaSize, radioChangeListener, croppedBitmap);
+         SizeOption option = new SizeOption(ctx, circaSize, radioChangeListener, viewCrop.getCropRect());
          sizeOptions.add(i, option);
          llvGeneratorSizes.addView(option.radioButton, i++);
       }
@@ -381,23 +434,27 @@ public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceStat
       int id = arguments.getInt(ARG_BITMAP_ID);
       if (id != 0) {
          Act act = (Act) requireActivity();
-         croppedBitmap = act.getBitmap(id);
+//         croppedBitmap = act.getBitmap(id);
          bitmapUri = act.db().getBitmapUri(id);
       }
       else {
          Uri uri = arguments.getParcelable(ARG_BITMAP_URI);
          if (uri != null) {
-            croppedBitmap = DB.loadBitmapFromUri(uri, requireContext());
+            // croppedBitmap = DB.loadBitmapFromUri(uri, requireContext());
             bitmapUri = uri;
          }
          else {
             Log.d(DBG, "onViewCreated() - all arguments (ARG_BITMAP_*) are null!");
          }
       }
-      if (croppedBitmap == null)
-         Log.d(DBG, "croppedBitmap is null");
+      
+      
+      if (bitmapUri == null)
+         Log.d(DBG, "bitmapUri is null");
       else
-         ui.viewCrop.setImageBitmap(croppedBitmap); //ui.imgCroppedBitmap.setImageBitmap(croppedBitmap);
+         ui.viewCrop.setImageUriAsync(bitmapUri);
+      
+      ui.setCropMode(false);
    }
    else Log.d(DBG, "onViewCreated() - Bundle getArguments() returns null!");
 }

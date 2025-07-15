@@ -2,7 +2,7 @@
 <resources>
     <string name="app_name">Jigsaw Puzzle FLOSS</string>
 
-    <!-- Dialog: PlayMatFragment.handleOnBackPressed -->
+    <!-- Dialog: PuzzleActivity.handleOnBackPressed -->
     <string name="btnLeaveNot">Continue Puzzle</string>
     <string name="btnLeaveToMenu">Main Menu</string>
     <string name="btnLeaveApp">Quit</string>

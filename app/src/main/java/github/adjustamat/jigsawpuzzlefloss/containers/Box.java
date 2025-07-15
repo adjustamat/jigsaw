@@ -37,7 +37,7 @@ public Box(List<GroupOrSinglePiece> pieces, ImagePuzzle parent)
 void setExpanded(Group group, boolean expand)
 {
    int index = group.getIndexInContainer();
-   int size = group.size();
+   int size = group.getPieceCount();
    if (expand)
       expanded.put(index, group);
    else
@@ -59,7 +59,7 @@ public Group createBoxGroup(List<SinglePiece> selectedPieces, int atIndex)
    int atExpandedIndex = atIndex;
    for (Entry<Integer, Group> expandedGroup: expanded.entrySet()) {
       if (atIndex > expandedGroup.getKey())
-         atExpandedIndex += expandedGroup.getValue().size();
+         atExpandedIndex += expandedGroup.getValue().getPieceCount();
    }
    list.add(atIndex, group);
    expandedList.add(atExpandedIndex, group);
@@ -100,9 +100,9 @@ public void reorder(int fromIndex, int toIndex)
    int toExpandedIndex = toIndex;
    for (Entry<Integer, Group> expandedGroup: expanded.entrySet()) {
       if (fromIndex > expandedGroup.getKey())
-         fromExpandedIndex += expandedGroup.getValue().size();
+         fromExpandedIndex += expandedGroup.getValue().getPieceCount();
       if (toIndex > expandedGroup.getKey())
-         toExpandedIndex += expandedGroup.getValue().size();
+         toExpandedIndex += expandedGroup.getValue().getPieceCount();
    }
    // TODO: fromexpanded toexpanded???
    

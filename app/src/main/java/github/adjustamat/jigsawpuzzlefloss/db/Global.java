@@ -3,11 +3,13 @@ package github.adjustamat.jigsawpuzzlefloss.db;
 import android.app.Application;
 import android.content.Context;
 
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+
 public class Global
  extends Application
 {
-
-
 
 private static Global global(Context ctx)
 {
@@ -16,18 +18,29 @@ private static Global global(Context ctx)
    return (Global) ctx.getApplicationContext();
 }
 
-//public Context/*Global*/ getApplicationContext()
-//{
-//   return this;
-//}
+public void onCreate()
+{
+   super.onCreate();
+   backgroundThreads = new ThreadPoolExecutor(0, 10,
+    2, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>());
+}
+
+private ThreadPoolExecutor backgroundThreads;
+
+public static void runOnBgThread(Context ctx, Runnable runnable)
+{
+   // Run on our background thread pool executor:
+   global(ctx).backgroundThreads.execute(runnable);
+}
 
 public static void initEverything(Context ctx)
 {
-   global(ctx).initEverything();
+   Prefs.init(global(ctx));
+//   global(ctx).initEverything();
 }
 
-public void initEverything()
-{
-   Prefs.init(this);
-}
+//private void initEverything()
+//{
+//   Prefs.init(this);
+//}
 }

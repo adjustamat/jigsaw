@@ -48,7 +48,7 @@ private class Views
 {
    final TextView lblNoStartedPuzzles;
    final RecyclerView lstStartedPuzzles;
-   final BitmapsAdapter startedPuzzles;
+   final GamesAdapter startedPuzzles;
    
    final TextView lblNoBitmaps;
    final RecyclerView lstBitmaps;
@@ -71,12 +71,10 @@ private class Views
       Act act = (Act) ctx;
       DB db = act.db();
       
-      startedPuzzles = new BitmapsAdapter(lblNoStartedPuzzles,
-       db::getStartedGameCount, db::getGameBitmapUri, db::getGameProgress);
+      startedPuzzles = new GamesAdapter(lblNoStartedPuzzles, db);
       lstStartedPuzzles.setAdapter(startedPuzzles);
       
-      bitmaps = new BitmapsAdapter(lblNoBitmaps,
-       db::getBitmapCount, db::getBitmapUri, nullProgress);
+      bitmaps = new BitmapsAdapter(lblNoBitmaps, db);
       lstBitmaps.setAdapter(bitmaps);
       
       btnDownloadBitmap.setOnClickListener(v->{
@@ -213,56 +211,106 @@ public void handleOnBackPressed(BackCallback callback)
    callback.goBackQuit();
 }
 
-public @FunctionalInterface interface GetSize
+public void onBitmapItemClick(Uri uri)
 {
-   int getSize();
+   Act act=(Act) requireActivity();
+   act.showNewGenerator(uri);
 }
 
-public @FunctionalInterface interface GetUri
+public void onGameItemClick(int gameID)
 {
-   Uri getUri(int index);
+   Act act = (Act) requireActivity();
+   act.gotoPuzzleFromMenu(gameID);
 }
 
-public @FunctionalInterface interface GetProgress
-{
-   Integer getProgress(int index);
-}
-
-private final GetProgress nullProgress = index->null;
+//public @FunctionalInterface interface GetSize
+//{
+//   int getSize();
+//}
+//
+//public @FunctionalInterface interface GetUri
+//{
+//   Uri getUri(int index);
+//}
+//
+//public @FunctionalInterface interface GetProgress
+//{
+//   Integer getProgress(int index);
+//}
+//
+//private final GetProgress nullProgress = index->null;
 
 public class BitmapsAdapter
- extends RecyclerView.Adapter<MenuListItemView>
+ extends RecyclerView.Adapter<MenuBitmapItemView>
 {
    private final View lblEmpty;
-   //private final DB db;
-   private final GetSize getSizeFun;
-   private final GetUri getUriFun;
-   private final GetProgress getProgressFun;
+   private final DB db;
    
-   public BitmapsAdapter(View lblEmpty, GetSize sizeFun, GetUri uriFun, GetProgress progressFun)
+   public BitmapsAdapter(View lblEmpty, DB db)
    {
       this.lblEmpty = lblEmpty;
-      this.getSizeFun = sizeFun;
-      this.getUriFun = uriFun;
-      this.getProgressFun = progressFun;
+      this.db = db;
    }
    
-   @NonNull public MenuListItemView onCreateViewHolder(@NonNull ViewGroup parent, int viewType)
+   @NonNull public MenuBitmapItemView onCreateViewHolder(@NonNull ViewGroup parent, int viewType)
    {
       LayoutInflater inflater = LayoutInflater.from(parent.getContext());
-      return new MenuListItemView(
+      return new MenuBitmapItemView(
        inflater.inflate(R.layout.itemview_mainmenu_bitmap, parent, false)
       );
    }
    
-   public void onBindViewHolder(@NonNull MenuListItemView holder, int position)
+   public void onBindViewHolder(@NonNull MenuBitmapItemView holder, int position)
    {
-      Uri uri = getUriFun.getUri(position);
+      Uri uri = db.getBitmapUri(position);
       Glide.with(thisFragment())
        .load(uri)
        .fitCenter()
        .into(holder.imgMenuItem);
-      Integer percent = getProgressFun.getProgress(position);
+      
+      holder.itemView.setOnClickListener(v->onBitmapItemClick(uri));
+   }
+   
+   public int getItemCount()
+   {
+      int size = db.getBitmapCount();
+      if (size > 0) // hide lblEmpty when size becomes >0
+         lblEmpty.setVisibility(View.GONE);
+      return size;
+   }
+}
+
+public class GamesAdapter
+ extends RecyclerView.Adapter<MenuGameItemView>
+{
+   private final View lblEmpty;
+   private final DB db;
+   
+   public GamesAdapter(View lblEmpty, DB db)
+   {
+      this.lblEmpty = lblEmpty;
+      this.db = db;
+   }
+   
+   @NonNull public MenuGameItemView onCreateViewHolder(@NonNull ViewGroup parent, int viewType)
+   {
+      LayoutInflater inflater = LayoutInflater.from(parent.getContext());
+      return new MenuGameItemView(
+       inflater.inflate(R.layout.itemview_mainmenu_game, parent, false)
+      );
+   }
+   
+   public void onBindViewHolder(@NonNull MenuGameItemView holder, int position)
+   {
+      Uri uri = db.getGameBitmapUri(position);
+      Glide.with(thisFragment())
+       .load(uri)
+       .fitCenter()
+       .into(holder.imgMenuItem);
+      
+      holder.itemView.setOnClickListener(v->onGameItemClick(position));
+      
+      Integer percent = db.getGameProgress(position);
       if (percent == null) {
          holder.puzzleProgressBar.setVisibility(View.GONE);
       }
@@ -274,20 +322,32 @@ public class BitmapsAdapter
    
    public int getItemCount()
    {
-      int size = getSizeFun.getSize();
+      int size = db.getStartedGameCount();
       if (size > 0) // hide lblEmpty when size becomes >0
          lblEmpty.setVisibility(View.GONE);
       return size;
    }
 }
 
-public static class MenuListItemView
+public static class MenuBitmapItemView
+ extends RecyclerView.ViewHolder
+{
+   public final ImageView imgMenuItem;
+   
+   public MenuBitmapItemView(@NonNull View itemView)
+   {
+      super(itemView);
+      imgMenuItem = itemView.findViewById(R.id.imgMenuItem);
+   }
+}
+
+public static class MenuGameItemView
  extends RecyclerView.ViewHolder
 {
    public final ImageView imgMenuItem;
    public final ProgressBar puzzleProgressBar;
    
-   public MenuListItemView(@NonNull View itemView)
+   public MenuGameItemView(@NonNull View itemView)
    {
       super(itemView);
       imgMenuItem = itemView.findViewById(R.id.imgMenuItem);

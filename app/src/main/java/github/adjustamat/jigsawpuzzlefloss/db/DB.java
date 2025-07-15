@@ -9,6 +9,7 @@ import android.graphics.Bitmap;
 import android.graphics.Bitmap.CompressFormat;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
+import android.os.Parcel;
 import android.provider.MediaStore;
 import android.util.Log;
 
@@ -18,6 +19,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.security.MessageDigest;
 
+import github.adjustamat.jigsawpuzzlefloss.game.ImagePuzzle;
 import github.adjustamat.jigsawpuzzlefloss.ui.PuzzleGraphics;
 
 public class DB
@@ -30,6 +32,7 @@ public static final String DB_FILENAME = "DB";
 public static final String BITMAP_TABLE_NAME = "BM";
 public static final String C_INT_BITMAP_ID = "BMID";
 public static final String C_STR_BITMAP_URI = "URI";
+
 public static final String SCHEME_CROPPED_BITMAP = "cropped";
 
 public static final String GAME_TABLE_NAME = "PZ";
@@ -81,6 +84,18 @@ public void loadOnBackgroundThread()
    SQLiteDatabase sdb = getWritableDatabase();
    sdb.close();
    loaded = true;
+}
+
+public Uri makeCroppedPNGFilename(Context ctx)
+{
+   String pngFilename = System.currentTimeMillis() + ".png";
+//   Uri croppedUri = new Uri.Builder().scheme(SCHEME_CROPPED_BITMAP)
+//    .opaquePart(pngFilename).build();
+   
+   Uri fileUri = Uri.fromFile(new File(ctx.getFilesDir()/*ctx.getCacheDir()*/, pngFilename));
+   // save in database before returning, so that the cropped image appears in bitmaps list also.
+   saveBitmapUri(fileUri);
+   return fileUri;
 }
 
 private static File makeNewPNGFilename(Uri originalUri, Context ctx)
@@ -216,6 +231,49 @@ public int getStartedGameCount()
    return count;
 }
 
+public void saveGame(ImagePuzzle imagePuzzle)
+{
+   
+   C_INT_GAME_ID = "PZID";
+   public static final String C_STR_GAME_BITMAP_URI = C_STR_BITMAP_URI;
+   public static final String C_INT_GAME_PROGRESS = "DONE";
+   public static final String C_BLOB_GAME_DATA = "DATA";
+   
+   SQLiteDatabase sdb = getWritableDatabase();
+   ContentValues values = new ContentValues();
+   values.put(C_STR_GAME_BITMAP_URI, imagePuzzle.bitmapUri.toString());
+   values.put(C_INT_GAME_PROGRESS, imagePuzzle.getProgressPercent());
+   
+   Parcel parcel = Parcel.obtain();
+   imagePuzzle.writeToParcel(parcel);
+   
+   values.put(C_BLOB_GAME_DATA, parcel.marshall());
+   parcel.recycle();
+   
+   //values.put(C_INT_GAME_ID, newBitmapUri.toString());
+   
+   
+   
+   sdb.close();
+}
+
+public int createNewSaveGame(Uri gameBitmapUri)
+{
+   int count = 0;
+   SQLiteDatabase sdb = getWritableDatabase();
+   ContentValues values = new ContentValues();
+   
+   values.put(C_STR_GAME_BITMAP_URI, gameBitmapUri.toString());
+   values.put(C_INT_GAME_PROGRESS, 0);
+   
+   long rowID = sdb.insert(GAME_TABLE_NAME, null, values);
+   
+   
+   
+   sdb.close();
+   return (int) rowID; // returned bitmapID is new row ID
+}
+
 public Uri getGameBitmapUri(int gameID)
 {
    Uri ret = null;
@@ -231,14 +289,29 @@ public Uri getGameBitmapUri(int gameID)
    return ret;
 }
 
-public Integer getGameProgress(int gameID)
+public int getGameProgress(int gameID)
 {
-   Integer ret = null;
+   int ret = 0;
    SQLiteDatabase sdb = getReadableDatabase();
    Cursor cursor = sdb.query(GAME_TABLE_NAME, new String[]{C_INT_GAME_PROGRESS},
     C_INT_GAME_ID + " = " + gameID, null, null, null, null);
    if (cursor.moveToFirst()) {
       ret = cursor.getInt(cursor.getColumnIndexOrThrow(C_INT_GAME_PROGRESS));
+   }
+   cursor.close();
+   sdb.close();
+   return ret;
+}
+
+public Parcel getGameData(int gameID)
+{
+   Parcel ret = Parcel.obtain();
+   SQLiteDatabase sdb = getReadableDatabase();
+   Cursor cursor = sdb.query(GAME_TABLE_NAME, new String[]{C_BLOB_GAME_DATA},
+    C_INT_GAME_ID + " = " + gameID, null, null, null, null);
+   if (cursor.moveToFirst()) {
+      byte[] data = cursor.getBlob(cursor.getColumnIndexOrThrow(C_BLOB_GAME_DATA));
+      ret.unmarshall(data, 0, data.length);
    }
    cursor.close();
    sdb.close();
