@@ -45,7 +45,13 @@ public boolean lockedInPlace;// = false;
 private PointF relativePos;
 public @NonNull Direction currentRotationNorthDirection;// = Direction.NORTH;
 protected Point correctPuzzlePosition;
+
 protected @NonNull Container containerParent;
+
+/**
+ * actually index in Group when in a Group inside box or PlayMat!
+ * @see #groupParent
+ */
 private int indexInContainer;
 
 protected AbstractPiece(@NonNull Container containerParent, int indexInContainer,
@@ -62,8 +68,28 @@ protected AbstractPiece(@NonNull Container containerParent, int indexInContainer
    this.currentRotationNorthDirection = rotation;
 }
 
-public @CallSuper void writeToParcel(Parcel dest)
+//public static AbstractPiece createFromParcelToPlayMat(Parcel in, Container loading, int i)
+//{
+//
+//}
+//
+//public static AbstractPiece createFromParcelToBox(Parcel in, Container loading, int i)
+//{
+//
+//}
+
+// TODO: remove this method and do readInt() in the method that is calling this one!
+public static AbstractPiece createFromParcelToMixedGroup(Parcel in, Container loading, int i)
 {
+   if (in.readInt() == 1)
+      return LargerPiece.createLargerPieceFromParcelToGroup(in, loading, i);
+   return SinglePiece.createSinglePieceFromParcelToGroup(in, loading, i);
+}
+
+// TODO: make this method a protected final method called writeAbstractPiece!
+public @CallSuper void writeToParcelFromMixedGroup(Parcel dest)
+{
+   // TODO: REMOVE THIS?: BEFORE calling this super-method, write if object is singlepiece or largerpiece!
    dest.writeInt(currentRotationNorthDirection.ordinal());
    dest.writeInt(correctPuzzlePosition.x);
    dest.writeInt(correctPuzzlePosition.y);
@@ -167,6 +193,10 @@ public Bitmap getUnrotatedFullSizeGraphics()
 
 // groups:
 
+/**
+ * Can be null. TODO: Is it always non-null when the Group is a Container?
+ * @see #indexInContainer
+ */
 protected Group groupParent;
 
 public void setGroup(@NonNull Group newGroup, int newIndex)
@@ -179,6 +209,7 @@ public void setGroup(@NonNull Group newGroup, int newIndex)
    indexInContainer = newIndex;
 }
 
+// TODO: when should this method be used?
 public void removeFromGroup(Container newContainer)
 {
    if (groupParent != null) {

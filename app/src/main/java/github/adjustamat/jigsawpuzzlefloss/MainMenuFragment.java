@@ -8,6 +8,7 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -15,6 +16,7 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
@@ -42,6 +44,7 @@ public class MainMenuFragment
  extends Fragment
  implements Frag
 {
+public static final String DBG = "MainMenuFragment";
 
 private class Views
  implements ActivityResultCallback<List<Uri>>
@@ -79,9 +82,17 @@ private class Views
       
       btnDownloadBitmap.setOnClickListener(v->{
          // open URL in browser.
-         Intent intent = new Intent(Intent.ACTION_VIEW,
-          Uri.parse(Prefs.get(ctx, OtherStr.downloadFromURL)));
-         ctx.startActivity(intent);
+         try {
+            Intent intent = new Intent(Intent.ACTION_VIEW,
+             Uri.parse(Prefs.get(ctx, OtherStr.downloadFromURL)));
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            ctx.startActivity(intent);
+         }
+         catch (Exception e) {
+            Log.d(DBG, "Views.btnDownloadBitmap.onClick() - Could not open URL", e);
+            Toast.makeText(ctx, R.string.msg_error_open_url, Toast.LENGTH_LONG).show();
+            // maybe AlertDialog or Toast.
+         }
       });
       
       btnOpenBitmap.setOnClickListener(v->{
@@ -180,7 +191,7 @@ private class Views
    }
 }
 
-private MainMenuFragment.Views ui;
+private Views ui;
 
 public MainMenuFragment()
 {
@@ -213,7 +224,7 @@ public void handleOnBackPressed(BackCallback callback)
 
 public void onBitmapItemClick(Uri uri)
 {
-   Act act=(Act) requireActivity();
+   Act act = (Act) requireActivity();
    act.showNewGenerator(uri);
 }
 
@@ -222,23 +233,6 @@ public void onGameItemClick(int gameID)
    Act act = (Act) requireActivity();
    act.gotoPuzzleFromMenu(gameID);
 }
-
-//public @FunctionalInterface interface GetSize
-//{
-//   int getSize();
-//}
-//
-//public @FunctionalInterface interface GetUri
-//{
-//   Uri getUri(int index);
-//}
-//
-//public @FunctionalInterface interface GetProgress
-//{
-//   Integer getProgress(int index);
-//}
-//
-//private final GetProgress nullProgress = index->null;
 
 public class BitmapsAdapter
  extends RecyclerView.Adapter<MenuBitmapItemView>
@@ -310,14 +304,8 @@ public class GamesAdapter
       
       holder.itemView.setOnClickListener(v->onGameItemClick(position));
       
-      Integer percent = db.getGameProgress(position);
-      if (percent == null) {
-         holder.puzzleProgressBar.setVisibility(View.GONE);
-      }
-      else {
-         holder.puzzleProgressBar.setProgress(percent);
-         holder.puzzleProgressBar.setVisibility(View.VISIBLE);
-      }
+      int percent = db.getGameProgress(position);
+      holder.puzzleProgressBar.setProgress(percent);
    }
    
    public int getItemCount()

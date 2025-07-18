@@ -76,6 +76,10 @@ public boolean moveGroupFrom(Container other, Group group, Context ctx)
    other.removeGroup(group);
    group.setContainer(this, groups.size());
    groups.add(group);
+   
+   // TODO: if moving from a temporary container-group, should the group still exist or should the pieces be ungrouped?
+   //  What happens if user creates a temporary container from an already existing group or adds a group to
+   //  the container group?
 //   if (other instanceof Group) {
 //      Group temporaryContainer = (Group) other; // other == group !!
 //
@@ -86,6 +90,8 @@ public boolean moveGroupFrom(Container other, Group group, Context ctx)
 //   }
    return true;
 }
+
+// TODO: new methods: create group, ungroup, add one or several pieces to group, remove one or several pieces from group.
 
 /**
  * Make all pieces in a Group non-overlapping, if possible. They will never overlap with other pieces in the same Group.
@@ -117,6 +123,8 @@ public void setFromDatabase(List<Group> playMatGroups,
    groups.addAll(playMatGroups);
    singlePieces.addAll(playMatSinglePieces);
    largerPieces.addAll(playMatLargerPieces);
+   // TODO: see ImagePuzzle.replaceLoadingWithRealContainers()
+   
    // TODO: for all list elements, set this as parent container! or maybe their constructors load that from database.
    // TODO: how save relativePosition?
    // TODO: how save temporary containers?

@@ -28,5 +28,4 @@
         android:alpha="0.6"
         android:max="100"
         />
-
 </FrameLayout>

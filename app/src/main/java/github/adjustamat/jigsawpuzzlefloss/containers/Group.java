@@ -13,6 +13,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
 
 import github.adjustamat.jigsawpuzzlefloss.R;
 import github.adjustamat.jigsawpuzzlefloss.containers.Box.GroupOrSinglePiece;
@@ -37,55 +38,98 @@ public class Dirty
 {
    public boolean overlapping = true;
    public boolean pile = true;
-   public boolean layout = true;
+   public boolean layout = true; // TODO: NO SERIALIZATION??
 }
 
-public final Dirty dirty = new Dirty();
+public final Dirty dirty = new Dirty(); // TODO: NO SERIALIZATION??
+
+private boolean selected; // = false; // NO SERIALIZATION
+private boolean expanded; // = false; // NO SERIALIZATION
+
+Container containerParent; // NO SERIALIZATION
+private int indexInContainer; // NO SERIALIZATION
+
+private final int groupNumber; // CONDITIONAL SERIALIZATION
+private @Nullable String name; // CONDITIONAL SERIALIZATION
 
 /**
  * The visual position of this group, relative to its Container, or if it's its own Container, to the screen.
  */
-public final PointF relativePos = new PointF();
+public final PointF relativePos = new PointF(); // ALWAYS SERIALIZATION
 
-private boolean selected; // = false;
-private boolean expanded; // = false;
+int largerPieces = 0; // ALWAYS SERIALIZATION
+final List<AbstractPiece> pieces = new LinkedList<>(); // ALWAYS SERIALIZATION
 
-private @Nullable String name;
-private final int groupNumber;
-Container containerParent;
-private int indexInContainer;
-
-final List<AbstractPiece> pieces = new LinkedList<>();
-int largerPieces = 0;
-
-public void writeToParcel(Parcel dest)
+public void writeGroupToParcel(Parcel dest, boolean singlePiecesOnly)
 {
-   dest.writeFloat(relativePos.x);
-   dest.writeFloat(relativePos.y);
+   if (groupNumber > -1)
+      dest.writeInt(groupNumber);
    dest.writeInt(name == null ?0 :1);
    if (name != null)
       dest.writeString(name);
-   dest.writeInt(groupNumber);
+   dest.writeFloat(relativePos.x);
+   dest.writeFloat(relativePos.y);
    dest.writeInt(largerPieces);
    dest.writeInt(pieces.size());
    for (AbstractPiece piece: pieces) {
-      piece.writeToParcel(dest); // TODO: writeToParcelFromGroup maybe?
+      if (singlePiecesOnly)
+         ((SinglePiece) piece).writeToSinglePieceParcel(dest);
+      else
+         piece.writeToParcelFromMixedGroup(dest);
    }
 }
 
-public static Group createFromParcelToBox(Parcel in, Loading loading)
+public static Group createFromParcelToBox(Parcel in, Loading loading, int i)
 {
-   // TODO! use SinglePiece.createFromParcelToGroup(), LargerPiece.createFromParcelToGroup()
+   Group ret = new Group(loading, i, in.readInt());
+   readGroupFromParcel(ret, in, true, loading);
+   return ret;
 }
 
-public static Group createFromParcelToTemp(Parcel in, Loading loading)
+public static Group createFromParcelToPlayMat(Parcel in, Loading loading, int i)
 {
-   // TODO! use SinglePiece.createFromParcelToGroup(), LargerPiece.createFromParcelToGroup()
+   Group ret = new Group(loading, i, in.readInt());
+   readGroupFromParcel(ret, in, false, loading);
+   return ret;
 }
 
-public static Group createFromParcelToPlayMat(Parcel in, Loading loading)
+public static Group createFromParcelToTemp(Parcel in, int i)
 {
-   // TODO! use SinglePiece.createFromParcelToGroup(), LargerPiece.createFromParcelToGroup()
+   Group ret = new Group(i); // getNewTemporaryContainer(i);
+   readGroupFromParcel(ret, in, false, ret);
+   return ret;
+}
+
+private static void readGroupFromParcel(Group ret, Parcel in, boolean singlesOnly, Container loading)
+{
+   if (in.readInt() == 1) {
+      ret.name = in.readString();
+   }
+   ret.relativePos.x = in.readFloat();
+   ret.relativePos.y = in.readFloat();
+   ret.largerPieces = in.readInt();
+   
+   int size = in.readInt();
+   for (int indexInGroup = 0; indexInGroup < size; indexInGroup++) {
+      if (singlesOnly)
+         ret.pieces.add(SinglePiece.createSinglePieceFromParcelToGroup(in, loading, indexInGroup));
+      else
+         ret.pieces.add(AbstractPiece.createFromParcelToMixedGroup(in, loading, indexInGroup));
+   }
+}
+
+/**
+ * Create a Container to hide some pieces out of the way.
+ */
+public Group getNewTemporaryContainer(int tempContainerIndex)
+{
+   return new Group(tempContainerIndex);
+}
+
+private Group(int tempContainerIndex)
+{
+   groupNumber = -1;
+   setContainer(this, tempContainerIndex);
 }
 
 public Group(Container container, int indexInContainer, int number)
@@ -94,25 +138,8 @@ public Group(Container container, int indexInContainer, int number)
    setContainer(container, indexInContainer);
 }
 
-/**
- * Create a Container to hide some pieces out of the way.
- */
-public Group getNewTemporaryContainer(int newIndex)
-{
-   return new Group(newIndex);
-}
-
-private Group(int newIndex)
-{
-   groupNumber = 0;
-   setContainer(this, newIndex);
-}
-
 public void setContainer(Container newParent, int indexInContainer)
 {
-   if (newParent == null) { // merging this Group into another Group!
-      pieces.clear();
-   }
    containerParent = newParent;
    this.indexInContainer = indexInContainer;
 }
@@ -122,6 +149,11 @@ public void replaceLoading(Container loadedContainer)
    setContainer(loadedContainer, this.indexInContainer);
 }
 
+/**
+ * Temporary Containers don't have names or numbers.
+ * @param ctx a Context
+ * @return the optional name
+ */
 public @NonNull String getName(Context ctx)
 {
    if (name == null)
@@ -136,7 +168,7 @@ public boolean isNameSet()
 
 /**
  * Trims spaces from name before setting it as this Group's name.
- * @param name a String or null
+ * @param name a name or null
  */
 public void setName(@Nullable String name)
 {
@@ -215,34 +247,21 @@ public List<AbstractPiece> getAllPieces()
    return pieces;
 }
 
-public void add(Collection<AbstractPiece> pieces)
-{
-   add(pieces, false);
-}
-
-private void add(Collection<AbstractPiece> pieces, boolean isContainer)
-{
-   for (AbstractPiece piece: pieces) {
-      if (isContainer) {
-         piece.setContainer(this, pieces.size());
-      }
-      add(piece);
-   }
-}
-
 public void add(AbstractPiece piece)
 {
    int size = getPieceCount();
    PointF piecePos = piece.getRelativePos();
    if (piecePos == null)
-      dirty.layout = true;
+      dirty.layout = true; // added a piece without position - layout needed.
    else {
       if (size == 0) {
+         // copy position from first piece
          this.relativePos.set(piecePos.x, piecePos.y);
          piecePos.set(0f, 0f);
          dirty.layout = false;
       }
       else {
+         // make piece position relative to this group
          piecePos.offset(-relativePos.x, -relativePos.y);
       }
    }
@@ -250,6 +269,38 @@ public void add(AbstractPiece piece)
    pieces.add(piece);
    if (piece instanceof LargerPiece)
       largerPieces++;
+}
+
+/**
+ * Move a Group of pieces into this Group - only use when this Group is in the same Container!
+ * @param other the Group to merge into this Group
+ * @return whether or not the other Group was merged into this Group
+ */
+public boolean add(Group other, Context ctx)
+{
+   // TODO: merge group into this group, but ask first! (ctx)
+//   if (ANSWER_IS_CANCEL) {
+//      return false;
+//   }
+   add(other.pieces, false);
+   other.deleteMerged();
+   return true;
+}
+
+private void add(Collection<AbstractPiece> pieces, boolean isContainer)
+{
+   // TODO: why is this method needed for isContainer=false? when is it used like that?
+   
+   // TODO: create methods in PlayMat for creating Group from one or more pieces, and
+   //  adding one or more pieces to a Group (also moving its relativePos in the process).
+   
+   for (AbstractPiece piece: pieces) {
+      if (isContainer) {
+         // TODO: if this method was used by a new method called movePiecesFrom(), then don't forget to other.remove(piece)!
+         piece.setContainer(this, pieces.size());
+      }
+      add(piece);
+   }
 }
 
 /**
@@ -277,9 +328,9 @@ public boolean movePieceFrom(Container other, AbstractPiece piece)
 /**
  * Move a Group of pieces here from another Container - only use when this Group is a temporary Container!
  * @param other a Container
- * @param group the pieces
+ * @param group the Group to merge into this Group
  * @param ctx a Context
- * @return whether or not the Group was merged into this Group
+ * @return whether or not the other Group was merged into this Group
  */
 public boolean moveGroupFrom(Container other, Group group, Context ctx)
 {
@@ -288,19 +339,31 @@ public boolean moveGroupFrom(Container other, Group group, Context ctx)
 //      return false;
 //   }
    other.removeGroup(group);
-   add(group.getAllPieces(), true);
-   // delete the group:
-   group.setContainer(null, -1);
+   add(group.pieces, true);
+   // delete the other group:
+   group.deleteMerged();
    return true;
+}
+
+private void deleteMerged()
+{
+   pieces.clear();  // merging this Group into another Group!
+   containerParent = null;
 }
 
 public void remove(AbstractPiece p)
 {
    pieces.remove(p.getIndexInContainer());
    if (isExpanded()) {
-      // TODO: remove 1 reference from Box.expandedList - maybe have to use Box method ungroupPiece - or is this method only used when moving a piece from a temporaryContainerGroup to playmat or box?
+      // TODO: remove 1 reference from Box.expandedList - maybe have to use Box method ungroupPiece - or
+      //  is this method only used when moving a piece from a temporaryContainerGroup to playmat or box?
    }
-   // TODO: all objects with higher index must index--!
+   
+   // all objects with higher index must decrement index:
+   for (ListIterator<AbstractPiece> iterator = pieces.listIterator(p.getIndexInContainer()); iterator.hasNext(); ) {
+      AbstractPiece next = iterator.next();
+      next.decrementIndex();
+   }
 }
 
 /**
@@ -375,14 +438,12 @@ public boolean isExpanded()
    return expanded;
 }
 
-public void setExpanded(boolean expanded)
+void setExpanded(boolean expanded)
 {
    this.expanded = expanded;
-   Box box = (Box) containerParent;
-   box.setExpanded(this, expanded);
 }
 
-//public boolean isPile() // TODO: maybe move these to PlayMat.java
+//public boolean isPile() // maybe move these to PlayMat.java
 //{
 //   // TOD
 //   return false;

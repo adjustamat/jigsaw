@@ -1,6 +1,5 @@
 package github.adjustamat.jigsawpuzzlefloss.pieces;
 
-import android.graphics.Color;
 import android.graphics.Point;
 import android.graphics.PointF;
 import android.graphics.RectF;
@@ -9,6 +8,7 @@ import android.os.Parcel;
 import androidx.annotation.Nullable;
 
 import github.adjustamat.jigsawpuzzlefloss.containers.Box.GroupOrSinglePiece;
+import github.adjustamat.jigsawpuzzlefloss.containers.Container;
 import github.adjustamat.jigsawpuzzlefloss.containers.Container.Loading;
 import github.adjustamat.jigsawpuzzlefloss.game.Direction;
 import github.adjustamat.jigsawpuzzlefloss.game.ImagePuzzle;
@@ -86,26 +86,41 @@ class SinglePieceJedges
    }
 } // class SinglePieceJedges
 
-public void writeToParcel(Parcel dest)
+public void writeToParcelFromMixedGroup(Parcel dest)
 {
-   super.writeToParcel(dest);
+   dest.writeInt(0);
+   super.writeToParcelFromMixedGroup(dest);
+   writeOnlySinglePieceToParcel(dest);
+}
+
+public void writeToSinglePieceParcel(Parcel dest)
+{
+   super.writeToParcelFromMixedGroup(dest);
+   writeOnlySinglePieceToParcel(dest);
+}
+
+private void writeOnlySinglePieceToParcel(Parcel dest)
+{
    for (JedgeParams param: neswParameters) {
       param.writeToParcel(dest);
    }
    vectorJedges.writeToParcel(dest);
 }
 
-public static SinglePiece createFromParcelToBox(Parcel in, Loading loading)
+public static SinglePiece createSinglePieceFromParcelToBox(Parcel in, Container loading, int i)
 {
    // TODO!
 }
 
-public static SinglePiece createFromParcelToGroup(Parcel in, Loading loading)
+// TODO: this method (ToGroup) is used when loading into BoxGroup, PlayMatGroup and TempContainerGroup. good?
+//  take into account writeToMixedGroupParcel and writeToSinglePieceParcel!
+//  should I create toMixedGroup and toElsewhere instead of current three methods?
+public static SinglePiece createSinglePieceFromParcelToGroup(Parcel in, Container loading, int i)
 {
    // TODO!
 }
 
-public static SinglePiece createFromParcelToPlayMat(Parcel in, Loading loading)
+public static SinglePiece createSinglePieceFromParcelToPlayMat(Parcel in, Container loading, int i)
 {
    // TODO!
 }

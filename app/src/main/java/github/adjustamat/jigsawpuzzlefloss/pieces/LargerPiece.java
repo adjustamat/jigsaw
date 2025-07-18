@@ -11,7 +11,7 @@ import androidx.annotation.NonNull;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import github.adjustamat.jigsawpuzzlefloss.containers.Container.Loading;
+import github.adjustamat.jigsawpuzzlefloss.containers.Container;
 import github.adjustamat.jigsawpuzzlefloss.game.Direction;
 import github.adjustamat.jigsawpuzzlefloss.pieces.SinglePiece.SinglePieceJedges;
 import github.adjustamat.jigsawpuzzlefloss.ui.BorderDrawable;
@@ -51,18 +51,44 @@ boolean southPEdge;
 
 private final RectF jigBreadth = new RectF();
 
-public void writeToParcel(Parcel dest)
+public void writeToParcelFromMixedGroup(Parcel dest)
 {
-   super.writeToParcel(dest);
+   dest.writeInt(1);
+   super.writeToParcelFromMixedGroup(dest);
+   writeOnlyLargerPieceToParcel(dest);
+}
+
+public void writeToLargerPieceParcel(Parcel dest)
+{
+   super.writeToParcelFromMixedGroup(dest);
+   writeOnlyLargerPieceToParcel(dest);
+}
+
+private void writeOnlyLargerPieceToParcel(Parcel dest){
+   // TODO!
+   /*
+private ArrayList<HoleIndices> matrix;
+
+int matrixWidth;
+int matrixHeight;
+int pieceCount;
+
+boolean westPEdge;
+boolean northPEdge;
+boolean eastPEdge;
+boolean southPEdge;
+
+private final RectF jigBreadth = new RectF();
+    */
+   vectorJedges.writeToParcel(dest);
+}
+
+public static LargerPiece createLargerPieceFromParcelToPlayMat(Parcel in, Container loading, int i)
+{
    // TODO!
 }
 
-public static LargerPiece createFromParcelToPlayMat(Parcel in, Loading loading)
-{
-   // TODO!
-}
-
-public static LargerPiece createFromParcelToGroup(Parcel in, Loading loading)
+public static LargerPiece createLargerPieceFromParcelToGroup(Parcel in, Container loading, int i)
 {
    // TODO!
 }
@@ -118,6 +144,11 @@ public class LargerPieceJedges
    private final ArrayList<PieceJedge> innerJedges = new ArrayList<>();
    private final ArrayList<ArrayList<PieceJedge>> outerJedgeHoles = new ArrayList<>(2);
    private int[] removed;
+   
+   public void writeToParcel(Parcel dest)
+   {
+      // TODO!
+   }
    
    LargerPieceJedges(LargerPiece p1, LargerPiece p2,
     Point subp1, Point subp2, Direction dir, int offsetX1, int offsetX2, int offsetY1, int offsetY2)

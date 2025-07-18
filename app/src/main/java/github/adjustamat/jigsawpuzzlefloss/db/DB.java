@@ -5,22 +5,14 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
-import android.graphics.Bitmap;
-import android.graphics.Bitmap.CompressFormat;
-import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Parcel;
-import android.provider.MediaStore;
 import android.util.Log;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.security.MessageDigest;
 
 import github.adjustamat.jigsawpuzzlefloss.game.ImagePuzzle;
-import github.adjustamat.jigsawpuzzlefloss.ui.PuzzleGraphics;
 
 public class DB
  extends SQLiteOpenHelper
@@ -33,7 +25,8 @@ public static final String BITMAP_TABLE_NAME = "BM";
 public static final String C_INT_BITMAP_ID = "BMID";
 public static final String C_STR_BITMAP_URI = "URI";
 
-public static final String SCHEME_CROPPED_BITMAP = "cropped";
+//public static final String SCHEME_CROPPED_BITMAP = "cropped";
+// TODO: instead of SCHEME_CROPPED_BITMAP, use glide cache or cropper's Uri output.
 
 public static final String GAME_TABLE_NAME = "PZ";
 public static final String C_INT_GAME_ID = "PZID";
@@ -120,33 +113,33 @@ private static File makeNewPNGFilename(Uri originalUri, Context ctx)
    return new File(ctx.getFilesDir()/*ctx.getCacheDir()*/, sha256.toString());
 }
 
-/**
- * Saves bitmap as PNG in ctx.getFilesDir(). Creates new bitmapUri and saves it in the database.
- * @param originalUri the bitmapUri of the uncropped bitmap
- * @param bitmap the cropped bitmap
- * @param ctx a Context
- * @return a new bitmapID
- */
-public int saveCroppedBitmap(Uri originalUri, Bitmap bitmap, Context ctx)
-{
-   File pngFilename = makeNewPNGFilename(originalUri, ctx);
-   try {
-      FileOutputStream outputStream = new FileOutputStream(pngFilename);
-      //ctx.openFileOutput(pngFilename, Context.MODE_PRIVATE);
-      // TODO: use glide library
-      bitmap.compress(CompressFormat.PNG, 100, outputStream); // write to file!
-      outputStream.flush();
-      outputStream.close();
-   }
-   catch (IOException e) {
-      Log.e("DBG", "saveCroppedBitmap() - IOException", e);
-   }
-   return saveBitmapUri(
-    new Uri.Builder().scheme(SCHEME_CROPPED_BITMAP)
-     .opaquePart(pngFilename.getName()).build()
-   ); // Uri is like "cropped:p8jzs5ob717v4hsh.png"
-   //return saveBitmapUri(Uri.fromFile(pngFilename)); // Uri has file: scheme. (if file moves, there will be an error later)
-}
+///**
+// * Saves bitmap as PNG in ctx.getFilesDir(). Creates new bitmapUri and saves it in the database.
+// * @param originalUri the bitmapUri of the uncropped bitmap
+// * @param bitmap the cropped bitmap
+// * @param ctx a Context
+// * @return a new bitmapID
+// */
+//public int saveCroppedBitmap(Uri originalUri, Bitmap bitmap, Context ctx)
+//{
+//   File pngFilename = makeNewPNGFilename(originalUri, ctx);
+//   try {
+//      FileOutputStream outputStream = new FileOutputStream(pngFilename);
+//      //ctx.openFileOutput(pngFilename, Context.MODE_PRIVATE);
+//      // TODO: use cropper, or not glide library
+//      bitmap.compress(CompressFormat.PNG, 100, outputStream); // write to file!
+//      outputStream.flush();
+//      outputStream.close();
+//   }
+//   catch (IOException e) {
+//      Log.e("DBG", "saveCroppedBitmap() - IOException", e);
+//   }
+//   return saveBitmapUri(
+//    new Uri.Builder().scheme(SCHEME_CROPPED_BITMAP)
+//     .opaquePart(pngFilename.getName()).build()
+//   ); // Uri is like "cropped:p8jzs5ob717v4hsh.png"
+//   //return saveBitmapUri(Uri.fromFile(pngFilename)); // Uri has file: scheme. (if file moves, there will be an error later)
+//}
 
 /**
  * Saves a bitmapUri in the database.
@@ -231,39 +224,13 @@ public int getStartedGameCount()
    return count;
 }
 
-public void saveGame(ImagePuzzle imagePuzzle)
-{
-   
-   C_INT_GAME_ID = "PZID";
-   public static final String C_STR_GAME_BITMAP_URI = C_STR_BITMAP_URI;
-   public static final String C_INT_GAME_PROGRESS = "DONE";
-   public static final String C_BLOB_GAME_DATA = "DATA";
-   
-   SQLiteDatabase sdb = getWritableDatabase();
-   ContentValues values = new ContentValues();
-   values.put(C_STR_GAME_BITMAP_URI, imagePuzzle.bitmapUri.toString());
-   values.put(C_INT_GAME_PROGRESS, imagePuzzle.getProgressPercent());
-   
-   Parcel parcel = Parcel.obtain();
-   imagePuzzle.writeToParcel(parcel);
-   
-   values.put(C_BLOB_GAME_DATA, parcel.marshall());
-   parcel.recycle();
-   
-   //values.put(C_INT_GAME_ID, newBitmapUri.toString());
-   
-   
-   
-   sdb.close();
-}
-
-public int createNewSaveGame(Uri gameBitmapUri)
+public int createNewSaveGame()
 {
    int count = 0;
    SQLiteDatabase sdb = getWritableDatabase();
    ContentValues values = new ContentValues();
    
-   values.put(C_STR_GAME_BITMAP_URI, gameBitmapUri.toString());
+   //values.put(C_STR_GAME_BITMAP_URI, gameBitmapUri.toString());
    values.put(C_INT_GAME_PROGRESS, 0);
    
    long rowID = sdb.insert(GAME_TABLE_NAME, null, values);
@@ -271,7 +238,26 @@ public int createNewSaveGame(Uri gameBitmapUri)
    
    
    sdb.close();
-   return (int) rowID; // returned bitmapID is new row ID
+   return (int) rowID; // returned gameID is new row ID
+}
+
+public void saveGame(ImagePuzzle imagePuzzle)
+{
+   SQLiteDatabase sdb = getWritableDatabase();
+   ContentValues values = new ContentValues();
+   
+   values.put(C_STR_GAME_BITMAP_URI, imagePuzzle.bitmapUri.toString());
+   values.put(C_INT_GAME_PROGRESS, imagePuzzle.getProgressPercent());
+   
+   Parcel parcel = Parcel.obtain();
+   imagePuzzle.writeToParcel(parcel);
+   values.put(C_BLOB_GAME_DATA, parcel.marshall());
+   parcel.recycle();
+   
+   sdb.update(GAME_TABLE_NAME, values,
+    C_INT_GAME_ID + " = " + imagePuzzle.gameID, null);
+   
+   sdb.close();
 }
 
 public Uri getGameBitmapUri(int gameID)
@@ -319,47 +305,44 @@ public Parcel getGameData(int gameID)
 }
 
 // TODO: use image loader library instead - several methods: getThumbnail, getHighResBitmap
-public Bitmap getBitmap(int bitmapID, Context ctx)
-{
-   // TODO: use image loader library instead
-   return loadBitmapFromUri(getBitmapUri(bitmapID), ctx);
-}
+//public Bitmap getBitmap(int bitmapID, Context ctx)
+//{
+//   return loadBitmapFromUri(getBitmapUri(bitmapID), ctx);
+//}
 
-public static Bitmap loadBitmapFromUri(Uri uri, Context ctx)
-{
-   Bitmap ret = null;
-   // TODO: use image loader library instead - instead of SCHEME_CROPPED_BITMAP, use its cache! or cropper's Uri output.
-   
-   if (SCHEME_CROPPED_BITMAP.equals(uri.getScheme())) {
-      return loadCroppedBitmap(uri.getSchemeSpecificPart(), ctx);
-   }
-   
-   try {
-      // API 28: ImageDecoder.createSource(ctx.getContentResolver(),uri);
-      ret = MediaStore.Images.Media.getBitmap(ctx.getContentResolver(), uri);
-   }
-   catch (IOException e) {
-      Log.d(PuzzleGraphics.DBG, "loadBitmapFromUri(" + uri + ") - IOException", e);
-   }
-   return ret;
-}
+//public static Bitmap loadBitmapFromUri(Uri uri, Context ctx)
+//{
+//   Bitmap ret = null;
+//
+//   if (SCHEME_CROPPED_BITMAP.equals(uri.getScheme())) {
+//      return loadCroppedBitmap(uri.getSchemeSpecificPart(), ctx);
+//   }
+//
+//   try {
+//      // API 28: ImageDecoder.createSource(ctx.getContentResolver(),uri);
+//      ret = MediaStore.Images.Media.getBitmap(ctx.getContentResolver(), uri);
+//   }
+//   catch (IOException e) {
+//      Log.d(PuzzleGraphics.DBG, "loadBitmapFromUri(" + uri + ") - IOException", e);
+//   }
+//   return ret;
+//}
 
-private static Bitmap loadCroppedBitmap(String pngFilename, Context ctx)
-{
-   // TODO: use image loader library instead - and use cropper library with Uri instead of Bitmap!
-   Bitmap ret = null;
-   try {
-      File file = new File(ctx.getFilesDir(), pngFilename);
-      if (file.isFile()) {
-         FileInputStream inputStream = new FileInputStream(file);
-         //ctx.openFileInput(file);
-         ret = BitmapFactory.decodeStream(inputStream);
-         inputStream.close();
-      }
-   }
-   catch (IOException e) {
-      Log.e(DBG, "loadCroppedBitmap(" + pngFilename + ") - IOException", e);
-   }
-   return ret;
-}
+//private static Bitmap loadCroppedBitmap(String pngFilename, Context ctx)
+//{
+//   Bitmap ret = null;
+//   try {
+//      File file = new File(ctx.getFilesDir(), pngFilename);
+//      if (file.isFile()) {
+//         FileInputStream inputStream = new FileInputStream(file);
+//         //ctx.openFileInput(file);
+//         ret = BitmapFactory.decodeStream(inputStream);
+//         inputStream.close();
+//      }
+//   }
+//   catch (IOException e) {
+//      Log.e(DBG, "loadCroppedBitmap(" + pngFilename + ") - IOException", e);
+//   }
+//   return ret;
+//}
 }

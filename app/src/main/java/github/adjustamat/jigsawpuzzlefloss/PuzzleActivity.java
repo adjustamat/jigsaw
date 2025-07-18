@@ -76,14 +76,12 @@ private class Views
    final RecyclerView.LayoutManager miniBoxLayout;
    final OnItemTouchListener bigBoxItemTouchListener;
    final OnItemTouchListener miniBoxItemTouchListener;
-   //   final OnFlingListener boxFlingListener;
    final LayoutParams boxParams;
    final int miniBoxHeight;
    boolean big = true; // initially true, so setMiniBoxLayout works.
    
    public Views(Context ctx)
    {
-      
       this.mainHandler = new Handler(Looper.getMainLooper());
       
       this.frameFullscreenLayout = findViewById(R.id.frameFullscreenLayout);
@@ -109,7 +107,7 @@ private class Views
       {
          public boolean onInterceptTouchEvent(@NonNull RecyclerView rv, @NonNull MotionEvent e)
          {
-            return false;
+            return false;// TODO!
          }
          
          public void onTouchEvent(@NonNull RecyclerView rv, @NonNull MotionEvent e)
@@ -126,7 +124,7 @@ private class Views
       {
          public boolean onInterceptTouchEvent(@NonNull RecyclerView rv, @NonNull MotionEvent e)
          {
-            return false;
+            return false;// TODO!
          }
          
          public void onTouchEvent(@NonNull RecyclerView rv, @NonNull MotionEvent e)
@@ -143,10 +141,9 @@ private class Views
       {
          public boolean onFling(int velocityX, int velocityY)
          {
-            
             if (Math.abs(velocityY) > Math.abs(velocityX)) { // vertical flings only
                if (velocityY < 0) { // fling up
-                  expandBox();
+                  expandBoxFully();
                } // fling up
                else { // fling down
                   retractBox();
@@ -168,7 +165,7 @@ private class Views
       if (height == LayoutParams.MATCH_PARENT)
          viewPlayMat.setVisibility(View.GONE);
       else
-         viewPlayMat.setVisibility(View.VISIBLE); // TODO: change params of srcPlayMat!
+         viewPlayMat.setVisibility(View.VISIBLE); // TODO: change params of viewPlayMat!
       boxParams.height = height;
       lstBox.setLayoutParams(boxParams);
    }
@@ -265,7 +262,6 @@ public static final String EXTRA_GENERATE_WIDTH = "mat.puzzle.width";
 public static final String EXTRA_GENERATE_HEIGHT = "mat.puzzle.height";
 public static final String EXTRA_GENERATE_BITMAP_WIDTH = "mat.puzzle.bitmap.width";
 public static final String EXTRA_GENERATE_BITMAP_HEIGHT = "mat.puzzle.bitmap.height";
-public static final String EXTRA_GENERATE_BITMAP_URI = "mat.puzzle.bitmap.uri";
 
 private void readIntent()
 {
@@ -284,53 +280,41 @@ private void readIntent()
         intent.getIntExtra(EXTRA_GENERATE_BITMAP_HEIGHT, -1))
       );
    }
-   
-   
-   
-   
 }
 
-private void startGameFromDB(int gameID, Context ctx, DB db)
+private DB dbInstance;
+
+public DB db()
 {
-   // TODO: see ImagePuzzle.getPuzzleFromDatabase and ImagePuzzle.createFromParcel
-   ImagePuzzle.loadFromDatabase(gameID,ctx,db);
+   if (dbInstance == null) {
+      dbInstance = new DB(this);
+   }
+   return dbInstance;
 }
 
-private void startNewGame(int width, int height, Uri bitmapUri, Size bitmapSize, DB db)
+private void startGameFromDB(int gameID)
 {
-   ImagePuzzle.generateNewPuzzle(
-    width, height,
-    bitmapUri, bitmapSize, new Random(),db.getStartedGameCount() );
-   
+   currentGame = ImagePuzzle.loadFromDatabase(gameID, this, db());
+   startGame();
 }
 
-private void startGame(@NonNull ImagePuzzle imagePuzzle)
+private void startNewGame(int width, int height, Uri bitmapUri, Size bitmapSize)
 {
-   
-   
+   currentGame = ImagePuzzle.generateNewPuzzle(width, height,
+    bitmapUri, bitmapSize, new Random(), db().createNewSaveGame());
+   saveGame();
+   startGame();
+}
+
+private void startGame()
+{
    // initialize PuzzleGraphics
-   PuzzleGraphics.init(currentGame = imagePuzzle);
+   PuzzleGraphics.init(currentGame);
    
    // initialize Box
-   bigBoxAdapter = new BoxAdapter(imagePuzzle.singlePiecesContainer);
-   miniBoxAdapter = new MiniBoxAdapter(imagePuzzle.singlePiecesContainer);
+   bigBoxAdapter = new BoxAdapter(currentGame.singlePiecesContainer);
+   miniBoxAdapter = new MiniBoxAdapter(currentGame.singlePiecesContainer);
    retractBox();
-}
-
-//@Override
-//public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
-//{
-//   // Inflate the layout for this fragment
-//   return inflater.inflate(R.layout.act_puzzle, container, false);
-//}
-
-@Override
-
-public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState)
-{
-   super.onViewCreated(view, savedInstanceState);
-   
-   
 }
 
 public void onCreate(@Nullable Bundle savedInstanceState)
@@ -399,14 +383,6 @@ public void onPause()
    endFullscreen();
 }
 
-//@Override
-//public void onDestroy()
-//{
-//   super.onDestroy();
-//   mContentView = null;
-//   mControlsView = null;
-//}
-
 private void toggle()
 {
    if (fullscreenMode) {
@@ -437,7 +413,7 @@ public void setAutoFullscreenDelayMillis(int autoHideDelayMillis)
    this.autoFullscreenDelayMillis = autoHideDelayMillis;
 }
 
-void expandBox()
+void expandBoxFully()
 {
    ui.imgBoxCover.setVisibility(View.GONE);
    ui.viewMiniMap.setVisibility(View.GONE);
@@ -458,7 +434,7 @@ void retractBox()
 
 private void saveGame()
 {
-
+   db().saveGame(currentGame);
 }
 
 private final OnBackPressedCallback onBackPressed = new OnBackPressedCallback(true)

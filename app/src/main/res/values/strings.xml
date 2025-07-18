@@ -42,6 +42,7 @@
 
     <!-- UNSORTED RESOURCES BELOW THIS -->
     <string name="NEW_RESOURCES_BELOW_THIS">UNSORTED strings:</string>
+    <string name="msg_error_open_url">Could not open URL. Please download using web browser.</string>
 
 
 </resources>

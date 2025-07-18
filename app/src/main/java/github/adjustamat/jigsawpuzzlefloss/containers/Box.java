@@ -1,7 +1,6 @@
 package github.adjustamat.jigsawpuzzlefloss.containers;
 
 import android.content.Context;
-import android.os.Parcel;
 
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -34,47 +33,66 @@ public Box(List<GroupOrSinglePiece> pieces, ImagePuzzle parent)
    expandedList.addAll(list);
 }
 
-void setExpanded(Group group, boolean expand)
+public void setExpanded(Group group, boolean expand)
 {
+   if (group.isExpanded() == expand)
+      return;
+   group.setExpanded(expand);
    int index = group.getIndexInContainer();
    int size = group.getPieceCount();
    if (expand)
       expanded.put(index, group);
    else
       expanded.remove(index);
-   if (size > 1) {
-      for (int i = size - 1; i > 0; i--) {
-         if (expand)
-            expandedList.add(index, group);
-         else
-            expandedList.remove(index);
-      }
+   for (int i = size - 1; i > 0; i--) {
+      if (expand)
+         expandedList.add(index, group);
+      else
+         expandedList.remove(index);
    }
 }
 
-public Group createBoxGroup(List<SinglePiece> selectedPieces, int atIndex)
+public Group createBoxGroup(List<SinglePiece> selectedPieces, int atBoxIndex)
 {
-   Group group = new Group(this, atIndex, imagePuzzle.getNewGroupNumber());
+   Group group = new Group(this, atBoxIndex, imagePuzzle.getNewGroupNumber());
    
-   int atExpandedIndex = atIndex;
+   //list.removeAll(selectedPieces);
+   for (SinglePiece piece: selectedPieces) {
+      int boxIndex = piece.getIndexInContainer();
+      if (boxIndex < atBoxIndex)
+         atBoxIndex--;
+      list.remove(boxIndex);
+   }
+   
+   int atExpandedIndex = atBoxIndex;
    for (Entry<Integer, Group> expandedGroup: expanded.entrySet()) {
-      if (atIndex > expandedGroup.getKey())
+      if (atBoxIndex > expandedGroup.getKey())
          atExpandedIndex += expandedGroup.getValue().getPieceCount();
    }
-   list.add(atIndex, group);
+   list.add(atBoxIndex, group);
    expandedList.add(atExpandedIndex, group);
    
    return group;
 }
 
+// TODO: create ungroupGroup method in PlayMat also.
 public void ungroupBoxGroup(Group group)
 {
-// TODO!
+   // TODO: if group.expanded, optimize: replace items in expandedList instead of removing and then adding
 }
 
+
+// TODO: should this method take an indexInGroup or a SinglePiece?
 public void ungroupPiece(Group group, int indexInGroup)
 {
-// TODO!
+   if (group.getPieceCount() == 1) {
+      ungroupBoxGroup(group);
+      return;
+   }
+   
+   SinglePiece piece = (SinglePiece) group.getAllPieces().get(indexInGroup);
+   group.remove(piece); // make sure this remove method works when container is Box - it's a Container method.
+   // TODO!
 }
 
 public void reorder(int fromIndex, int toIndex)
@@ -104,7 +122,7 @@ public void reorder(int fromIndex, int toIndex)
       if (toIndex > expandedGroup.getKey())
          toExpandedIndex += expandedGroup.getValue().getPieceCount();
    }
-   // TODO: fromexpanded toexpanded???
+   // TODO: what is fromexpanded and toexpanded??? what to do?
    
 }
 
@@ -112,28 +130,32 @@ public void remove(AbstractPiece p)
 {
    list.remove(p.getIndexInContainer());
    expandedList.remove(p.getIndexInContainer());
-   // TODO: all objects with higher index must index--!
+   // TODO: all objects with higher index must index--! - see reorder() and PlayMat.removeGroup(Group group)
 }
 
 public void removeGroup(Group group)
 {
-   // this method is used when moving to another container.
+   // this method is used when moving the Group of pieces to another container.
    list.remove(group.getIndexInContainer());
    if (group.isExpanded())
       setExpanded(group, false);
    expandedList.remove(group.getIndexInContainer());
-   // TODO: all objects with higher index must index--!
+   // TODO: all objects with higher index must index--! - see reorder() and PlayMat.removeGroup(Group group)
 }
 
 public boolean movePieceFrom(Container other, AbstractPiece p)
 {
-   // TODO: method for adding piece/group atIndex: just use this method and then reorder.
+   // TODO: method for adding piece/group atIndex: just use this method and then reorder. - see reorder()
+   
+   
    // only a SinglePiece can be put back into the box.
    if (p instanceof LargerPiece)
       return false;
    other.remove(p);
    p.setContainer(this, list.size());
    list.add((SinglePiece) p);
+   
+   // TODO: expanded list - does this work?
    expandedList.add((SinglePiece) p);
 //   if (other instanceof Group) {
 //      Group temporaryContainer = (Group) other;
@@ -154,6 +176,8 @@ public boolean moveGroupFrom(Container other, Group group, Context ctx)
    other.removeGroup(group);
    group.setContainer(this, list.size());
    list.add(group);
+   
+   // TODO: expanded list - does this work?
    expandedList.add(group);
 //   if (other instanceof Group) {
 //      Group temporaryContainer = (Group) other;
@@ -174,7 +198,5 @@ public interface GroupOrSinglePiece
    void decrementIndex();
    void incrementIndex();
    void replaceLoading(Container loadedContainer);
-   void writeToParcel(Parcel dest);
-
 }
 }

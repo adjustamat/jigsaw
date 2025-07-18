@@ -52,38 +52,38 @@ public void writeToParcel(Parcel dest)
    dest.writeInt(width);
    dest.writeInt(height);
    
+   // TODO: bitmapSize
+   
    dest.writeInt(singlePiecesContainer.list.size());
    for (GroupOrSinglePiece groupOrSinglePiece: singlePiecesContainer.list) {
-      dest.writeInt(groupOrSinglePiece instanceof Group ?1 :0);
-      groupOrSinglePiece.writeToParcel(dest);
-//      if () {
-//
-//         ((Group) groupOrSinglePiece).writeToParcel(dest);
-//      }
-//      else {
-//         dest.writeInt(0);
-//         ((SinglePiece) groupOrSinglePiece).writeToParcel(dest);
-//      }
+      boolean isGroup = groupOrSinglePiece instanceof Group;
+      dest.writeInt(isGroup ?1 :0);
+      if (isGroup) {
+         ((Group) groupOrSinglePiece).writeGroupToParcel(dest, true);
+      }
+      else {
+         ((SinglePiece) groupOrSinglePiece).writeToSinglePieceParcel(dest);
+      }
    }
    
    dest.writeInt(temporaryContainers.size());
    for (Group group: temporaryContainers) {
-      group.writeToParcel(dest);
+      group.writeGroupToParcel(dest, false);
    }
    
    dest.writeInt(playMatContainer.groups.size());
    for (Group group: playMatContainer.groups) {
-      group.writeToParcel(dest);
+      group.writeGroupToParcel(dest, false);
    }
    
    dest.writeInt(playMatContainer.singlePieces.size());
    for (SinglePiece piece: playMatContainer.singlePieces) {
-      piece.writeToParcel(dest);
+      piece.writeToSinglePieceParcel(dest);
    }
    
    dest.writeInt(playMatContainer.largerPieces.size());
    for (LargerPiece piece: playMatContainer.largerPieces) {
-      piece.writeToParcel(dest);
+      piece.writeToLargerPieceParcel(dest);
    }
 }
 
@@ -93,64 +93,54 @@ public static ImagePuzzle loadFromDatabase(int gameID, Context ctx, DB db)
    
    Parcel in = db.getGameData(gameID);
    
-   
-   
-   
    int width = in.readInt();
    int height = in.readInt();
    
-   Size bitmapSize = new Size(in.readInt(), in.readInt()); // TODO: writeInt!
-   Uri bitmapUri = db.getGameBitmapUri(gameID);
-   
-   int progressPercent = db.getGameProgress(gameID);
-   
-   int bitmapID = in.readInt();
-   
-   //Bitmap bitmap = db.getBitmap(bitmapID, ctx); TODO: image loader
+   Size bitmapSize = new Size(in.readInt(), in.readInt()); // TODO: writeInt above!
    
    int size = in.readInt();
-   List<GroupOrSinglePiece> box = new ArrayList<>(size);
+   List<GroupOrSinglePiece> box = new LinkedList<>();//new ArrayList<>(size);
    for (int i = 0; i < size; i++) {
       int isGroup = in.readInt();
       if (isGroup != 0)
-         box.add(Group.createFromParcelToBox(in, loading));
+         box.add(Group.createFromParcelToBox(in, loading, i));
       else
-         box.add(SinglePiece.createFromParcelToBox(in, loading));
+         box.add(SinglePiece.createSinglePieceFromParcelToBox(in, loading, i));
    }
    
    size = in.readInt();
    List<Group> temporaryContainers = new ArrayList<>(size);
    for (int i = 0; i < size; i++) {
-      temporaryContainers.add(Group.createFromParcelToTemp(in, loading));
+      temporaryContainers.add(Group.createFromParcelToTemp(in, i));
    }
    
    size = in.readInt();
    List<Group> playMatGroups = new ArrayList<>(size);
    for (int i = 0; i < size; i++) {
-      playMatGroups.add(Group.createFromParcelToPlayMat(in, loading));
+      playMatGroups.add(Group.createFromParcelToPlayMat(in, loading, i));
    }
    
    size = in.readInt();
    List<SinglePiece> playMatSinglePieces = new ArrayList<>(size);
    for (int i = 0; i < size; i++) {
-      playMatSinglePieces.add(SinglePiece.createFromParcelToPlayMat(in, loading));
+      playMatSinglePieces.add(SinglePiece.createSinglePieceFromParcelToPlayMat(in, loading, i));
    }
    
    size = in.readInt();
    List<LargerPiece> playMatLargerPieces = new ArrayList<>(size);
    for (int i = 0; i < size; i++) {
-      playMatLargerPieces.add(LargerPiece.createFromParcelToPlayMat(in, loading));
+      playMatLargerPieces.add(LargerPiece.createLargerPieceFromParcelToPlayMat(in, loading, i));
    }
-   
-   
    
    in.recycle();
    
-   ImagePuzzle ret = new ImagePuzzle(width, height, gameID,
-    bitmapSize, bitmapUri, box);
+   Uri bitmapUri = db.getGameBitmapUri(gameID); //Bitmap bitmap  TODO: image loader glide (ctx)
+   
+   ImagePuzzle ret = new ImagePuzzle(width, height, gameID, bitmapSize, bitmapUri, box);
    ret.playMatContainer.setFromDatabase(playMatGroups, playMatSinglePieces, playMatLargerPieces);
    ret.temporaryContainers.addAll(temporaryContainers);
    ret.replaceLoadingWithRealContainers();
+   
    return ret;
 }
 
@@ -177,9 +167,10 @@ private void replaceLoadingWithRealContainers()
    for (GroupOrSinglePiece groupOrSinglePiece: singlePiecesContainer.list) {
       groupOrSinglePiece.replaceLoading(singlePiecesContainer);
    }
-   for (Group group: temporaryContainers) {
-      group.replaceLoading(group);
-   }
+//   for (Group group: temporaryContainers) {
+//      group.replaceLoading(group);
+//   }
+   // TODO: see PlayMat.setFromDatabase()
    for (Group group: playMatContainer.groups) {
       group.replaceLoading(playMatContainer);
    }
@@ -245,7 +236,7 @@ public static ImagePuzzle generateNewPuzzle(int pWidth, int pHeight,
 
 public int getNewGroupNumber()
 {
-   return ++groupCounter;
+   return ++groupCounter; // TODO: save groupCounter when saving game.
 }
 
 public int getProgressPercent()

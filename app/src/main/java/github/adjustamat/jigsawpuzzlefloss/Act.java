@@ -23,11 +23,6 @@ public class Act
 {
 //private boolean everShowedMenu = false;
 private Frag currentFrag = null;
-//private PuzzleActivity startedGame = null;
-//private ImagePuzzle startedPuzzle = null;
-
-// TODO: image loader handles cache itself! TODO: empty this cache when starting a game. only needed by MainMenu and Generator fragments
-//private final HashMap<Integer, Bitmap> bitmapCache = new HashMap<>();
 
 private final OnBackPressedCallback onBackPressed = new OnBackPressedCallback(true)
 {

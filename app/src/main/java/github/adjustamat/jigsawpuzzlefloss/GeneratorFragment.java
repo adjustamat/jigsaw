@@ -42,11 +42,9 @@ class GeneratorFragment
 public static final String DBG = "GeneratorFragment";
 public static final String ARG_BITMAP_URI = "mat.IMAGE_URI";
 public static final String ARG_BITMAP_ID = "mat.IMAGE_ID";
-//private Bitmap croppedBitmap;
-private Uri bitmapUri;
-private static final int defaultPiecesCirca = 200; // TODO: default size (pieces) if no option was chosen before custom!
+private static final int defaultPiecesCirca = 200; // default size (pieces) if no option was chosen before custom!
 
-private boolean cropped; // TODO
+private Uri originalBitmapUri;
 
 private class CustomSizeListener
  implements TextWatcher
@@ -143,7 +141,8 @@ private class SizeOption
       double width = ratio * height;
       wxh.x = (int) Math.round(width);
       wxh.y = (int) Math.round(height);
-      // TODO: !! cropping is mandatory! show on cropview what happens when choosing options or changing custom size.
+      
+      // TODO: cropping is mandatory! show on cropview what happens when choosing options or changing custom size.
       //  how do we calculate where to remove margins from? can pieceSquareSize only be an integer? can the ratio?
       
    }
@@ -176,7 +175,7 @@ private class Views
 {
    final CropImageView viewCrop;
    final Button btnCropOnly;
-   private boolean cropMode = false;
+   private boolean freeCropMode = false;
    
    final LinearLayout llhStart;
    final Button btnStart;
@@ -247,7 +246,7 @@ private class Views
          Act act = (Act) requireActivity();
          Rect rect = Objects.requireNonNull(cropResult.getCropRect());
          
-         // show new PuzzleActivity
+         // show new PuzzleActivity with cropped image
          act.gotoPuzzleFromGenerator(cropResult.getUriContent(),
           selectedSize.wxh.x, selectedSize.wxh.y,
           rect.width(), rect.height()
@@ -255,7 +254,7 @@ private class Views
       });
       
       btnCropOnly.setOnClickListener(v->{
-         setCropMode(true);
+         setFreeCropMode(true);
       });
       
       btnStart.setOnClickListener(v->{
@@ -264,13 +263,14 @@ private class Views
          Rect rect = viewCrop.getCropRect();
          if (rect == null) {
             rect = Objects.requireNonNull(viewCrop.getWholeImageRect());
-            act.gotoPuzzleFromGenerator(bitmapUri,
+            
+            // show new PuzzleActivity with original image unchanged
+            act.gotoPuzzleFromGenerator(originalBitmapUri,
              selectedSize.wxh.x, selectedSize.wxh.y,
              rect.width(), rect.height()
             );
          }
          else {
-            // TODO: // Subscribe to async event using cropImageView.setOnCropImageCompleteListener(listener)
             viewCrop.croppedImageAsync(
              CompressFormat.PNG, 100,
              rect.width(), rect.height(), RequestSizeOptions.NONE,
@@ -298,12 +298,12 @@ private class Views
    
    /**
     * TODO: maybe change some settings of the view, see {@link CropImageOptions}
-    * @param crop
+    * @param free
     */
-   void setCropMode(boolean crop)
+   void setFreeCropMode(boolean free)
    {
-      cropMode = crop;
-      if (cropMode) {
+      freeCropMode = free;
+      if (freeCropMode) {
          // remove forced ratio in cropMode.
          viewCrop.clearAspectRatio();
          
@@ -312,9 +312,9 @@ private class Views
          btnCropOnly.setVisibility(View.GONE);
       }
       else {
-         // TODO: make viewCrop force the ratio of the selected puzzle size when not in cropMode.
+         // TODO: make viewCrop force the ratio of the selected puzzle size when not in freecropMode.
          
-         // TODO: unselect size when returning from cropMode!
+         // TODO: unselect size when returning from freecropMode!
          
          if (selectedSize != null) {
             //viewCrop.setAspectRatio();
@@ -435,13 +435,13 @@ public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceStat
       if (id != 0) {
          Act act = (Act) requireActivity();
 //         croppedBitmap = act.getBitmap(id);
-         bitmapUri = act.db().getBitmapUri(id);
+         originalBitmapUri = act.db().getBitmapUri(id);
       }
       else {
          Uri uri = arguments.getParcelable(ARG_BITMAP_URI);
          if (uri != null) {
             // croppedBitmap = DB.loadBitmapFromUri(uri, requireContext());
-            bitmapUri = uri;
+            originalBitmapUri = uri;
          }
          else {
             Log.d(DBG, "onViewCreated() - all arguments (ARG_BITMAP_*) are null!");
@@ -449,20 +449,20 @@ public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceStat
       }
       
       
-      if (bitmapUri == null)
+      if (originalBitmapUri == null)
          Log.d(DBG, "bitmapUri is null");
       else
-         ui.viewCrop.setImageUriAsync(bitmapUri);
+         ui.viewCrop.setImageUriAsync(originalBitmapUri);
       
-      ui.setCropMode(false);
+      ui.setFreeCropMode(false);
    }
    else Log.d(DBG, "onViewCreated() - Bundle getArguments() returns null!");
 }
 
 public void handleOnBackPressed(BackCallback callback)
 {
-   if (ui.cropMode) { // TODO: delete ui.cropMode field
-      ui.setCropMode(false);
+   if (ui.freeCropMode) {
+      ui.setFreeCropMode(false);
    }
    else
       callback.goBackToMenu();
