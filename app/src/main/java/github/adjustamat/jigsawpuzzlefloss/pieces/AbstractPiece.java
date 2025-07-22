@@ -11,7 +11,6 @@ import android.graphics.PointF;
 import android.graphics.RectF;
 import android.os.Parcel;
 
-import androidx.annotation.CallSuper;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
@@ -36,17 +35,19 @@ public static final float HALF_SIZE = 60f;
 public static final float MAX_SIZE = (25 + 7.5f + 17.5f) * 2 / 1.7f + SIDE_SIZE;
 public static final int MAX_BUFFER_SIZE = 180;
 
-private boolean selected;
-public boolean lockedRotation;// = false;
-public boolean lockedInPlace;// = false;
+private boolean selected; // NO SERIALIZATION
+public boolean lockedRotation; // ALWAYS SERIALIZATION
+public boolean lockedInPlace; // ALWAYS SERIALIZATION
 /**
  * The visual position of this piece, relative to its Group, or if none, to its Container. Can be null in the Box.
  */
-private PointF relativePos;
-public @NonNull Direction currentRotationNorthDirection;// = Direction.NORTH;
-protected Point correctPuzzlePosition;
+private PointF relativePos; // CONDITIONAL SERIALIZATION
 
-protected @NonNull Container containerParent;
+public @NonNull Direction currentRotationNorthDirection;  // ALWAYS SERIALIZATION
+
+protected Point correctPuzzlePosition; // ALWAYS SERIALIZATION
+
+protected @NonNull Container containerParent; // NO SERIALIZATION
 
 /**
  * actually index in Group when in a Group inside box or PlayMat!
@@ -55,41 +56,34 @@ protected @NonNull Container containerParent;
 private int indexInContainer;
 
 protected AbstractPiece(@NonNull Container containerParent, int indexInContainer,
- @NonNull Direction rotation, Point correctPuzzlePosition)
-{
-   this(containerParent, indexInContainer, rotation);
-   this.correctPuzzlePosition = correctPuzzlePosition;
-}
-
-protected AbstractPiece(@NonNull Container containerParent, int indexInContainer,
  @NonNull Direction rotation)
 {
    setContainer(containerParent, indexInContainer);
    this.currentRotationNorthDirection = rotation;
 }
 
-//public static AbstractPiece createFromParcelToPlayMat(Parcel in, Container loading, int i)
-//{
-//
-//}
-//
-//public static AbstractPiece createFromParcelToBox(Parcel in, Container loading, int i)
-//{
-//
-//}
-
-// TODO: remove this method and do readInt() in the method that is calling this one!
-public static AbstractPiece createFromParcelToMixedGroup(Parcel in, Container loading, int i)
+protected AbstractPiece(@NonNull Container containerParent, int indexInContainer,
+ @NonNull Direction rotation, Point correctPuzzlePosition)
 {
-   if (in.readInt() == 1)
-      return LargerPiece.createLargerPieceFromParcelToGroup(in, loading, i);
-   return SinglePiece.createSinglePieceFromParcelToGroup(in, loading, i);
+   this(containerParent, indexInContainer, rotation);
+   this.correctPuzzlePosition = correctPuzzlePosition;
 }
 
-// TODO: make this method a protected final method called writeAbstractPiece!
-public @CallSuper void writeToParcelFromMixedGroup(Parcel dest)
+// TODO: use this constructor when loading from database
+protected AbstractPiece(Loading loading, int indexInContainer,
+ @NonNull Direction rotation, Point correctPuzzlePosition,
+ PointF relative, boolean lockedRotation, boolean lockedInPlace)
 {
-   // TODO: REMOVE THIS?: BEFORE calling this super-method, write if object is singlepiece or largerpiece!
+   this(loading, indexInContainer, rotation, correctPuzzlePosition);
+   relativePos = relative;
+   this.lockedInPlace = lockedInPlace;
+   this.lockedRotation = lockedRotation;
+}
+
+//public @CallSuper void writeToParcelFromMixedGroup(Parcel dest)
+protected final void writeAbstractPieceFields(Parcel dest)
+{
+   // TODO: read these ints and floats in both SinglePiece and LargerPiece
    dest.writeInt(currentRotationNorthDirection.ordinal());
    dest.writeInt(correctPuzzlePosition.x);
    dest.writeInt(correctPuzzlePosition.y);
@@ -100,17 +94,6 @@ public @CallSuper void writeToParcelFromMixedGroup(Parcel dest)
    }
    dest.writeInt(lockedRotation ?0 :1);
    dest.writeInt(lockedInPlace ?0 :1);
-}
-
-// used when loading from database
-protected AbstractPiece(Loading loading, int indexInContainer,
- @NonNull Direction rotation, Point correctPuzzlePosition,
- PointF relative, boolean lockedRotation, boolean lockedInPlace)
-{
-   this(loading, indexInContainer, rotation, correctPuzzlePosition);
-   relativePos = relative;
-   this.lockedInPlace = lockedInPlace;
-   this.lockedRotation = lockedRotation;
 }
 
 public void replaceLoading(Container loadedContainer)

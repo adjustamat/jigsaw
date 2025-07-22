@@ -43,8 +43,8 @@ public class Dirty
 
 public final Dirty dirty = new Dirty(); // TODO: NO SERIALIZATION??
 
-private boolean selected; // = false; // NO SERIALIZATION
-private boolean expanded; // = false; // NO SERIALIZATION
+private boolean selected; // NO SERIALIZATION
+private boolean expanded; // NO SERIALIZATION
 
 Container containerParent; // NO SERIALIZATION
 private int indexInContainer; // NO SERIALIZATION
@@ -112,9 +112,15 @@ private static void readGroupFromParcel(Group ret, Parcel in, boolean singlesOnl
    int size = in.readInt();
    for (int indexInGroup = 0; indexInGroup < size; indexInGroup++) {
       if (singlesOnly)
-         ret.pieces.add(SinglePiece.createSinglePieceFromParcelToGroup(in, loading, indexInGroup));
-      else
-         ret.pieces.add(AbstractPiece.createFromParcelToMixedGroup(in, loading, indexInGroup));
+         ret.pieces.add(SinglePiece.createPieceFromParcelToBoxGroup(in, loading, indexInGroup));
+      else {
+         if (in.readInt() == 1) // TODO: write this int IFF there's a mixed group!
+            ret.pieces.add(LargerPiece.createLargerPieceFromParcelToGroup(in, loading, indexInGroup));
+         else
+            ret.pieces.add(SinglePiece.createPieceFromParcelToMixedGroup(in, loading, indexInGroup));
+         
+         //ret.pieces.add(AbstractPiece.createFromParcelToMixedGroup(in, loading, indexInGroup));
+      }
    }
 }
 
