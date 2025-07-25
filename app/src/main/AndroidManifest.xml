@@ -15,9 +15,7 @@
 
        }
 
-       // EVENTS: click, long-click, flick, drag, drag-after-long-click, rotate with two fingers, ...
-       // ACTIONS: scroll, zoom, rotate bg, move or rotate piece, zoom in on piece, show context menu, select, select group,
-       // ACTIONS: lock/unlock piece/group, ...
+// see PlayMatView for EVENTS (gestures) and ACTIONS!
 
        + write help popups with explanation for options and menu items
        + give help by automating trying to put pieces together
@@ -49,7 +47,6 @@
         >
 
         <activity android:name=".Act"
-            android:configChanges="orientation"
             android:exported="true"
             >
             <intent-filter>

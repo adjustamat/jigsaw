@@ -15,7 +15,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import github.adjustamat.jigsawpuzzlefloss.containers.Container;
-import github.adjustamat.jigsawpuzzlefloss.containers.Container.Loading;
 import github.adjustamat.jigsawpuzzlefloss.containers.Group;
 import github.adjustamat.jigsawpuzzlefloss.game.Direction;
 import github.adjustamat.jigsawpuzzlefloss.game.ImagePuzzle;
@@ -55,6 +54,13 @@ protected @NonNull Container containerParent; // NO SERIALIZATION
  */
 private int indexInContainer;
 
+/**
+ * Super-constructor for LargerPiece.
+ * Remember to set {@link #correctPuzzlePosition} manually in LargerPiece constructor!
+ * @param containerParent container
+ * @param indexInContainer index in container
+ * @param rotation current rotation
+ */
 protected AbstractPiece(@NonNull Container containerParent, int indexInContainer,
  @NonNull Direction rotation)
 {
@@ -62,6 +68,10 @@ protected AbstractPiece(@NonNull Container containerParent, int indexInContainer
    this.currentRotationNorthDirection = rotation;
 }
 
+/**
+ * Super-constructor for SinglePiece.
+ * @param correctPuzzlePosition position in finished ImagePuzzle
+ */
 protected AbstractPiece(@NonNull Container containerParent, int indexInContainer,
  @NonNull Direction rotation, Point correctPuzzlePosition)
 {
@@ -69,21 +79,24 @@ protected AbstractPiece(@NonNull Container containerParent, int indexInContainer
    this.correctPuzzlePosition = correctPuzzlePosition;
 }
 
-// TODO: use this constructor when loading from database
-protected AbstractPiece(Loading loading, int indexInContainer,
+/**
+ * Super-constructor for deserializing from database.
+ * @param relativePos current position relative to parent
+ * @param lockedRotation current locked rotation status
+ * @param lockedInPlace current locked position status
+ */
+protected AbstractPiece(@NonNull Container containerParent, int indexInContainer,
  @NonNull Direction rotation, Point correctPuzzlePosition,
- PointF relative, boolean lockedRotation, boolean lockedInPlace)
+ PointF relativePos, boolean lockedRotation, boolean lockedInPlace)
 {
-   this(loading, indexInContainer, rotation, correctPuzzlePosition);
-   relativePos = relative;
+   this(containerParent, indexInContainer, rotation, correctPuzzlePosition);
+   this.relativePos = relativePos;
    this.lockedInPlace = lockedInPlace;
    this.lockedRotation = lockedRotation;
 }
 
-//public @CallSuper void writeToParcelFromMixedGroup(Parcel dest)
-protected final void writeAbstractPieceFields(Parcel dest)
+protected final void serializeAbstractPieceFields(Parcel dest)
 {
-   // TODO: read these ints and floats in both SinglePiece and LargerPiece
    dest.writeInt(currentRotationNorthDirection.ordinal());
    dest.writeInt(correctPuzzlePosition.x);
    dest.writeInt(correctPuzzlePosition.y);
@@ -98,7 +111,7 @@ protected final void writeAbstractPieceFields(Parcel dest)
 
 public void replaceLoading(Container loadedContainer)
 {
-   setContainer(loadedContainer, this.indexInContainer);
+   containerParent = loadedContainer;
 }
 
 public void setContainer(@NonNull Container newParent, int indexInContainer)
@@ -161,12 +174,13 @@ public @Nullable PointF getRelativePos()
 // graphics:
 
 protected Path bufferedPath = null;
-protected Bitmap buffer;
+protected Bitmap buffer; // TODO: image loader?
 
 public Bitmap getUnrotatedFullSizeGraphics()
 {
    if (buffer == null) { // TODO: for LargerPieces: make buffer=null when it grows!
       VectorJedges vectorJedges = getVectorJedges();
+      // TODO: image loader?
       buffer = Bitmap.createBitmap(vectorJedges.width(), vectorJedges.height(), Config.ARGB_8888);
       Canvas canvas = new Canvas(buffer);
       PuzzleGraphics.drawPiece(canvas, vectorJedges);

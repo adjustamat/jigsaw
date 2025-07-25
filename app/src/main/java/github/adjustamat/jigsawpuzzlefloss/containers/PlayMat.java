@@ -20,17 +20,26 @@ import github.adjustamat.jigsawpuzzlefloss.pieces.SinglePiece;
 public class PlayMat
  extends Container
 {
-float usableMargin;
 public final List<Group> groups = new ArrayList<>();
 public final List<LargerPiece> largerPieces = new ArrayList<>();
 public final List<SinglePiece> singlePieces = new ArrayList<>();
-//float visibleOuterMargin;
 
 /*
 TODO: in PlayMat, use these AbstractPiece fields:
- // PointF positionInContainer; // this already exists: relativePosition
- // boolean lockedInPlace; // see also AbstractPiece.lockedRotation
+ // PointF relativePosition
+ // boolean lockedInPlace
+ // boolean lockedRotation
 */
+
+public PointF getTopLeft(){
+   // TODO: used by PlayMatView
+   return new PointF();
+}
+
+public PointF getBottomRight(){
+   // TODO: used by PlayMatView
+   return new PointF();
+}
 
 public void remove(AbstractPiece p)
 {
@@ -123,10 +132,15 @@ public void setFromDatabase(List<Group> playMatGroups,
    groups.addAll(playMatGroups);
    singlePieces.addAll(playMatSinglePieces);
    largerPieces.addAll(playMatLargerPieces);
-   // TODO: see ImagePuzzle.replaceLoadingWithRealContainers()
    
-   // TODO: for all list elements, set this as parent container! or maybe their constructors load that from database.
-   // TODO: how save relativePosition?
-   // TODO: how save temporary containers?
+   for (Group group: groups) {
+      group.replaceLoading(this);
+   }
+   for (SinglePiece piece: singlePieces) {
+      piece.replaceLoading(this);
+   }
+   for (LargerPiece piece: largerPieces) {
+      piece.replaceLoading(this);
+   }
 }
 }

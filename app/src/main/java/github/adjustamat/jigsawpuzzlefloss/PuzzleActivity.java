@@ -3,6 +3,7 @@ package github.adjustamat.jigsawpuzzlefloss;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
@@ -35,6 +36,7 @@ import androidx.recyclerview.widget.RecyclerView.OnItemTouchListener;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.MemoryCategory;
+import com.otaliastudios.zoom.ZoomLayout;
 
 import java.util.Random;
 
@@ -45,6 +47,7 @@ import github.adjustamat.jigsawpuzzlefloss.ui.BoxAdapter;
 import github.adjustamat.jigsawpuzzlefloss.ui.BoxAdapter.MiniBoxAdapter;
 import github.adjustamat.jigsawpuzzlefloss.ui.MiniMapView;
 import github.adjustamat.jigsawpuzzlefloss.ui.PlayMatView;
+import github.adjustamat.jigsawpuzzlefloss.ui.PlayMenu;
 import github.adjustamat.jigsawpuzzlefloss.ui.PuzzleGraphics;
 
 /**
@@ -56,13 +59,14 @@ public class PuzzleActivity
 {
 private static final int INITIAL_AUTO_HIDE_DELAY_MILLIS = 100;
 
+private Handler mainHandler;
+
 private class Views
 {
-   final Handler mainHandler;
-   
    final FrameLayout frameFullscreenLayout;
    final LinearLayout llvPuzzleActivity;
    
+   final ZoomLayout viewPlayMatParent;
    final PlayMatView viewPlayMat;
    
    final ImageView imgSeparator;
@@ -82,11 +86,13 @@ private class Views
    
    public Views(Context ctx)
    {
-      this.mainHandler = new Handler(Looper.getMainLooper());
-      
       this.frameFullscreenLayout = findViewById(R.id.frameFullscreenLayout);
       this.llvPuzzleActivity = findViewById(R.id.llvPuzzleActivity);
+      
+      // TODO: construct PlayMatView here! Combine ZoomLayout into PlayMatView.
+      this.viewPlayMatParent = findViewById(R.id.viewPlayMatParent);
       this.viewPlayMat = findViewById(R.id.viewPlayMat);
+      
       this.imgSeparator = findViewById(R.id.imgSeparator);
       this.llhBottom = findViewById(R.id.llhBottom);
       this.imgBoxCover = findViewById(R.id.imgBoxCover);
@@ -156,28 +162,43 @@ private class Views
    
    private void setBigBoxLayout(int height)
    {
+      
+      
       if (!big) {
          big = true;
+         lstBox.setAdapter(bigBoxAdapter);
          lstBox.setLayoutManager(bigBoxLayout);
          lstBox.removeOnItemTouchListener(miniBoxItemTouchListener);
          lstBox.addOnItemTouchListener(bigBoxItemTouchListener);
       }
       if (height == LayoutParams.MATCH_PARENT)
-         viewPlayMat.setVisibility(View.GONE);
+         viewPlayMatParent.setVisibility(View.GONE);
       else
-         viewPlayMat.setVisibility(View.VISIBLE); // TODO: change params of viewPlayMat!
+         viewPlayMatParent.setVisibility(View.VISIBLE); // TODO: change params of viewPlayMatParent!
+      
+      imgBoxCover.setVisibility(View.GONE);
+      viewMiniMap.setVisibility(View.GONE);
+      
       boxParams.height = height;
       lstBox.setLayoutParams(boxParams);
    }
    
    private void setMiniBoxLayout()
    {
+      // TODO: check prefs before showing minimap and boxcover. also check prefs in onResume or onStart!
+      imgBoxCover.setVisibility(View.VISIBLE);
+      viewMiniMap.setVisibility(View.VISIBLE);
+      
+      viewPlayMatParent.setVisibility(View.VISIBLE); // TODO: change params of viewPlayMatParent?
+      
       if (big) {
          big = false;
+         // TODO: which order? before changing adapter and layoutmanager, turn it off so that the old object doesn't get notified about the first change.
+         lstBox.setAdapter(miniBoxAdapter);
          lstBox.setLayoutManager(miniBoxLayout);
          lstBox.removeOnItemTouchListener(bigBoxItemTouchListener);
          lstBox.addOnItemTouchListener(miniBoxItemTouchListener);
-         viewPlayMat.setVisibility(View.VISIBLE);
+         
          boxParams.height = miniBoxHeight;
          lstBox.setLayoutParams(boxParams);
       }
@@ -185,6 +206,7 @@ private class Views
 }
 
 private Views ui;
+private PlayMenu menu;
 
 BoxAdapter bigBoxAdapter;
 MiniBoxAdapter miniBoxAdapter;
@@ -240,9 +262,9 @@ private void startFullscreen()
  */
 private void delayAutoHideUI(long millis)
 {
-   ui.mainHandler.removeCallbacks(runStartFullscreen);
+   mainHandler.removeCallbacks(runStartFullscreen);
    if (autoFullscreen)
-      ui.mainHandler.postDelayed(runStartFullscreen, millis);
+      mainHandler.postDelayed(runStartFullscreen, millis);
 }
 
 /**
@@ -269,7 +291,7 @@ private void readIntent()
    
    int gameID = intent.getIntExtra(EXTRA_GAME_ID, -1);
    if (gameID > -1) {
-      startGameFromDB(gameID);
+      startSavedGame(gameID);
    }
    else {
       startNewGame(
@@ -292,9 +314,9 @@ public DB db()
    return dbInstance;
 }
 
-private void startGameFromDB(int gameID)
+private void startSavedGame(int gameID)
 {
-   currentGame = ImagePuzzle.loadFromDatabase(gameID, this, db());
+   currentGame = ImagePuzzle.loadFromDatabase(gameID, db());
    startGame();
 }
 
@@ -317,6 +339,26 @@ private void startGame()
    retractBox();
 }
 
+public void onConfigurationChanged(@NonNull Configuration c)
+{
+   //c.orientation is checked - see AndroidManifest.xml
+   super.onConfigurationChanged(c);
+   // TODO: also use getResources().getConfiguration() in onResume()
+   
+   //c.densityDpi
+   // see DisplayMetrics.DENSITY_*
+   //getResources().getDisplayMetrics().densityDpi
+   //getResources().getDisplayMetrics().density
+   //getResources().getDisplayMetrics().xdpi
+   //getResources().getDisplayMetrics().ydpi
+   
+   //c.screenHeightDp
+   //c.screenWidthDp
+   //getResources().getDisplayMetrics().heightPixels
+   //getResources().getDisplayMetrics().widthPixels
+   
+}
+
 public void onCreate(@Nullable Bundle savedInstanceState)
 {
    EdgeToEdge.enable(this);
@@ -327,7 +369,10 @@ public void onCreate(@Nullable Bundle savedInstanceState)
    
    fullscreenMode = false;
    
+   mainHandler = new Handler(Looper.getMainLooper());
+   
    ui = new Views(this);
+   menu = new PlayMenu(this);
    
    // Set up the user interaction to manually show or hide the system UI.
    // ui.layoutPlayMatFragment.setOnClickListener(v->toggle());
@@ -415,20 +460,16 @@ public void setAutoFullscreenDelayMillis(int autoHideDelayMillis)
 
 void expandBoxFully()
 {
-   ui.imgBoxCover.setVisibility(View.GONE);
-   ui.viewMiniMap.setVisibility(View.GONE);
    
-   ui.lstBox.setAdapter(bigBoxAdapter);
+   
+   
    ui.setBigBoxLayout(LayoutParams.MATCH_PARENT);
 }
 
 void retractBox()
 {
-   // TODO: check prefs before showing minimap and boxcover
-   ui.imgBoxCover.setVisibility(View.VISIBLE);
-   ui.viewMiniMap.setVisibility(View.VISIBLE);
    
-   ui.lstBox.setAdapter(miniBoxAdapter);
+   
    ui.setMiniBoxLayout();
 }
 

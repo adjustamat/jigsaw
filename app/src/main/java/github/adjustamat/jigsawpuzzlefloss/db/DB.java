@@ -250,7 +250,7 @@ public void saveGame(ImagePuzzle imagePuzzle)
    values.put(C_INT_GAME_PROGRESS, imagePuzzle.getProgressPercent());
    
    Parcel parcel = Parcel.obtain();
-   imagePuzzle.writeToParcel(parcel);
+   imagePuzzle.saveInDatabase(parcel);
    values.put(C_BLOB_GAME_DATA, parcel.marshall());
    parcel.recycle();
    

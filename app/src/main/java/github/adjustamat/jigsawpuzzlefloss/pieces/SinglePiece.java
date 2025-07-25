@@ -9,7 +9,6 @@ import androidx.annotation.Nullable;
 
 import github.adjustamat.jigsawpuzzlefloss.containers.Box.GroupOrSinglePiece;
 import github.adjustamat.jigsawpuzzlefloss.containers.Container;
-import github.adjustamat.jigsawpuzzlefloss.containers.Container.Loading;
 import github.adjustamat.jigsawpuzzlefloss.game.Direction;
 import github.adjustamat.jigsawpuzzlefloss.game.ImagePuzzle;
 import github.adjustamat.jigsawpuzzlefloss.pieces.PieceJedge.HalfJedge;
@@ -41,8 +40,8 @@ class SinglePieceJedges
    
    public SinglePieceJedges(HalfJedge[][] pool)
    {
-      for (Direction d: Direction.values()) {
-         int i = d.ordinal();
+      for (Direction d: Direction.values()) { // for(int i = 0; i < 4; i++)
+         int i = d.ordinal(); // Direction d = Direction.values()[i];
          nesw[i] = neswParameters[i] != null
           ?neswParameters[i].getDoubleJedge(pool, d)
           :PieceJedge.getEdgeJedge(d);
@@ -79,59 +78,49 @@ class SinglePieceJedges
    {
       return MAX_BUFFER_SIZE;
    }
-   
-   public void writeToParcel(Parcel dest)
-   {
-      // TODO!
-   }
 } // class SinglePieceJedges
 
-public void writeToParcelFromMixedGroup(Parcel dest)
+public void serializeSinglePiece(Parcel dest)
 {
-   dest.writeInt(0);
-   super.writeToParcelFromMixedGroup(dest);
-   writeOnlySinglePieceToParcel(dest);
-}
-
-public void writeToSinglePieceParcel(Parcel dest)
-{
-   super.writeToParcelFromMixedGroup(dest);
-   writeOnlySinglePieceToParcel(dest);
-}
-
-private void writeOnlySinglePieceToParcel(Parcel dest)
-{
+   super.serializeAbstractPieceFields(dest);
    for (JedgeParams param: neswParameters) {
-      param.writeToParcel(dest);
+      param.serializeJedgeParams(dest);
    }
-   vectorJedges.writeToParcel(dest);
 }
 
-public static SinglePiece createSinglePieceFromParcelToBox(Parcel in, Container loading, int i)
+public static SinglePiece deserializeSinglePiece(Parcel in, Container loading, int i, HalfJedge[][] pool)
 {
-   // TODO!
+   Direction rotation = Direction.values()[in.readInt()];
+   Point correct = new Point(in.readInt(), in.readInt());
+   PointF relative;
+   if (in.readInt() == 0)
+      relative = null;
+   else
+      relative = new PointF(in.readFloat(), in.readFloat());
+   boolean lockedRotation = in.readInt() == 0,
+    lockedPlace = in.readInt() == 0;
+   
+   JedgeParams north = new JedgeParams(in),
+    east = new JedgeParams(in),
+    south = new JedgeParams(in),
+    west = new JedgeParams(in);
+   
+   return new SinglePiece(loading, i,
+    rotation, correct, relative, lockedRotation, lockedPlace,
+    north, east, south, west, pool);
 }
 
-// TODO: this method (ToGroup) is used when loading into BoxGroup, PlayMatGroup and TempContainerGroup. good?
-//  take into account writeToMixedGroupParcel and writeToSinglePieceParcel!
-//  should I create toMixedGroup and toElsewhere instead of current three methods?
-public static SinglePiece createSinglePieceFromParcelToGroup(Parcel in, Container loading, int i)
-{
-   // TODO!
-}
-
-public static SinglePiece createSinglePieceFromParcelToPlayMat(Parcel in, Container loading, int i)
-{
-   // TODO!
-}
-
-protected SinglePiece(Loading loading, int indexInContainer,
+/**
+ * Contructor for deserializing from database.
+ */
+private SinglePiece(Container loading, int indexInContainer,
  Direction rotation, Point correct, PointF relative, boolean lockedRotation, boolean lockedPlace,
  @Nullable JedgeParams north, @Nullable JedgeParams east, @Nullable JedgeParams south, @Nullable JedgeParams west,
  HalfJedge[][] pool
 )
 {
-   super(loading, indexInContainer, rotation, correct, relative, lockedRotation, lockedPlace);
+   super(loading, indexInContainer,
+    rotation, correct, relative, lockedRotation, lockedPlace);
    neswParameters[0] = north;
    neswParameters[1] = east;
    neswParameters[2] = south;
@@ -139,6 +128,9 @@ protected SinglePiece(Loading loading, int indexInContainer,
    vectorJedges = new SinglePieceJedges(pool);
 }
 
+/**
+ * Constructor for ImagePuzzle generator.
+ */
 public SinglePiece(ImagePuzzle imagePuzzle, int indexInBox, Point coordinates,
  @Nullable JedgeParams north, @Nullable JedgeParams east, @Nullable JedgeParams south, @Nullable JedgeParams west,
  HalfJedge[][] pool, int randomRotation
@@ -146,22 +138,15 @@ public SinglePiece(ImagePuzzle imagePuzzle, int indexInBox, Point coordinates,
 {
    super(imagePuzzle.singlePiecesContainer, indexInBox,
     Direction.values()[randomRotation], coordinates);
-   
    neswParameters[0] = north;
    neswParameters[1] = east;
    neswParameters[2] = south;
    neswParameters[3] = west;
    vectorJedges = new SinglePieceJedges(pool);
-
-//   imageOffset = new PointF(coordinates.x * imagePuzzle.pieceImageSize,
-//    coordinates.y * imagePuzzle.pieceImageSize);
-//   zeroOffsetOutline = vectorEdges.drawOuterEdges(0, 0f, 0f);
-   //this.imageMask = new Path();
-   //zeroOffsetOutline.offset(imageOffset.x, imageOffset.y, imageMask);
 }
 
 //public Color getColor(){
-//   // TODO: extract color from the vectorJedges part of the puzzle bitmap.
+//   // TODO: extract color from the vectorJedges part of the ImagePuzzle bitmap.
 //}
 //
 //public Color getHighContrastBgColor()
@@ -201,6 +186,7 @@ public boolean isWestPEdge()
 }
 
 /**
+ * TODO: move to AbstractPiece.
  * @return whether or not this piece is one of the four pieces at the outer corners of an ImagePuzzle.
  * @see #isEdgePiece()
  */

@@ -17,8 +17,10 @@ import java.util.ListIterator;
 
 import github.adjustamat.jigsawpuzzlefloss.R;
 import github.adjustamat.jigsawpuzzlefloss.containers.Box.GroupOrSinglePiece;
+import github.adjustamat.jigsawpuzzlefloss.game.ImagePuzzle;
 import github.adjustamat.jigsawpuzzlefloss.pieces.AbstractPiece;
 import github.adjustamat.jigsawpuzzlefloss.pieces.LargerPiece;
+import github.adjustamat.jigsawpuzzlefloss.pieces.PieceJedge.HalfJedge;
 import github.adjustamat.jigsawpuzzlefloss.pieces.SinglePiece;
 
 /**
@@ -34,7 +36,7 @@ public class Group
 {
 private static final String DBG = "Group";
 
-public class Dirty
+public static class Dirty
 {
    public boolean overlapping = true;
    public boolean pile = true;
@@ -60,10 +62,10 @@ public final PointF relativePos = new PointF(); // ALWAYS SERIALIZATION
 int largerPieces = 0; // ALWAYS SERIALIZATION
 final List<AbstractPiece> pieces = new LinkedList<>(); // ALWAYS SERIALIZATION
 
-public void writeGroupToParcel(Parcel dest, boolean singlePiecesOnly)
+public void serializeGroup(Parcel dest, boolean singlesOnly)
 {
    if (groupNumber > -1)
-      dest.writeInt(groupNumber);
+      dest.writeInt(groupNumber); // do not serialize groupNumber for temporary containers
    dest.writeInt(name == null ?0 :1);
    if (name != null)
       dest.writeString(name);
@@ -72,35 +74,42 @@ public void writeGroupToParcel(Parcel dest, boolean singlePiecesOnly)
    dest.writeInt(largerPieces);
    dest.writeInt(pieces.size());
    for (AbstractPiece piece: pieces) {
-      if (singlePiecesOnly)
-         ((SinglePiece) piece).writeToSinglePieceParcel(dest);
-      else
-         piece.writeToParcelFromMixedGroup(dest);
+      if (singlesOnly)
+         ((SinglePiece) piece).serializeSinglePiece(dest);
+      else if (piece instanceof SinglePiece) {
+         dest.writeInt(0);
+         ((SinglePiece) piece).serializeSinglePiece(dest);
+      }
+      else {
+         dest.writeInt(1);
+         ((LargerPiece) piece).serializeLargerPiece(dest);
+      }
    }
 }
 
-public static Group createFromParcelToBox(Parcel in, Loading loading, int i)
+public static Group deserializeBoxGroup(Parcel in, Loading loading, int i, HalfJedge[][] pool)
 {
    Group ret = new Group(loading, i, in.readInt());
-   readGroupFromParcel(ret, in, true, loading);
+   deserializeGroup(ret, in, true, loading, pool);
    return ret;
 }
 
-public static Group createFromParcelToPlayMat(Parcel in, Loading loading, int i)
+public static Group deserializeMixedGroup(Parcel in, Loading loading, int i, HalfJedge[][] pool)
 {
    Group ret = new Group(loading, i, in.readInt());
-   readGroupFromParcel(ret, in, false, loading);
+   deserializeGroup(ret, in, false, loading, pool);
    return ret;
 }
 
-public static Group createFromParcelToTemp(Parcel in, int i)
+public static Group deserializeTemporaryContainerGroup(Parcel in, int i, HalfJedge[][] pool)
 {
-   Group ret = new Group(i); // getNewTemporaryContainer(i);
-   readGroupFromParcel(ret, in, false, ret);
+   Group ret = getNewTemporaryContainer(i);
+   deserializeGroup(ret, in, false, ret, pool);
    return ret;
 }
 
-private static void readGroupFromParcel(Group ret, Parcel in, boolean singlesOnly, Container loading)
+private static void deserializeGroup(Group ret, Parcel in, boolean singlesOnly,
+ Container container, HalfJedge[][] pool)
 {
    if (in.readInt() == 1) {
       ret.name = in.readString();
@@ -112,32 +121,43 @@ private static void readGroupFromParcel(Group ret, Parcel in, boolean singlesOnl
    int size = in.readInt();
    for (int indexInGroup = 0; indexInGroup < size; indexInGroup++) {
       if (singlesOnly)
-         ret.pieces.add(SinglePiece.createPieceFromParcelToBoxGroup(in, loading, indexInGroup));
+         ret.pieces.add(SinglePiece.deserializeSinglePiece(in, container, indexInGroup, pool));
       else {
-         if (in.readInt() == 1) // TODO: write this int IFF there's a mixed group!
-            ret.pieces.add(LargerPiece.createLargerPieceFromParcelToGroup(in, loading, indexInGroup));
+         if (in.readInt() == 1)
+            ret.pieces.add(LargerPiece.deserializeLargerPiece(in, container, indexInGroup));
          else
-            ret.pieces.add(SinglePiece.createPieceFromParcelToMixedGroup(in, loading, indexInGroup));
+            ret.pieces.add(SinglePiece.deserializeSinglePiece(in, container, indexInGroup, pool));
          
-         //ret.pieces.add(AbstractPiece.createFromParcelToMixedGroup(in, loading, indexInGroup));
+         //ret.pieces.add(AbstractPiece.createFromParcelToMixedGroup(in, container, indexInGroup));
       }
    }
 }
 
 /**
- * Create a Container to hide some pieces out of the way.
+ * Create a Container for removing pieces from the PlayMat temporarily.
  */
-public Group getNewTemporaryContainer(int tempContainerIndex)
+public static Group getNewTemporaryContainer(int tempContainerIndex)
 {
    return new Group(tempContainerIndex);
 }
 
+/**
+ * Construct a temporary container Group.
+ * @param tempContainerIndex index in ImagePuzzle.temporaryContainers
+ * @see ImagePuzzle#temporaryContainers
+ */
 private Group(int tempContainerIndex)
 {
    groupNumber = -1;
    setContainer(this, tempContainerIndex);
 }
 
+/**
+ * Construct a Group inside a Container
+ * @param container the Container
+ * @param indexInContainer index in container
+ * @param number the group number
+ */
 public Group(Container container, int indexInContainer, int number)
 {
    groupNumber = number;
@@ -153,6 +173,9 @@ public void setContainer(Container newParent, int indexInContainer)
 public void replaceLoading(Container loadedContainer)
 {
    setContainer(loadedContainer, this.indexInContainer);
+   for (AbstractPiece piece: pieces) {
+      piece.replaceLoading(loadedContainer);
+   }
 }
 
 /**

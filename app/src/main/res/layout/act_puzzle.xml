@@ -6,72 +6,100 @@
     android:layout_height="match_parent"
     android:keepScreenOn="true"
     tools:context=".PuzzleActivity"
-    tools:ignore="ContentDescription">
+    tools:ignore="ContentDescription"
+    >
     <!-- android:theme="@style/ThemeOverlay.JigsawPuzzleFLOSS.FullscreenContainer"
     android:background="?attr/fullscreenBackgroundColor" is blue. -->
 
     <!--
-    TODO: temporary views (view_temporary_container_oval) can be children of frameFullscreenLayout.
+    TODO: temporary views (view_temporary_container) can be children of frameFullscreenLayout.
       add dropzone views along the edges of the screen (transparent but show indicators when hovering) when starting
-       drag of temporary view. -->
+      drag of temporary view. -->
 
-    <LinearLayout
-        android:id="@+id/llvPuzzleActivity"
+    <LinearLayout android:id="@+id/llhMenus"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:visibility="gone"
+        >
+        <LinearLayout android:id="@+id/llvMenu1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            />
+        <LinearLayout android:id="@+id/llvMenu2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone"
+            />
+        <LinearLayout android:id="@+id/llvMenu3"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone"
+            />
+    </LinearLayout>
+
+    <LinearLayout android:id="@+id/llvPuzzleActivity"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        >
 
-        <!--       another class, not NestedScrollView -->
-        <!--        <androidx.core.widget.NestedScrollView-->
-        <!--            android:id="@+id/zoomAndScrollView"-->
-        <!--            android:layout_width="match_parent"-->
-        <!--            android:layout_height="0dp"-->
-        <!--            android:layout_weight="1">-->
-        <github.adjustamat.jigsawpuzzlefloss.ui.PlayMatView
-            android:id="@+id/viewPlayMat"
+        <com.otaliastudios.zoom.ZoomLayout android:id="@+id/viewPlayMatParent"
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
-           />
-<!--        android:layout_width="wrap_content"-->
-<!--        android:layout_height="wrap_content"-->
-        <!-- </androidx.core.widget.NestedScrollView>-->
+            >
+            <github.adjustamat.jigsawpuzzlefloss.ui.PlayMatView android:id="@+id/viewPlayMat"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                />
+        </com.otaliastudios.zoom.ZoomLayout>
 
-        <ImageView
-            android:id="@+id/imgSeparator"
+        <!--        <github.adjustamat.jigsawpuzzlefloss.ui.PlayMatView-->
+        <!--            android:id="@+id/viewPlayMat"-->
+        <!--            android:layout_width="match_parent"-->
+        <!--            android:layout_height="0dp"-->
+        <!--            android:layout_weight="1"-->
+        <!--            />-->
+
+        <ImageView android:id="@+id/imgSeparator"
             style="@style/Widget.AppCompat.ImageButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:foregroundGravity="center_horizontal"
-            android:src="@drawable/ic_arrow_up_down"/>
+            android:src="@drawable/ic_arrow_up_down"
+            />
         <!-- android:minHeight="48dp" -->
 
-        <LinearLayout
-            android:id="@+id/llhBottom"
+        <LinearLayout android:id="@+id/llhBottom"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="bottom"
-            android:orientation="horizontal">
+            android:orientation="horizontal"
+            >
 
-            <ImageView
-                android:id="@+id/imgBoxCover"
+            <ImageView android:id="@+id/imgBoxCover"
                 android:layout_width="60dp"
                 android:layout_height="wrap_content"
                 />
             <!-- android:foregroundGravity="fill_horizontal|bottom" -->
 
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/lstBox"
+            <androidx.recyclerview.widget.RecyclerView android:id="@+id/lstBox"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                tools:listitem="@layout/itemview_box_item"/>
+                tools:listitem="@layout/itemview_box_item"
+                />
 
-            <github.adjustamat.jigsawpuzzlefloss.ui.MiniMapView
-                android:id="@+id/viewMiniMap"
+            <github.adjustamat.jigsawpuzzlefloss.ui.MiniMapView android:id="@+id/viewMiniMap"
                 android:layout_width="100dp"
                 android:layout_height="wrap_content"
-                android:minHeight="40dp"/>
+                android:minHeight="40dp"
+                />
+
         </LinearLayout>
 
     </LinearLayout>

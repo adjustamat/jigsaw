@@ -1,12 +1,15 @@
 [versions]
 agp = "8.9.3"
+kotlin = "2.0.21"
 androidImageCropper = "4.6.0"
 glide = "4.14.2"
 gMaterial = "1.12.0"
+xKotlinCore = "1.16.0"
 xAppcompat = "1.7.1"
 xActivity = "1.10.1"
 xPreference = "1.2.1"
 xRecyclerview = "1.4.0"
+zoomlayout = "1.9.0"
 
 [libraries]
 androidimagecropper = { module = "com.vanniktech:android-image-cropper", version.ref = "androidImageCropper" }
@@ -14,10 +17,13 @@ glide = { module = "com.github.bumptech.glide:glide", version.ref = "glide" }
 glide-annotations = { module = "com.github.bumptech.glide:annotations", version.ref = "glide" }
 glide-compiler = { module = "com.github.bumptech.glide:compiler", version.ref = "glide" }
 google-material = { group = "com.google.android.material", name = "material", version.ref = "gMaterial" }
+x-ktx-core = { group = "androidx.core", name = "core-ktx", version.ref = "xKotlinCore" }
 x-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "xAppcompat" }
 x-activity = { group = "androidx.activity", name = "activity", version.ref = "xActivity" }
 x-preference = { group = "androidx.preference", name = "preference", version.ref = "xPreference" }
 x-recyclerview = { group = "androidx.recyclerview", name = "recyclerview", version.ref = "xRecyclerview" }
+zoomlayout = { module = "com.otaliastudios:zoomlayout", version.ref = "zoomlayout" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }

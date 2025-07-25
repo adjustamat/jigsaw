@@ -1,6 +1,5 @@
 package github.adjustamat.jigsawpuzzlefloss.game;
 
-import android.content.Context;
 import android.graphics.Point;
 import android.net.Uri;
 import android.os.Parcel;
@@ -37,7 +36,7 @@ public final int totalPieces;
 
 public final int gameID;
 
-public final Uri bitmapUri;
+public final Uri bitmapUri; // TODO: image loader glide (ctx)
 public final Size bitmapSize;
 
 public final float pieceImageSize;
@@ -47,99 +46,112 @@ public final PlayMat playMatContainer;
 
 public final List<Group> temporaryContainers = new ArrayList<>();
 
-public void writeToParcel(Parcel dest)
+public void saveInDatabase(Parcel dest)
 {
+   dest.writeInt(groupCounter);
    dest.writeInt(width);
    dest.writeInt(height);
-   
-   // TODO: bitmapSize
+   dest.writeInt(bitmapSize.getWidth());
+   dest.writeInt(bitmapSize.getHeight());
    
    dest.writeInt(singlePiecesContainer.list.size());
    for (GroupOrSinglePiece groupOrSinglePiece: singlePiecesContainer.list) {
       boolean isGroup = groupOrSinglePiece instanceof Group;
       dest.writeInt(isGroup ?1 :0);
       if (isGroup) {
-         ((Group) groupOrSinglePiece).writeGroupToParcel(dest, true);
+         ((Group) groupOrSinglePiece).serializeGroup(dest, true);
       }
       else {
-         ((SinglePiece) groupOrSinglePiece).writeToSinglePieceParcel(dest);
+         ((SinglePiece) groupOrSinglePiece).serializeSinglePiece(dest);
       }
    }
    
    dest.writeInt(temporaryContainers.size());
    for (Group group: temporaryContainers) {
-      group.writeGroupToParcel(dest, false);
+      group.serializeGroup(dest, false);
    }
    
    dest.writeInt(playMatContainer.groups.size());
    for (Group group: playMatContainer.groups) {
-      group.writeGroupToParcel(dest, false);
+      group.serializeGroup(dest, false);
    }
    
    dest.writeInt(playMatContainer.singlePieces.size());
    for (SinglePiece piece: playMatContainer.singlePieces) {
-      piece.writeToSinglePieceParcel(dest);
+      piece.serializeSinglePiece(dest);
    }
    
    dest.writeInt(playMatContainer.largerPieces.size());
    for (LargerPiece piece: playMatContainer.largerPieces) {
-      piece.writeToLargerPieceParcel(dest);
+      piece.serializeLargerPiece(dest);
    }
 }
 
-public static ImagePuzzle loadFromDatabase(int gameID, Context ctx, DB db)
+public static ImagePuzzle loadFromDatabase(int gameID, DB db)
 {
    Loading loading = new Loading();
-   
+   HalfJedge[][] pool = PieceJedge.generateAllJigsawEdges();
+   Uri bitmapUri = db.getGameBitmapUri(gameID);
    Parcel in = db.getGameData(gameID);
    
+   int groupcounter = in.readInt();
    int width = in.readInt();
    int height = in.readInt();
-   
-   Size bitmapSize = new Size(in.readInt(), in.readInt()); // TODO: writeInt above!
+   Size bitmapSize = new Size(in.readInt(), in.readInt());
    
    int size = in.readInt();
    List<GroupOrSinglePiece> box = new LinkedList<>();//new ArrayList<>(size);
    for (int i = 0; i < size; i++) {
       int isGroup = in.readInt();
       if (isGroup != 0)
-         box.add(Group.createFromParcelToBox(in, loading, i));
+         box.add(Group.deserializeBoxGroup(in, loading, i, pool));
       else
-         box.add(SinglePiece.createSinglePieceFromParcelToBox(in, loading, i));
+         box.add(SinglePiece.deserializeSinglePiece(in, loading, i, pool));
    }
    
    size = in.readInt();
    List<Group> temporaryContainers = new ArrayList<>(size);
    for (int i = 0; i < size; i++) {
-      temporaryContainers.add(Group.createFromParcelToTemp(in, i));
+      temporaryContainers.add(Group.deserializeTemporaryContainerGroup(in, i, pool));
    }
    
    size = in.readInt();
    List<Group> playMatGroups = new ArrayList<>(size);
    for (int i = 0; i < size; i++) {
-      playMatGroups.add(Group.createFromParcelToPlayMat(in, loading, i));
+      playMatGroups.add(Group.deserializeMixedGroup(in, loading, i, pool));
    }
    
    size = in.readInt();
    List<SinglePiece> playMatSinglePieces = new ArrayList<>(size);
    for (int i = 0; i < size; i++) {
-      playMatSinglePieces.add(SinglePiece.createSinglePieceFromParcelToPlayMat(in, loading, i));
+      playMatSinglePieces.add(SinglePiece.deserializeSinglePiece(in, loading, i, pool));
    }
    
    size = in.readInt();
    List<LargerPiece> playMatLargerPieces = new ArrayList<>(size);
    for (int i = 0; i < size; i++) {
-      playMatLargerPieces.add(LargerPiece.createLargerPieceFromParcelToPlayMat(in, loading, i));
+      playMatLargerPieces.add(LargerPiece.deserializeLargerPiece(in, loading, i));
    }
    
+   // done deserializing!
    in.recycle();
    
-   Uri bitmapUri = db.getGameBitmapUri(gameID); //Bitmap bitmap  TODO: image loader glide (ctx)
-   
+   // ImagePuzzle constructs the non-temporary containers Box and PlayMat:
    ImagePuzzle ret = new ImagePuzzle(width, height, gameID, bitmapSize, bitmapUri, box);
-   ret.playMatContainer.setFromDatabase(playMatGroups, playMatSinglePieces, playMatLargerPieces);
+   
+   // add deserialized temporary containers:
    ret.temporaryContainers.addAll(temporaryContainers);
-   ret.replaceLoadingWithRealContainers();
+   
+   // replace Loading container with Box:
+   for (GroupOrSinglePiece groupOrSinglePiece: ret.singlePiecesContainer.list) {
+      groupOrSinglePiece.replaceLoading(ret.singlePiecesContainer);
+   }
+   
+   // replace Loading container with PlayMat:
+   ret.playMatContainer.setFromDatabase(playMatGroups, playMatSinglePieces, playMatLargerPieces);
+   
+   // load group counter
+   ret.groupCounter = groupcounter;
    
    return ret;
 }
@@ -152,7 +164,6 @@ private ImagePuzzle(int width, int height, int gameID,
    this.totalPieces = width * height;
    this.gameID = gameID;
    
-   //this.image = croppedImage; TODO: use image loader!
    this.bitmapSize = bitmapSize;
    this.bitmapUri = bitmapUri;
    
@@ -160,26 +171,6 @@ private ImagePuzzle(int width, int height, int gameID,
    
    this.singlePiecesContainer = new Box(pieceList, this);
    this.playMatContainer = new PlayMat();
-}
-
-private void replaceLoadingWithRealContainers()
-{
-   for (GroupOrSinglePiece groupOrSinglePiece: singlePiecesContainer.list) {
-      groupOrSinglePiece.replaceLoading(singlePiecesContainer);
-   }
-//   for (Group group: temporaryContainers) {
-//      group.replaceLoading(group);
-//   }
-   // TODO: see PlayMat.setFromDatabase()
-   for (Group group: playMatContainer.groups) {
-      group.replaceLoading(playMatContainer);
-   }
-   for (SinglePiece piece: playMatContainer.singlePieces) {
-      piece.replaceLoading(playMatContainer);
-   }
-   for (LargerPiece piece: playMatContainer.largerPieces) {
-      piece.replaceLoading(playMatContainer);
-   }
 }
 
 /**
@@ -196,8 +187,10 @@ public static ImagePuzzle generateNewPuzzle(int pWidth, int pHeight,
  Random rng, int newGameID)
 {
    LinkedList<GroupOrSinglePiece> singlePieces = new LinkedList<>();
+   
    ImagePuzzle ret = new ImagePuzzle(pWidth, pHeight, newGameID,
     bitmapSize, bitmapUri, singlePieces);
+   
    HalfJedge[][] pool = PieceJedge.generateAllJigsawEdges();
    
    JedgeParams[] wests = new JedgeParams[pHeight];

@@ -350,6 +350,24 @@ public static class JedgeParams
    public final int curv1, curv2;
    public final int neck1, neck2;
    
+   public void serializeJedgeParams(Parcel dest)
+   {
+      dest.writeInt(in ?1 :0);
+      dest.writeInt(curv1);
+      dest.writeInt(curv2);
+      dest.writeInt(neck1);
+      dest.writeInt(neck2);
+   }
+   
+   public JedgeParams(Parcel in)
+   {
+      this.in = in.readInt() == 1;
+      curv1 = in.readInt();
+      curv2 = in.readInt();
+      neck1 = in.readInt();
+      neck2 = in.readInt();
+   }
+   
    public JedgeParams(Random rng)
    {
       in = rng.nextBoolean();
@@ -379,11 +397,6 @@ public static class JedgeParams
           pool[neck1 * 6 + curv1 * 2 + 1][rotationIndex]
          );
       }
-   }
-   
-   public void writeToParcel(Parcel dest)
-   {
-      // TODO!
    }
 } // class JedgeParams
 }

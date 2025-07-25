@@ -51,21 +51,15 @@ boolean southPEdge;
 
 private final RectF jigBreadth = new RectF();
 
-public void writeToParcelFromMixedGroup(Parcel dest)
+public void serializeLargerPiece(Parcel dest)
 {
-   dest.writeInt(1);
-   super.writeToParcelFromMixedGroup(dest);
-   writeOnlyLargerPieceToParcel(dest);
+   super.serializeAbstractPieceFields(dest);
+   serializeLargerPieceFields(dest);
 }
 
-public void writeToLargerPieceParcel(Parcel dest)
+private void serializeLargerPieceFields(Parcel dest)
 {
-   super.writeToParcelFromMixedGroup(dest);
-   writeOnlyLargerPieceToParcel(dest);
-}
-
-private void writeOnlyLargerPieceToParcel(Parcel dest){
-   // TODO!
+   // TODO! serialize!!
    /*
 private ArrayList<HoleIndices> matrix;
 
@@ -80,17 +74,50 @@ boolean southPEdge;
 
 private final RectF jigBreadth = new RectF();
     */
-   vectorJedges.writeToParcel(dest);
+   vectorJedges.serializeJedges(dest);
 }
 
-public static LargerPiece createLargerPieceFromParcelToPlayMat(Parcel in, Container loading, int i)
+private LargerPiece(Container containerParent, int indexInContainer,
+ @NonNull Direction rotation, Point correctPuzzlePosition,
+ PointF relativePos, boolean lockedRotation, boolean lockedInPlace,
+ Parcel in
+)
 {
-   // TODO!
+   super(containerParent, indexInContainer,
+    rotation, correctPuzzlePosition, relativePos, lockedRotation, lockedInPlace);
+    /* TODO: copy from serialize
+private ArrayList<HoleIndices> matrix;
+
+int matrixWidth;
+int matrixHeight;
+int pieceCount;
+
+boolean westPEdge;
+boolean northPEdge;
+boolean eastPEdge;
+boolean southPEdge;
+
+private final RectF jigBreadth = new RectF();
+   ;*/
+   vectorJedges = new LargerPieceJedges(in);
 }
 
-public static LargerPiece createLargerPieceFromParcelToGroup(Parcel in, Container loading, int i)
+public static LargerPiece deserializeLargerPiece(Parcel in, Container loading, int i)
 {
-   // TODO!
+   Direction rotation = Direction.values()[in.readInt()];
+   Point correct = new Point(in.readInt(), in.readInt());
+   PointF relative;
+   if (in.readInt() == 0)
+      relative = null;
+   else
+      relative = new PointF(in.readFloat(), in.readFloat());
+   boolean lockedRotation = in.readInt() == 0,
+    lockedPlace = in.readInt() == 0;
+   
+   return new LargerPiece(loading, i,
+    rotation, correct, relative, lockedRotation, lockedPlace,
+    in
+   );
 }
 
 private static class HoleIndex
@@ -145,8 +172,12 @@ public class LargerPieceJedges
    private final ArrayList<ArrayList<PieceJedge>> outerJedgeHoles = new ArrayList<>(2);
    private int[] removed;
    
-   public void writeToParcel(Parcel dest)
+   public void serializeJedges(Parcel dest)
    {
+      // TODO!
+   }
+   
+   LargerPieceJedges(Parcel in){
       // TODO!
    }
    
@@ -865,13 +896,13 @@ public class LargerPieceJedges
 } // class LargerPieceJedges
 
 /**
- * Combine two LargerPieces.
+ * Constructs a LargerPiece by combining two other LargerPieces.
  * @param newIndexInContainer index in Container
- * @param p1
- * @param p2
- * @param subPiece1
- * @param subPiece2
- * @param dir
+ * @param p1 a LargerPiece
+ * @param p2 another LargerPiece
+ * @param subPiece1 a subPiece in p1 which connects to subPiece2
+ * @param subPiece2 a subPiece in p2 which connects to subPiece1
+ * @param dir the direction of combination
  */
 private LargerPiece(int newIndexInContainer,
  LargerPiece p1, LargerPiece p2, Point subPiece1, Point subPiece2, Direction dir)
@@ -913,12 +944,11 @@ private LargerPiece(int newIndexInContainer,
 }
 
 /**
- * Combine two SinglePieces.
- * TODO: param's
+ * Constructs a LargerPiece by combining two SinglePieces.
+ * @param newIndexInContainer index in Container
  * @param p1 a SinglePiece
  * @param p2 another SinglePiece
  * @param dir the direction of combination
- * Constructs a LargerPiece by combining two SinglePieces.
  */
 private LargerPiece(int newIndexInContainer, SinglePiece p1, SinglePiece p2, Direction dir)
 {
