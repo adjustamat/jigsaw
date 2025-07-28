@@ -24,6 +24,13 @@ public final List<Group> groups = new ArrayList<>();
 public final List<LargerPiece> largerPieces = new ArrayList<>();
 public final List<SinglePiece> singlePieces = new ArrayList<>();
 
+// draw this with low opacity (when placing something from another Container)
+public Group transparentGroup;
+public AbstractPiece transparentPiece;
+
+public PointF topLeft=new PointF();
+public PointF bottomRight = new PointF();
+
 /*
 TODO: in PlayMat, use these AbstractPiece fields:
  // PointF relativePosition
@@ -126,7 +133,10 @@ public void pileUpGroup(Group group, RectF within)
    // TODO: no two pieces can have the exact same coordinates! (absolute position on the play mat)
 }
 
-public void setFromDatabase(List<Group> playMatGroups,
+/**
+ * Load all pieces and groups from savegame and replace Loading container with PlayMat.
+ */
+public void loadData(List<Group> playMatGroups,
  List<SinglePiece> playMatSinglePieces, List<LargerPiece> playMatLargerPieces)
 {
    groups.addAll(playMatGroups);

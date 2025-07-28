@@ -148,7 +148,7 @@ public static ImagePuzzle loadFromDatabase(int gameID, DB db)
    }
    
    // replace Loading container with PlayMat:
-   ret.playMatContainer.setFromDatabase(playMatGroups, playMatSinglePieces, playMatLargerPieces);
+   ret.playMatContainer.loadData(playMatGroups, playMatSinglePieces, playMatLargerPieces);
    
    // load group counter
    ret.groupCounter = groupcounter;

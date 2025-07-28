@@ -42,7 +42,7 @@ public boolean lockedInPlace; // ALWAYS SERIALIZATION
  */
 private PointF relativePos; // CONDITIONAL SERIALIZATION
 
-public @NonNull Direction currentRotationNorthDirection;  // ALWAYS SERIALIZATION
+public @NonNull Direction currentNorthDirection;  // (aka rotation) ALWAYS SERIALIZATION
 
 protected Point correctPuzzlePosition; // ALWAYS SERIALIZATION
 
@@ -65,7 +65,7 @@ protected AbstractPiece(@NonNull Container containerParent, int indexInContainer
  @NonNull Direction rotation)
 {
    setContainer(containerParent, indexInContainer);
-   this.currentRotationNorthDirection = rotation;
+   this.currentNorthDirection = rotation;
 }
 
 /**
@@ -80,7 +80,7 @@ protected AbstractPiece(@NonNull Container containerParent, int indexInContainer
 }
 
 /**
- * Super-constructor for deserializing from database.
+ * Super-constructor for deserializing from savegame.
  * @param relativePos current position relative to parent
  * @param lockedRotation current locked rotation status
  * @param lockedInPlace current locked position status
@@ -97,7 +97,7 @@ protected AbstractPiece(@NonNull Container containerParent, int indexInContainer
 
 protected final void serializeAbstractPieceFields(Parcel dest)
 {
-   dest.writeInt(currentRotationNorthDirection.ordinal());
+   dest.writeInt(currentNorthDirection.ordinal());
    dest.writeInt(correctPuzzlePosition.x);
    dest.writeInt(correctPuzzlePosition.y);
    dest.writeInt(relativePos == null ?0 :1);
@@ -233,7 +233,7 @@ public abstract RectF getJigBreadth();
 public PointF getCurrentJigBreadth()
 {
    RectF edges = getJigBreadth();
-   switch (currentRotationNorthDirection) {
+   switch (currentNorthDirection) {
    case NORTH: case SOUTH:
       return new PointF(edges.left + edges.right, edges.top + edges.bottom);
    default: // case WEST: case EAST:
@@ -261,14 +261,14 @@ public abstract class VectorJedges
 {
    /**
     * Create a closed vector graphics Path of the outer edge of this AbstractPiece, with the supplied top-left corner.
-    * @param hole an integer between 0 (inclusive) and {@link #getOuterEdgesCount()} (exclusive)
+    * @param hole an integer between 0 (inclusive) and {@link #getOuterJedgesCount()} (exclusive)
     * @return a closed Path
     */
    private Path drawOuterEdges(int hole/*, float startX, float startY*/)
    {
 //         *@param startX X of the top - left corner
 //    * @param startY Y of the top -left corner
-      return getPath(/*startX, startY,*/ getFirstEdge(hole));
+      return getPath(/*startX, startY,*/ getFirstJedge(hole));
    }
    
    public Path drawOuterEdges()
@@ -279,7 +279,7 @@ public abstract class VectorJedges
          bufferedPath.setFillType(FillType.EVEN_ODD);
          
          // collect all edges of the puzzle piece shape:
-         int holes = getOuterEdgesCount();
+         int holes = getOuterJedgesCount();
          for (int i = 0; i < holes; i++) {
             Path path = drawOuterEdges(i/*, 0f, 0f*/);
             bufferedPath.addPath(path);
@@ -322,9 +322,9 @@ public abstract class VectorJedges
       return matrix;
    }
    
-   protected abstract PieceJedge getFirstEdge(int hole);
+   protected abstract PieceJedge getFirstJedge(int hole);
    
-   public abstract int getOuterEdgesCount();
+   public abstract int getOuterJedgesCount();
    
    protected abstract int width();
    protected abstract int height();

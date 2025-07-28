@@ -106,7 +106,7 @@ public static void drawPiece(Canvas pieceBufferCanvas, VectorJedges vectorJedges
    
    // draw innerEdges of LargerPiece:
    if (vectorJedges instanceof LargerPieceJedges) {
-      Path path = ((LargerPieceJedges) vectorJedges).drawInnerEdges(0f, 0f);
+      Path path = ((LargerPieceJedges) vectorJedges).drawInnerJedges(0f, 0f);
       pieceBufferCanvas.drawPath(path, innerPaint);
    }
 }

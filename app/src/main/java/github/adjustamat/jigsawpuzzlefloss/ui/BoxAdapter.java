@@ -110,7 +110,7 @@ private void onBind(@NonNull BoxItemView holder, SinglePiece piece)
    // TODO: shrink unrotatedFullSize to some size, smaller than thumbnail.getWidth(), thumbnail.getHeight()
    //thumbnailCanvas.scale();
    
-   thumbnailCanvas.rotate(-piece.currentRotationNorthDirection.degrees);
+   thumbnailCanvas.rotate(-piece.currentNorthDirection.degrees);
    
    // TODO: left and top might not be 0 if the rotated unrotatedFullSize is smaller in some dimension than thumbnail
    thumbnailCanvas.drawBitmap(unrotatedFullSize,0f,0f,null);

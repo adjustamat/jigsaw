@@ -26,7 +26,6 @@ public class SinglePiece
  * The outline to draw when rotating or when drawing embossed 3D-effect.
  */
 final SinglePieceJedges vectorJedges;
-final JedgeParams[] neswParameters = new JedgeParams[4];
 
 //    PointF shapeSize;
 //   this.shapeSize = new PointF(
@@ -37,9 +36,15 @@ class SinglePieceJedges
  extends VectorJedges
 {
    final PieceJedge[] nesw = new PieceJedge[4];
+   final JedgeParams[] neswParameters = new JedgeParams[4];
    
-   public SinglePieceJedges(HalfJedge[][] pool)
+   public SinglePieceJedges(HalfJedge[][] pool,
+    @Nullable JedgeParams north, @Nullable JedgeParams east, @Nullable JedgeParams south, @Nullable JedgeParams west)
    {
+      neswParameters[0] = north;
+      neswParameters[1] = east;
+      neswParameters[2] = south;
+      neswParameters[3] = west;
       for (Direction d: Direction.values()) { // for(int i = 0; i < 4; i++)
          int i = d.ordinal(); // Direction d = Direction.values()[i];
          nesw[i] = neswParameters[i] != null
@@ -59,12 +64,12 @@ class SinglePieceJedges
       );
    }
    
-   public int getOuterEdgesCount()
+   public int getOuterJedgesCount()
    {
       return 1;
    }
    
-   public PieceJedge getFirstEdge(int hole)
+   public PieceJedge getFirstJedge(int hole)
    {
       return nesw[0];
    }
@@ -83,7 +88,7 @@ class SinglePieceJedges
 public void serializeSinglePiece(Parcel dest)
 {
    super.serializeAbstractPieceFields(dest);
-   for (JedgeParams param: neswParameters) {
+   for (JedgeParams param: vectorJedges.neswParameters) {
       param.serializeJedgeParams(dest);
    }
 }
@@ -111,7 +116,7 @@ public static SinglePiece deserializeSinglePiece(Parcel in, Container loading, i
 }
 
 /**
- * Contructor for deserializing from database.
+ * Contructor for deserializing from savegame.
  */
 private SinglePiece(Container loading, int indexInContainer,
  Direction rotation, Point correct, PointF relative, boolean lockedRotation, boolean lockedPlace,
@@ -121,11 +126,7 @@ private SinglePiece(Container loading, int indexInContainer,
 {
    super(loading, indexInContainer,
     rotation, correct, relative, lockedRotation, lockedPlace);
-   neswParameters[0] = north;
-   neswParameters[1] = east;
-   neswParameters[2] = south;
-   neswParameters[3] = west;
-   vectorJedges = new SinglePieceJedges(pool);
+   vectorJedges = new SinglePieceJedges(pool, north, east, south, west);
 }
 
 /**
@@ -138,11 +139,7 @@ public SinglePiece(ImagePuzzle imagePuzzle, int indexInBox, Point coordinates,
 {
    super(imagePuzzle.singlePiecesContainer, indexInBox,
     Direction.values()[randomRotation], coordinates);
-   neswParameters[0] = north;
-   neswParameters[1] = east;
-   neswParameters[2] = south;
-   neswParameters[3] = west;
-   vectorJedges = new SinglePieceJedges(pool);
+   vectorJedges = new SinglePieceJedges(pool, north, east, south, west);
 }
 
 //public Color getColor(){
@@ -167,22 +164,22 @@ public RectF getJigBreadth()
 
 public boolean isNorthPEdge()
 {
-   return neswParameters[0] == null;
+   return vectorJedges.neswParameters[0] == null;
 }
 
 public boolean isEastPEdge()
 {
-   return neswParameters[1] == null;
+   return vectorJedges.neswParameters[1] == null;
 }
 
 public boolean isSouthPEdge()
 {
-   return neswParameters[2] == null;
+   return vectorJedges.neswParameters[2] == null;
 }
 
 public boolean isWestPEdge()
 {
-   return neswParameters[3] == null;
+   return vectorJedges.neswParameters[3] == null;
 }
 
 /**
