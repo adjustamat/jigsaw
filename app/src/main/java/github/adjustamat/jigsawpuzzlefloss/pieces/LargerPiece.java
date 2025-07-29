@@ -5,6 +5,7 @@ import android.graphics.Point;
 import android.graphics.PointF;
 import android.graphics.RectF;
 import android.os.Parcel;
+import android.os.Parcelable;
 
 import androidx.annotation.NonNull;
 
@@ -13,6 +14,7 @@ import java.util.Arrays;
 
 import github.adjustamat.jigsawpuzzlefloss.containers.Container;
 import github.adjustamat.jigsawpuzzlefloss.game.Direction;
+import github.adjustamat.jigsawpuzzlefloss.pieces.PieceJedge.DoubleJedge;
 import github.adjustamat.jigsawpuzzlefloss.pieces.PieceJedge.JedgeParams;
 import github.adjustamat.jigsawpuzzlefloss.pieces.SinglePiece.SinglePieceJedges;
 import github.adjustamat.jigsawpuzzlefloss.ui.BorderDrawable;
@@ -45,36 +47,25 @@ int matrixWidth;
 int matrixHeight;
 int pieceCount;
 
-boolean westPEdge;
-boolean northPEdge;
-boolean eastPEdge;
-boolean southPEdge;
+boolean northPuzzleEdge;
+boolean eastPuzzleEdge;
+boolean southPuzzleEdge;
+boolean westPuzzleEdge;
 
 private final RectF jigBreadth = new RectF();
 
 public void serializeLargerPiece(Parcel dest)
 {
    super.serializeAbstractPieceFields(dest);
-   serializeLargerPieceFields(dest);
-}
-
-private void serializeLargerPieceFields(Parcel dest)
-{
-   // TODO! serialize!!
-   /*
-private ArrayList<HoleIndices> matrix;
-
-int matrixWidth;
-int matrixHeight;
-int pieceCount;
-
-boolean westPEdge;
-boolean northPEdge;
-boolean eastPEdge;
-boolean southPEdge;
-
-private final RectF jigBreadth = new RectF();
-    */
+   dest.writeInt(pieceCount);
+   dest.writeInt(northPuzzleEdge ?1 :0);
+   dest.writeInt(eastPuzzleEdge ?1 :0);
+   dest.writeInt(southPuzzleEdge ?1 :0);
+   dest.writeInt(westPuzzleEdge ?1 :0);
+   jigBreadth.writeToParcel(dest, 0);
+   dest.writeInt(matrixWidth);
+   dest.writeInt(matrixHeight);
+   dest.writeTypedList(matrix);
    vectorJedges.serializeJedges(dest);
 }
 
@@ -89,20 +80,15 @@ private LargerPiece(Container containerParent, int indexInContainer,
 {
    super(containerParent, indexInContainer,
     rotation, correctPuzzlePosition, relativePos, lockedRotation, lockedInPlace);
-    /* TODO: copy from serialize
-private ArrayList<HoleIndices> matrix;
-
-int matrixWidth;
-int matrixHeight;
-int pieceCount;
-
-boolean westPEdge;
-boolean northPEdge;
-boolean eastPEdge;
-boolean southPEdge;
-
-private final RectF jigBreadth = new RectF();
-   ;*/
+   pieceCount = in.readInt();
+   northPuzzleEdge = in.readInt() == 1;
+   eastPuzzleEdge = in.readInt() == 1;
+   southPuzzleEdge = in.readInt() == 1;
+   westPuzzleEdge = in.readInt() == 1;
+   jigBreadth.readFromParcel(in);
+   matrixWidth = in.readInt();
+   matrixHeight = in.readInt();
+   in.readTypedList(matrix, HoleIndices.CREATOR);
    vectorJedges = new LargerPieceJedges(in);
 }
 
@@ -137,8 +123,50 @@ private static class HoleIndex
 } // class HoleIndex
 
 private static class HoleIndices
+ implements Parcelable
 {
    private final HoleIndex[] nesw = new HoleIndex[4];
+   
+   @Override
+   public void writeToParcel(Parcel dest, int flags)
+   {
+      for (HoleIndex holeIndex: nesw) {
+         if (holeIndex == null) {
+            dest.writeInt(0);
+            continue;
+         }
+         dest.writeInt(1);
+         dest.writeInt(holeIndex.hole);
+         dest.writeInt(holeIndex.index);
+      }
+   }
+   
+   @Override
+   public int describeContents()
+   {
+      return 0;
+   }
+   
+   public static final Creator<HoleIndices> CREATOR = new Creator<HoleIndices>()
+   {
+      @Override
+      public HoleIndices createFromParcel(Parcel in)
+      {
+         HoleIndices ret = new HoleIndices();
+         for (int i = 0; i < 4; i++) {
+            if (in.readInt() == 1) {
+               ret.set(i, in.readInt(), in.readInt());
+            }
+         }
+         return ret;
+      }
+      
+      @Override
+      public HoleIndices[] newArray(int size)
+      {
+         return new HoleIndices[size];
+      }
+   };
    
    HoleIndex getIndexNESW(int direction)
    {
@@ -150,12 +178,12 @@ private static class HoleIndices
       return getIndexNESW(direction.ordinal());
    }
    
-   void set(int direction, int hole, @NonNull Integer index)
+   void set(int direction, int hole, int index)
    {
       nesw[direction] = new HoleIndex(hole, index);
    }
    
-   void set(Direction direction, int hole, @NonNull Integer index)
+   void set(Direction direction, int hole, int index)
    {
       set(direction.ordinal(), hole, index);
    }
@@ -164,26 +192,29 @@ private static class HoleIndices
 public class LargerPieceJedges
  extends VectorJedges
 {
-   private final ArrayList<PieceJedge> innerJedges = new ArrayList<>();
+   private final ArrayList<DoubleJedge> innerJedges = new ArrayList<>();
    private final ArrayList<ArrayList<PieceJedge>> outerJedgeHoles = new ArrayList<>(2);
    private final ArrayList<ArrayList<JedgeParams>> outerJedgeParams = new ArrayList<>(2);
    private int[] removed;
    
    public void serializeJedges(Parcel dest)
    {
-      // TODO!
+      clearRemoved();
+      // TODO: serialize list of DoubleJedge - innerJedges
+      // TODO: serialize list of lists of PieceJedge - outerJedgeHoles
+      // TODO: serialize list of lists of JedgeParams - outerJedgeParams
    }
    
    LargerPieceJedges(Parcel in)
    {
-      // TODO!
+      // TODO: deserialize, copy from serialize
    }
    
-   LargerPieceJedges(LargerPiece p1, LargerPiece p2,
+   void combine(LargerPiece p1,LargerPiece p2,
     Point subp1, Point subp2, Direction dir, int offsetX1, int offsetX2, int offsetY1, int offsetY2)
    {
       // we know that p2 has less or equal amount of pieces!
-      // TODO: combine outlines and innerJedges (my own UNION) - indexes in matrix need to change too.
+      // TODO: combine holes (outerJedges) and innerJedges (my own UNION) - indexes in matrix need to change too.
       
       // TODO: outerJedgeHoles is empty, only its CAPACITY is two! Add at least one list to it!
       //  do not use addHole the first time, but do use addHole after that.
@@ -192,7 +223,7 @@ public class LargerPieceJedges
       // TODO: make sure when combining two LargerPieces that I know there can be nulls in both p1's
       //  and p2's outerJedgeHoles/Params lists! check both removed arrays!
       
-      LargerPieceJedges vectorJ1 = p1.vectorJedges;
+      LargerPieceJedges vectorJ1 = this;//p1.vectorJedges;
       LargerPieceJedges vectorJ2 = p2.vectorJedges;
       for (PieceJedge inner: vectorJ1.innerJedges) {
          inner.getSubPiece().offset(offsetX1, offsetY1);
@@ -205,7 +236,7 @@ public class LargerPieceJedges
       
       // combine matrices:
       
-      // copy non-null values from p1.matrix
+      // TODO: DO NOT COPY! ONLY MOVE! - copy non-null values from p1.matrix
       int matrixX = 0, matrixY = 0;
       for (HoleIndices indices1: p1.matrix) {
          if (indices1 != null)
@@ -226,7 +257,7 @@ public class LargerPieceJedges
              */
             setSubPieceIndices(
              matrixX + offsetX1, matrixY + offsetY1,
-             indices1 // TODO: combine outlines (indices1 value(s) should change)
+             indices1 // TODO: combine holes (indices1 value(s) should change)
             );
          matrixX++;
          if (matrixX == p1.matrixWidth) {
@@ -242,7 +273,7 @@ public class LargerPieceJedges
          if (indices2 != null)
             setSubPieceIndices(
              matrixX + offsetX2, matrixY + offsetY2,
-             indices2 // TODO: combine outline (indices should change)
+             indices2 // TODO: combine holes (indices should change)
             );
          matrixX++;
          if (matrixX == p2.matrixWidth) {
@@ -338,7 +369,7 @@ public class LargerPieceJedges
       HoleIndex attachingIndex = opposite.getIndex(dir);
       // the attaching edge is now an inner edge. detach:
       PieceJedge attachingJedge = removeOuter(attachingIndex);
-      innerJedges.add(attachingJedge);
+      innerJedges.add((DoubleJedge) attachingJedge);
       
       // check behind the new piece
       if (behind != null) {
@@ -347,7 +378,7 @@ public class LargerPieceJedges
          attachingIndex = behind.getIndex(dirOpposite);
          // the attaching edge is now an inner edge. detach:
          attachingJedge = removeOuter(attachingIndex);
-         innerJedges.add(attachingJedge);
+         innerJedges.add((DoubleJedge) attachingJedge);
       }
       
       // check the clockwise side of the new piece
@@ -357,7 +388,7 @@ public class LargerPieceJedges
          attachingIndex = next.getIndex(dirPrev);
          // the attaching edge is now an inner edge. detach:
          attachingJedge = removeOuter(attachingIndex);
-         innerJedges.add(attachingJedge);
+         innerJedges.add((DoubleJedge) attachingJedge);
       }
       
       // check the last side
@@ -367,7 +398,7 @@ public class LargerPieceJedges
          attachingIndex = prev.getIndex(dirNext);
          // the attaching edge is now an inner edge. detach:
          attachingJedge = removeOuter(attachingIndex);
-         innerJedges.add(attachingJedge);
+         innerJedges.add((DoubleJedge) attachingJedge);
       }
       
       // store a new instance of HoleIndices in the matrix, at the new Point being added.
@@ -654,7 +685,8 @@ public class LargerPieceJedges
             // create the new hole
             ArrayList<PieceJedge> hole2 = new ArrayList<>();
             int newHole = outerJedgeHoles.size();
-            ArrayList<JedgeParams> params = addHole(hole2);
+            
+            ArrayList<JedgeParams> params = addHole(hole2); // TODO: params
             
             // add newJedge to the new hole
             addOuter(newHole, hole2, newJedge, newSubPiece, dirPrev, newIndices);
@@ -729,7 +761,7 @@ public class LargerPieceJedges
       // only need one inner! skip the same one from p2.
       PieceJedge inner = p1.nesw[dir.ordinal()];
       inner.setSubPiece(subPiece1, dir); // hmm...
-      innerJedges.add(inner);
+      innerJedges.add((DoubleJedge) inner);
       
       Direction dirNext = dir.next();
       Direction dirPrev = dir.prev();
@@ -792,7 +824,7 @@ public class LargerPieceJedges
    }
    
    /**
-    * TODO: first draw all inner edges with 100% opacity on a BufferedImage/Raster/Bitmap/Canvas, and
+    * TODO: first draw all inner edges with 100% opacity on a buffer Bitmap/Canvas, and
     *  then draw the buffer with lower opacity on top of the largerpiece.
     * @param startX the canvas x position of this LargerPiece
     * @param startY the canvas y position of this LargerPiece
@@ -864,6 +896,40 @@ public class LargerPieceJedges
 //      return holes.get(index.hole).get(index.index);
    }
    
+   private void clearRemoved()
+   {
+      for (int i = 0; i < removed.length; i++) {
+         if (removed[i] > 0) {
+            ArrayList<PieceJedge> hole = outerJedgeHoles.get(i);
+            ArrayList<JedgeParams> params = outerJedgeParams.get(i);
+            removeRemoved(i, hole, params);
+         }
+      }
+   }
+   
+   private void removeRemoved(int holeIndex, ArrayList<PieceJedge> hole, ArrayList<JedgeParams> params)
+   {
+      removed[holeIndex] = 0;
+      int remove = 0;
+      for (int i = 0; i < hole.size(); i++) {
+         PieceJedge edge = hole.get(i);
+         if (edge == null) {
+            remove++;
+            continue;
+         }
+         HoleIndices indices = getSubPieceIndices(edge.getSubPiece());
+         HoleIndex index = indices.getIndex(edge.getSubPieceDir());
+         index.index -= remove;
+         hole.set(i - remove, edge);
+         params.set(i - remove, params.get(i));
+      }
+      
+      for (; remove > 0; remove--) {
+         hole.remove(hole.size() - 1);
+         params.remove(params.size() - 1);
+      }
+   }
+   
    private PieceJedge removeOuter(HoleIndex removeIndex)
    {
       if (removeIndex == null)
@@ -876,25 +942,7 @@ public class LargerPieceJedges
       removed[removeIndex.hole]++;
       
       if (removed[removeIndex.hole] > 15) { // wait until 16 have been removed until actually shortening the lists
-         removed[removeIndex.hole] = 0;
-         int remove = 0;
-         for (int i = 0; i < hole.size(); i++) {
-            PieceJedge edge = hole.get(i);
-            if (edge == null) {
-               remove++;
-               continue;
-            }
-            HoleIndices indices = getSubPieceIndices(edge.getSubPiece());
-            HoleIndex index = indices.getIndex(edge.getSubPieceDir());
-            index.index -= remove;
-            hole.set(i - remove, edge);
-            params.set(i - remove, params.get(i));
-         }
-         
-         for (; remove > 0; remove--) {
-            hole.remove(hole.size() - 1);
-            params.remove(params.size() - 1);
-         }
+         removeRemoved(removeIndex.hole, hole, params);
       }
 //      for (int i = removeIndex.index; i < hole.size(); i++) {
 //         jedge = hole.get(i);
@@ -917,68 +965,23 @@ public class LargerPieceJedges
 } // class LargerPieceJedges
 
 /**
- * Constructs a LargerPiece by combining two other LargerPieces.
- * @param newIndexInContainer index in Container
- * @param p1 a LargerPiece
- * @param p2 another LargerPiece
- * @param subPiece1 a subPiece in p1 which connects to subPiece2
- * @param subPiece2 a subPiece in p2 which connects to subPiece1
- * @param dir the direction of combination
- */
-private LargerPiece(int newIndexInContainer,
- LargerPiece p1, LargerPiece p2, Point subPiece1, Point subPiece2, Direction dir)
-{
-   super(p1.containerParent, newIndexInContainer, p1.currentNorthDirection);
-   
-   int diffX = subPiece1.x + dir.x - subPiece2.x;
-   int offsetX1 = diffX < 0 ?-diffX :0;
-   int offsetX2 = diffX > 0 ?diffX :0;
-   int diffY = subPiece1.y + dir.y - subPiece2.y;
-   int offsetY1 = diffY < 0 ?-diffY :0;
-   int offsetY2 = diffY > 0 ?diffY :0;
-   
-   init(Math.max(offsetX1 + p1.matrixWidth, offsetX2 + p2.matrixWidth),
-    Math.max(offsetY1 + p1.matrixHeight, offsetY2 + p2.matrixHeight));
-   
-   correctPuzzlePosition = p1.correctPuzzlePosition;
-   correctPuzzlePosition.offset(offsetX1, offsetY1);
-   // could also do:
-   //correctPuzzlePosition = p2.correctPuzzlePosition;
-   //correctPuzzlePosition.offset(offsetX2, offsetY2);
-   
-   pieceCount = p1.pieceCount + p2.pieceCount;
-   westPEdge = p1.isWestPEdge() || p2.isWestPEdge();
-   eastPEdge = p1.isEastPEdge() || p2.isEastPEdge();
-   northPEdge = p1.isNorthPEdge() || p2.isNorthPEdge();
-   southPEdge = p1.isSouthPEdge() || p2.isSouthPEdge();
-   
-   // LargerPieceJedges constructor combines the matrices!
-   if (p1.pieceCount > p2.pieceCount)
-      vectorJedges = new LargerPieceJedges(p1, p2, subPiece1, subPiece2,
-       dir, offsetX1, offsetX2, offsetY1, offsetY2);
-   else
-      vectorJedges = new LargerPieceJedges(p2, p1, subPiece2, subPiece1,
-       dir.opposite(), offsetX2, offsetX1, offsetY2, offsetY1);
-   
-   // TODO: check jigBreadth
-   
-}
-
-/**
  * Constructs a LargerPiece by combining two SinglePieces.
  * @param newIndexInContainer index in Container
  * @param p1 a SinglePiece
  * @param p2 another SinglePiece
  * @param dir the direction of combination
  */
-private LargerPiece(int newIndexInContainer, SinglePiece p1, SinglePiece p2, Direction dir)
+public LargerPiece(int newIndexInContainer, SinglePiece p1, SinglePiece p2, Direction dir)
 {
    super(p1.containerParent, newIndexInContainer, p1.currentNorthDirection);
-   init(dir.initWidth, dir.initHeight);
-   
-   correctPuzzlePosition = p1.correctPuzzlePosition;
+   initMatrix(dir.initWidth, dir.initHeight);
    
    pieceCount = 2;
+   
+   correctPuzzlePosition = p1.correctPuzzlePosition;
+   correctPuzzlePosition.y -= dir.initY1;
+   correctPuzzlePosition.x -= dir.initX1;
+   
    copyIsEdge(p1);
    copyIsEdge(p2);
    
@@ -990,7 +993,6 @@ private LargerPiece(int newIndexInContainer, SinglePiece p1, SinglePiece p2, Dir
    RectF jigBreadth2 = p2.getJigBreadth();
    switch (dir) {
    case NORTH:
-      correctPuzzlePosition.y -= 1;
       jigBreadth.top = jigBreadth2.top;
       jigBreadth.bottom = jigBreadth1.bottom;
       jigBreadth.left = Math.max(jigBreadth1.left, jigBreadth2.left);
@@ -1009,7 +1011,6 @@ private LargerPiece(int newIndexInContainer, SinglePiece p1, SinglePiece p2, Dir
       jigBreadth.right = Math.max(jigBreadth1.right, jigBreadth2.right);
       break;
    default: // WEST:
-      correctPuzzlePosition.x -= 1;
       jigBreadth.left = jigBreadth2.left;
       jigBreadth.right = jigBreadth1.right;
       jigBreadth.top = Math.max(jigBreadth1.top, jigBreadth2.top);
@@ -1018,15 +1019,102 @@ private LargerPiece(int newIndexInContainer, SinglePiece p1, SinglePiece p2, Dir
    }
 }
 
+///**
+// * Constructs a LargerPiece by combining two other LargerPieces.
+// * @param newIndexInContainer index in Container
+// * @param p1 a LargerPiece
+// * @param p2 another LargerPiece
+// * @param subPiece1 a subPiece in p1 which connects to subPiece2
+// * @param subPiece2 a subPiece in p2 which connects to subPiece1
+// * @param dir the direction of combination
+// */
+//public LargerPiece(int newIndexInContainer,
+// LargerPiece p1, LargerPiece p2, Point subPiece1, Point subPiece2, Direction dir)
+//{
+//   super(p1.containerParent, newIndexInContainer, p1.currentNorthDirection);
+//
+//   int diffX = subPiece1.x + dir.x - subPiece2.x;
+//   int offsetX1 = diffX < 0 ?-diffX :0;
+//   int offsetX2 = diffX > 0 ?diffX :0;
+//   int diffY = subPiece1.y + dir.y - subPiece2.y;
+//   int offsetY1 = diffY < 0 ?-diffY :0;
+//   int offsetY2 = diffY > 0 ?diffY :0;
+//
+//   initMatrix(Math.max(offsetX1 + p1.matrixWidth, offsetX2 + p2.matrixWidth),
+//    Math.max(offsetY1 + p1.matrixHeight, offsetY2 + p2.matrixHeight));
+//
+//   correctPuzzlePosition = p1.correctPuzzlePosition;
+//   correctPuzzlePosition.offset(offsetX1, offsetY1);
+//   // could also do:
+//   //correctPuzzlePosition = p2.correctPuzzlePosition;
+//   //correctPuzzlePosition.offset(offsetX2, offsetY2);
+//
+//   pieceCount = p1.pieceCount + p2.pieceCount;
+//   westPuzzleEdge = p1.isWestPuzzleEdge() || p2.isWestPuzzleEdge();
+//   eastPuzzleEdge = p1.isEastPuzzleEdge() || p2.isEastPuzzleEdge();
+//   northPuzzleEdge = p1.isNorthPuzzleEdge() || p2.isNorthPuzzleEdge();
+//   southPuzzleEdge = p1.isSouthPuzzleEdge() || p2.isSouthPuzzleEdge();
+//
+//   // LargerPieceJedges constructor combines the matrices!
+//   if (p1.pieceCount > p2.pieceCount)
+//      vectorJedges = new LargerPieceJedges(p1, p2, subPiece1, subPiece2,
+//       dir, offsetX1, offsetX2, offsetY1, offsetY2);
+//   else
+//      vectorJedges = new LargerPieceJedges(p2, p1, subPiece2, subPiece1,
+//       dir.opposite(), offsetX2, offsetX1, offsetY2, offsetY1);
+//}
+
+/**
+ * Combines two LargerPieces into one. TODO: Remove the one that was NOT returned, from its container (always PlayMat)
+ * @param p1 a LargerPiece
+ * @param p2 another LargerPiece
+ * @param subPiece1 a subPiece in p1 which connects to subPiece2
+ * @param subPiece2 a subPiece in p2 which connects to subPiece1
+ * @param dir the direction of combination
+ * @return the combination of the two pieces.
+ */
+public static LargerPiece combine(LargerPiece p1, LargerPiece p2, Point subPiece1, Point subPiece2, Direction dir)
+{
+   if (p1.pieceCount < p2.pieceCount)
+      return combine(p2, p1, subPiece2, subPiece1, dir.opposite());
+   
+   int diffX = subPiece1.x + dir.x - subPiece2.x; // ? TODO: see post-its
+   int offsetX1 = diffX < 0 ?-diffX :0; // ?
+   int offsetX2 = diffX > 0 ?diffX :0; // ?
+   int diffY = subPiece1.y + dir.y - subPiece2.y; // ?
+   int offsetY1 = diffY < 0 ?-diffY :0; // ?
+   int offsetY2 = diffY > 0 ?diffY :0; // ?
+   
+   p1.correctPuzzlePosition.offset(offsetX1, offsetY1);
+   
+   p1.pieceCount += p2.pieceCount;
+   p1.westPuzzleEdge = p1.westPuzzleEdge || p2.westPuzzleEdge;
+   p1.eastPuzzleEdge = p1.eastPuzzleEdge || p2.eastPuzzleEdge;
+   p1.northPuzzleEdge = p1.northPuzzleEdge || p2.northPuzzleEdge;
+   p1.southPuzzleEdge = p1.southPuzzleEdge || p2.southPuzzleEdge;
+   
+   int newWidth = Math.max(offsetX1 + p1.matrixWidth, offsetX2 + p2.matrixWidth);
+   int newHeight = Math.max(offsetY1 + p1.matrixHeight, offsetY2 + p2.matrixHeight);
+   // TODO: expandMatrix - see vectorJedges constructor!
+   
+   // TODO: vectorJedges!
+   
+   // TODO: check jigBreadth
+   
+   return p1;
+}
+
 public void addPiece(SinglePiece newPiece, Point attachedTo, Direction dir)
 {
    // reset buffers
    buffer = null;
    bufferedPath = null;
    
-   // edge widths:
+   pieceCount++;
+   
+   // jigsaw edge thickness/width/size/breadth:
    RectF newJigBreadth = newPiece.getJigBreadth();
-   if (attachedTo.x == 0)
+   if (attachedTo.x == 0) // TODO: this can't work. must consider direction also! or see below!
       jigBreadth.left = Math.max(jigBreadth.left, newJigBreadth.left);
    if (attachedTo.x == matrixWidth - 1)
       jigBreadth.right = Math.max(jigBreadth.right, newJigBreadth.right);
@@ -1035,25 +1123,25 @@ public void addPiece(SinglePiece newPiece, Point attachedTo, Direction dir)
    if (attachedTo.y == matrixHeight - 1)
       jigBreadth.bottom = Math.max(jigBreadth.bottom, newJigBreadth.bottom);
    
-   pieceCount++;
+   
    if (attachedTo.x == 0 && dir == Direction.WEST) {
       correctPuzzlePosition.x -= 1;
-      expandX(0);
+      expandMatrixX(0);
       attachedTo.x = 1; // update to the coordinate in the expanded matrix
-      jigBreadth.left = newJigBreadth.left;
+      jigBreadth.left = newJigBreadth.left; // TODO: here we consider direction! does this work? see above.
    }
    else if (attachedTo.y == 0 && dir == Direction.NORTH) {
       correctPuzzlePosition.y -= 1;
-      expandY(0);
+      expandMatrixY(0);
       attachedTo.y = 1; // update to the coordinate in the expanded matrix
       jigBreadth.top = newJigBreadth.top;
    }
    else if (attachedTo.x == matrixWidth - 1 && dir == Direction.EAST) {
-      expandX(matrixWidth);
+      expandMatrixX(matrixWidth);
       jigBreadth.right = newJigBreadth.right;
    }
    else if (attachedTo.y == matrixHeight - 1 && dir == Direction.SOUTH) {
-      expandY(matrix.size());
+      expandMatrixY(matrix.size());
       jigBreadth.bottom = newJigBreadth.bottom;
    }
    // vectorEdges also sets the matrix value at the point (attachedTo.x + dir.x, attachedTo.y + dir.y)
@@ -1061,22 +1149,10 @@ public void addPiece(SinglePiece newPiece, Point attachedTo, Direction dir)
    copyIsEdge(newPiece);
 }
 
-/*private LargerPiece(int width, int height, Container parent){
-   super(parent);
-   matrixWidth = width;
-   matrixHeight = height;
-
-   matrix = new ArrayList();
-   int full = width * height;
-   for(int i=0; i < full; i++){
-      matrix.add(null);
-   }
-}*/
-
-private void visitAllDepthFirst(Point startSubPiece, Direction direction, LargerPieceJedges callback)
+private void visitAllDepthFirst(Point startSubPiece, Direction d, LargerPieceJedges callback)
 {
    boolean[][] visited = new boolean[matrixWidth][matrixHeight];
-   visitRecursive(startSubPiece.x, startSubPiece.y, direction,
+   visitRecursive(startSubPiece.x, startSubPiece.y, d,
     linear(startSubPiece.x, startSubPiece.y), callback, visited);
 }
 
@@ -1103,7 +1179,7 @@ private void visitRecursive(int x, int y, Direction d, int linear,
       visitRecursive(x - 1, y, Direction.WEST, checkLinear, callback, visited);
 }
 
-private void init(int width, int height)
+private void initMatrix(int width, int height)
 {
    matrixWidth = width;
    matrixHeight = height;
@@ -1111,7 +1187,43 @@ private void init(int width, int height)
    matrix = new ArrayList<>();
    int len = width * height;
    for (int i = 0; i < len; i++) {
-      matrix.add(null/*new OuterEdges()*/);
+      matrix.add(null);
+   }
+}
+
+//private void expandMatrix(int i, boolean x)
+//{
+//   int max;
+//   if (x) {
+//      matrixWidth++;
+//      max = matrixHeight;
+//   }
+//   else {
+//      matrixHeight++;
+//      max = matrixWidth;
+//   }
+//   for (int j = 0; j < max; j++) {
+//      matrix.add(i, null);
+//      if (x) i += matrixWidth;
+//   }
+//}
+
+private void expandMatrixX(int i)
+{
+   matrixWidth++;
+   // expand matrix right or left by inserting null items into matrix list.
+   for (int j = 0; j < matrixHeight; j++) {
+      matrix.add(i, null);
+      i += matrixWidth;
+   }
+}
+
+private void expandMatrixY(int i)
+{
+   matrixHeight++;
+   // expand matrix up or down by inserting null items into matrix list.
+   for (int j = 0; j < matrixWidth; j++) {
+      matrix.add(i, null);
    }
 }
 
@@ -1169,33 +1281,14 @@ private void setSubPieceIndices(int x, int y, HoleIndices indices)
 
 private void copyIsEdge(SinglePiece p)
 {
-   if (p.isWestPEdge())
-      westPEdge = true;
-   if (p.isEastPEdge())
-      eastPEdge = true;
-   if (p.isNorthPEdge())
-      northPEdge = true;
-   if (p.isSouthPEdge())
-      southPEdge = true;
-}
-
-private void expandX(int i)
-{
-   matrixWidth++;
-   // expand matrix right or left by inserting null items into matrix list.
-   for (int j = 0; j < matrixHeight; j++) {
-      matrix.add(i, null);
-      i += matrixWidth;
-   }
-}
-
-private void expandY(int i)
-{
-   matrixHeight++;
-   // expand matrix up or down by inserting null items into matrix list.
-   for (int j = 0; j < matrixWidth; j++) {
-      matrix.add(i, null);
-   }
+   if (p.isWestPuzzleEdge())
+      westPuzzleEdge = true;
+   if (p.isEastPuzzleEdge())
+      eastPuzzleEdge = true;
+   if (p.isNorthPuzzleEdge())
+      northPuzzleEdge = true;
+   if (p.isSouthPuzzleEdge())
+      southPuzzleEdge = true;
 }
 
 public Point getPuzzlePiece(PointF mouseOffset)
@@ -1277,18 +1370,18 @@ public ArrayList<BorderDrawable> getBorder()
    int height = matrixHeight;
    int extraX = 0;
    int extraY = 0;
-   if (!isWestPEdge()) {
+   if (!isWestPuzzleEdge()) {
       width++;
       extraX++;
    }
-   if (!isEastPEdge()) {
+   if (!isEastPuzzleEdge()) {
       width++;
    }
-   if (!isNorthPEdge()) {
+   if (!isNorthPuzzleEdge()) {
       height++;
       extraY++;
    }
-   if (!isSouthPEdge()) {
+   if (!isSouthPuzzleEdge()) {
       height++;
    }
    //int[][] bits = new int[width][height];
@@ -1296,11 +1389,11 @@ public ArrayList<BorderDrawable> getBorder()
    int x;
    int y;
    // check edges (do not generate borders for straight edges!)
-   if (!isWestPEdge()) { // leftmost column (WEST) can be outlined
+   if (!isWestPuzzleEdge()) { // leftmost column (WEST) can be outlined
       x = -1; // outside left edge
       
       // leftmost column: top left corner (NW)
-      if (!isNorthPEdge()) { // leftmost column: NW can be outlined
+      if (!isNorthPuzzleEdge()) { // leftmost column: NW can be outlined
          y = -1; // outside top edge
          // if(matrix.get(linear(x + 1, y + 1)) != null)
          if (isSubPiece(x + 1, y + 1)) { // x+1 == 0, y+1 == 0
@@ -1345,7 +1438,7 @@ public ArrayList<BorderDrawable> getBorder()
       }
       
       // leftmost column: bottom left corner (SW)
-      if (!isSouthPEdge()) { // leftmost column: SW can be outlined
+      if (!isSouthPuzzleEdge()) { // leftmost column: SW can be outlined
          // TODO: matrixHeight: outside bottom edge
          if (isSubPiece(x + 1, y)) { // x+1 == 0, y == matrixHeight - 1
             // outside left edge, bottom row (-1, matrixHeight - 1)
@@ -1369,10 +1462,10 @@ public ArrayList<BorderDrawable> getBorder()
          }
       }
    } // west column can be outlined
-   if (!isEastPEdge()) { // east column can be outlined
+   if (!isEastPuzzleEdge()) { // east column can be outlined
       // TODO: copy westEdge
    } // east column can be outlined
-   if (!isNorthPEdge()) { // north row can be outlined
+   if (!isNorthPuzzleEdge()) { // north row can be outlined
       y = -1; // outside north edge
       
       x = 0;
@@ -1394,7 +1487,7 @@ public ArrayList<BorderDrawable> getBorder()
       // assert(x == matrixWidth - 1) // rightmost column
       
    } // north row can be outlined
-   if (!isSouthPEdge()) { // south row can be outlined
+   if (!isSouthPuzzleEdge()) { // south row can be outlined
    
    } // south row can be outlined
    
@@ -1549,29 +1642,29 @@ protected VectorJedges getVectorJedges()
 
 public RectF getJigBreadth()
 {
-   return new RectF(westPEdge ?PieceJedge.STRAIGHT_EDGE_WIDTH :jigBreadth.left,
-    northPEdge ?PieceJedge.STRAIGHT_EDGE_WIDTH :jigBreadth.top,
-    eastPEdge ?PieceJedge.STRAIGHT_EDGE_WIDTH :jigBreadth.right,
-    southPEdge ?PieceJedge.STRAIGHT_EDGE_WIDTH :jigBreadth.bottom);
+   return new RectF(westPuzzleEdge ?PieceJedge.STRAIGHT_EDGE_WIDTH :jigBreadth.left,
+    northPuzzleEdge ?PieceJedge.STRAIGHT_EDGE_WIDTH :jigBreadth.top,
+    eastPuzzleEdge ?PieceJedge.STRAIGHT_EDGE_WIDTH :jigBreadth.right,
+    southPuzzleEdge ?PieceJedge.STRAIGHT_EDGE_WIDTH :jigBreadth.bottom);
 }
 
-public boolean isWestPEdge()
+public boolean isNorthPuzzleEdge()
 {
-   return westPEdge;
+   return northPuzzleEdge;
 }
 
-public boolean isNorthPEdge()
+public boolean isEastPuzzleEdge()
 {
-   return northPEdge;
+   return eastPuzzleEdge;
 }
 
-public boolean isEastPEdge()
+public boolean isSouthPuzzleEdge()
 {
-   return eastPEdge;
+   return southPuzzleEdge;
 }
 
-public boolean isSouthPEdge()
+public boolean isWestPuzzleEdge()
 {
-   return southPEdge;
+   return westPuzzleEdge;
 }
 }

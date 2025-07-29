@@ -91,7 +91,14 @@ public void ungroupPiece(Group group, int indexInGroup)
    }
    
    SinglePiece piece = (SinglePiece) group.getAllPieces().get(indexInGroup);
-   group.remove(piece); // make sure this remove method works when container is Box - it's a Container method.
+   
+   // TODO: THIS PROBABLY WON'T WORK: maybe remove group methods from AbstractPiece!
+   //  see also Group.add(AbstractPiece) (which uses AbstractPiece.setGroup())
+   piece.removeFromGroup(this,list.size());
+   
+   // movePieceFrom(this,piece); NO! do everything manually in this method!
+   
+   group.remove(piece); // make sure group.remove() works even when container is Box - it's a Container method!
    // TODO!
 }
 

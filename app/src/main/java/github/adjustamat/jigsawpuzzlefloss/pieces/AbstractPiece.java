@@ -201,13 +201,15 @@ public void setGroup(@NonNull Group newGroup, int newIndex)
    if (groupParent != null) {
       groupParent.remove(this);
    }
-   // TODO: do this but not in this method: containerParent.remove(this); // the group needs to be added to containerParent or the group needs to be a temporary container!
+   // TODO: do this but not in this method: containerParent.remove(this);
+   // TODO: the group needs to be added to containerParent or the group needs to be a temporary container!
+   //  this method should probably not do a lot of things, instead do it in Box and PlayMat.
    groupParent = newGroup;
    indexInContainer = newIndex;
 }
 
-// TODO: when should this method be used?
-public void removeFromGroup(Container newContainer)
+// TODO: when should this method be used? see Box and PlayMat - see their ungroupGroup and ungroupPiece methods
+public void removeFromGroup(Container newContainer, int newIndexInContainer)
 {
    if (groupParent != null) {
       groupParent.remove(this);
@@ -243,10 +245,10 @@ public PointF getCurrentJigBreadth()
 
 protected abstract VectorJedges getVectorJedges();
 
-public abstract boolean isWestPEdge();
-public abstract boolean isNorthPEdge();
-public abstract boolean isEastPEdge();
-public abstract boolean isSouthPEdge();
+public abstract boolean isWestPuzzleEdge();
+public abstract boolean isNorthPuzzleEdge();
+public abstract boolean isEastPuzzleEdge();
+public abstract boolean isSouthPuzzleEdge();
 
 /**
  * @return whether or not this piece is, or contains at least, one "edge piece" - a piece at one of the outermost rows
@@ -254,11 +256,20 @@ public abstract boolean isSouthPEdge();
  */
 public boolean isEdgePiece()
 {
-   return isWestPEdge() || isNorthPEdge() || isEastPEdge() || isSouthPEdge();
+   return isWestPuzzleEdge() || isNorthPuzzleEdge() || isEastPuzzleEdge() || isSouthPuzzleEdge();
+}
+
+/**
+ * @return whether or not this piece is or contains one of the four pieces at the outer corners of an ImagePuzzle.
+ * @see #isEdgePiece()
+ */
+public boolean isCornerPiece()
+{
+   return (isWestPuzzleEdge() || isEastPuzzleEdge()) && (isNorthPuzzleEdge() || isSouthPuzzleEdge());
 }
 
 public abstract class VectorJedges
-{
+{ // TODO: perhaps we don't need VectorJedges at all, just JedgeParams.init and a buffer in LargerPiece with calculated outerJedges and holes.
    /**
     * Create a closed vector graphics Path of the outer edge of this AbstractPiece, with the supplied top-left corner.
     * @param hole an integer between 0 (inclusive) and {@link #getOuterJedgesCount()} (exclusive)

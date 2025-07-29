@@ -1,9 +1,11 @@
 package github.adjustamat.jigsawpuzzlefloss.game;
 
-import android.graphics.Point;
 import android.net.Uri;
 import android.os.Parcel;
 import android.util.Size;
+
+import androidx.annotation.IntRange;
+import androidx.annotation.NonNull;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -30,8 +32,7 @@ public class ImagePuzzle
 {
 private int groupCounter = 0;
 
-public final int width;
-public final int height;
+public final RandomJedges randomJedges;
 public final int totalPieces;
 
 public final int gameID;
@@ -49,10 +50,10 @@ public final List<Group> temporaryContainers = new ArrayList<>();
 public void saveInDatabase(Parcel dest)
 {
    dest.writeInt(groupCounter);
-   dest.writeInt(width);
-   dest.writeInt(height);
    dest.writeInt(bitmapSize.getWidth());
    dest.writeInt(bitmapSize.getHeight());
+   
+   randomJedges.serializeRandomJedges(dest);
    
    dest.writeInt(singlePiecesContainer.list.size());
    for (GroupOrSinglePiece groupOrSinglePiece: singlePiecesContainer.list) {
@@ -90,14 +91,15 @@ public void saveInDatabase(Parcel dest)
 public static ImagePuzzle loadFromDatabase(int gameID, DB db)
 {
    Loading loading = new Loading();
-   HalfJedge[][] pool = PieceJedge.generateAllJigsawEdges();
+   HalfJedge[][] pool = PieceJedge.getAllJigsawEdges();
+   
    Uri bitmapUri = db.getGameBitmapUri(gameID);
    Parcel in = db.getGameData(gameID);
    
    int groupcounter = in.readInt();
-   int width = in.readInt();
-   int height = in.readInt();
    Size bitmapSize = new Size(in.readInt(), in.readInt());
+   
+   RandomJedges randomJedges = new RandomJedges(in);
    
    int size = in.readInt();
    List<GroupOrSinglePiece> box = new LinkedList<>();//new ArrayList<>(size);
@@ -106,7 +108,7 @@ public static ImagePuzzle loadFromDatabase(int gameID, DB db)
       if (isGroup != 0)
          box.add(Group.deserializeBoxGroup(in, loading, i, pool));
       else
-         box.add(SinglePiece.deserializeSinglePiece(in, loading, i, pool));
+         box.add(SinglePiece.deserializeSinglePiece(in, loading, i, pool, randomJedges));
    }
    
    size = in.readInt();
@@ -124,7 +126,7 @@ public static ImagePuzzle loadFromDatabase(int gameID, DB db)
    size = in.readInt();
    List<SinglePiece> playMatSinglePieces = new ArrayList<>(size);
    for (int i = 0; i < size; i++) {
-      playMatSinglePieces.add(SinglePiece.deserializeSinglePiece(in, loading, i, pool));
+      playMatSinglePieces.add(SinglePiece.deserializeSinglePiece(in, loading, i, pool, randomJedges));
    }
    
    size = in.readInt();
@@ -137,7 +139,8 @@ public static ImagePuzzle loadFromDatabase(int gameID, DB db)
    in.recycle();
    
    // ImagePuzzle constructs the non-temporary containers Box and PlayMat:
-   ImagePuzzle ret = new ImagePuzzle(width, height, gameID, bitmapSize, bitmapUri, box);
+   ImagePuzzle ret = new ImagePuzzle(randomJedges.width, randomJedges.height, gameID, bitmapSize, bitmapUri,
+    box, randomJedges);
    
    // add deserialized temporary containers:
    ret.temporaryContainers.addAll(temporaryContainers);
@@ -157,81 +160,111 @@ public static ImagePuzzle loadFromDatabase(int gameID, DB db)
 }
 
 private ImagePuzzle(int width, int height, int gameID,
- Size bitmapSize, Uri bitmapUri, List<GroupOrSinglePiece> pieceList)
+ Size bitmapSize, Uri bitmapUri, List<GroupOrSinglePiece> singlePiecesList, RandomJedges jedges)
 {
-   this.width = width;
-   this.height = height;
-   this.totalPieces = width * height;
+   this(jedges, width * height, (float) bitmapSize.getHeight() / height,
+    gameID, bitmapSize, bitmapUri, singlePiecesList);
+}
+
+private ImagePuzzle(int width, int height, int totalPieces, int gameID,
+ Size bitmapSize, Uri bitmapUri, List<GroupOrSinglePiece> singlePiecesList, @NonNull Random rng)
+{
+   this(new RandomJedges(width, height, rng),
+    totalPieces, (float) bitmapSize.getHeight() / height,
+    gameID, bitmapSize, bitmapUri, singlePiecesList);
+}
+
+private ImagePuzzle(RandomJedges jedges, int totalPieces, float pieceImageSize,
+ int gameID, Size bitmapSize, Uri bitmapUri, List<GroupOrSinglePiece> singlePiecesList)
+{
+   this.randomJedges = jedges;
+   this.totalPieces = totalPieces;
    this.gameID = gameID;
    
+   this.pieceImageSize = pieceImageSize;
    this.bitmapSize = bitmapSize;
    this.bitmapUri = bitmapUri;
    
-   this.pieceImageSize = (float) bitmapSize.getHeight() / height;
-   
-   this.singlePiecesContainer = new Box(pieceList, this);
+   this.singlePiecesContainer = new Box(singlePiecesList, this);
    this.playMatContainer = new PlayMat();
 }
 
 /**
  * Generate a random jigsaw pattern for the given image and size of the ImagePuzzle.
- * @param pWidth the width, in number of pieces
- * @param pHeight the height, in number of pieces
+ * @param width the width, in number of pieces
+ * @param height the height, in number of pieces
  * @param bitmapUri the image
  * @param bitmapSize the image size in pixels
  * @param rng a random number generator
  * @return a new ImagePuzzle with the given size and image
  */
-public static ImagePuzzle generateNewPuzzle(int pWidth, int pHeight,
+public static ImagePuzzle generateNewPuzzle(int width, int height,
  Uri bitmapUri, Size bitmapSize,
  Random rng, int newGameID)
 {
    LinkedList<GroupOrSinglePiece> singlePieces = new LinkedList<>();
+   int totalPieces = width * height;
+   ImagePuzzle ret = new ImagePuzzle(width, height, totalPieces, newGameID,
+    bitmapSize, bitmapUri, singlePieces, rng);
    
-   ImagePuzzle ret = new ImagePuzzle(pWidth, pHeight, newGameID,
-    bitmapSize, bitmapUri, singlePieces);
+   HalfJedge[][] pool = PieceJedge.getAllJigsawEdges();
    
-   HalfJedge[][] pool = PieceJedge.generateAllJigsawEdges();
-   
-   JedgeParams[] wests = new JedgeParams[pHeight];
-   for (int x = 0; x < pWidth; x++) {
-      JedgeParams north = null;
-      for (int y = 0; y < pHeight; y++) {
-         JedgeParams east, south;
+   SinglePiece[] orderedList = new SinglePiece[totalPieces];
+   int[] randomOrder = new int[totalPieces];
+   for (int i = 0; i < totalPieces; i++) {
+      randomOrder[i] = i;
+   }
+   for (int i = 0; i < totalPieces; i++) {
+      randomOrder[i] = randomOrder[rng.nextInt(totalPieces)];
+   }
+
+
+//   JedgeParams[] wests = new JedgeParams[height];
+   for (int x = 0, i = 0; x < width; x++) {
+//      JedgeParams north = null;
+      for (int y = 0; y < height; y++, i++) {
+//         JedgeParams east, south;
+//
+//         if (x == width - 1)
+//            east = null;
+//         else
+//            east = new JedgeParams(rng);
+//
+//         if (y == height - 1)
+//            south = null;
+//         else
+//            south = new JedgeParams(rng);
          
-         if (x == pWidth - 1)
-            east = null;
-         else
-            east = new JedgeParams(rng);
-         
-         if (y == pHeight - 1)
-            south = null;
-         else
-            south = new JedgeParams(rng);
-         
-         singlePieces.add(new SinglePiece(
+         orderedList[randomOrder[i]] = new SinglePiece(
           ret,
-          singlePieces.size(),
-          new Point(x, y),
-          north, east, south, wests[y],
+          randomOrder[i],
+          x, y,
+//          new Point(x, y),
+//          north, east, south, wests[y],
           pool,
           rng.nextInt(4)
-         ));
-         
-         //if (south != null)
-         north = south;
-         //if (east != null)
-         wests[y] = east;
+         );
+
+//         //if (south != null)
+//         north = south;
+//         //if (east != null)
+//         wests[y] = east;
       } // for(y)
    } // for(x)
+   
+   //noinspection ManualArrayToCollectionCopy
+   for (int i = 0; i < totalPieces; i++) {
+      singlePieces.add(orderedList[i]);
+   }
    return ret;
 }
 
 public int getNewGroupNumber()
 {
-   return ++groupCounter; // TODO: save groupCounter when saving game.
+   return ++groupCounter;
 }
 
+@IntRange(from=0, to=100)
 public int getProgressPercent()
 {
    int total = playMatContainer.largerPieces.size();
@@ -300,6 +333,94 @@ public int getProgressPercent()
    // 99 - (int) (tot + single + boxed + ungrouped);
     */
    return 99 - ungroupedInt - boxedInt - singleInt - totInt;
+}
+
+public static class RandomJedges
+{
+   public final int width;
+   public final int height;
+   private final JedgeParams[][] horizNS;
+   private final JedgeParams[][] vertiEW;
+   
+   void serializeRandomJedges(Parcel dest)
+   {
+      dest.writeInt(width);
+      dest.writeInt(height);
+      for (int x = 0; x < width; x++) {
+         for (int y = 0; y < height - 1; y++) {
+            horizNS[x][y].writeToParcel(dest, 0);
+         }
+      }
+      for (int x = 0; x < width - 1; x++) {
+         for (int y = 0; y < height; y++) {
+            vertiEW[x][y].writeToParcel(dest, 0);
+         }
+      }
+   }
+   
+   RandomJedges(Parcel in)
+   {
+      width = in.readInt();
+      height = in.readInt();
+      horizNS = new JedgeParams[width][height - 1];
+      vertiEW = new JedgeParams[width - 1][height];
+      for (int x = 0; x < width; x++) {
+         for (int y = 0; y < height - 1; y++) {
+            horizNS[x][y] = new JedgeParams(in);
+         }
+      }
+      for (int x = 0; x < width - 1; x++) {
+         for (int y = 0; y < height; y++) {
+            vertiEW[x][y] = new JedgeParams(in);
+         }
+      }
+   }
+   
+   RandomJedges(int width, int height, Random rng)
+   {
+      this.width = width;
+      this.height = height;
+      horizNS = new JedgeParams[width][height - 1];
+      vertiEW = new JedgeParams[width - 1][height];
+      for (int x = 0; x < width; x++) {
+         for (int y = 0; y < height; y++) {
+            if (y < height - 1) {
+               horizNS[x][y] = new JedgeParams(rng);
+            }
+            if (x < width - 1) {
+               vertiEW[x][y] = new JedgeParams(rng);
+            }
+         }
+      }
+   }
+   
+   public JedgeParams getNorth(int x, int y)
+   {
+      if (y == 0)
+         return null;
+      return horizNS[x][y - 1];
+   }
+   
+   public JedgeParams getEast(int x, int y)
+   {
+      if (x == width - 1)
+         return null;
+      return vertiEW[x][y];
+   }
+   
+   public JedgeParams getSouth(int x, int y)
+   {
+      if (y == height - 1)
+         return null;
+      return horizNS[x][y];
+   }
+   
+   public JedgeParams getWest(int x, int y)
+   {
+      if (x == 0)
+         return null;
+      return vertiEW[x - 1][y];
+   }
 }
 
 // /**

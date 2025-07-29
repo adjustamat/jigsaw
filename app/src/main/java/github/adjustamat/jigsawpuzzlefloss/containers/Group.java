@@ -121,12 +121,12 @@ private static void deserializeGroup(Group ret, Parcel in, boolean singlesOnly,
    int size = in.readInt();
    for (int indexInGroup = 0; indexInGroup < size; indexInGroup++) {
       if (singlesOnly)
-         ret.pieces.add(SinglePiece.deserializeSinglePiece(in, container, indexInGroup, pool));
+         ret.pieces.add(SinglePiece.deserializeSinglePiece(in, container, indexInGroup, pool, randomJedges));
       else {
          if (in.readInt() == 1)
             ret.pieces.add(LargerPiece.deserializeLargerPiece(in, container, indexInGroup));
          else
-            ret.pieces.add(SinglePiece.deserializeSinglePiece(in, container, indexInGroup, pool));
+            ret.pieces.add(SinglePiece.deserializeSinglePiece(in, container, indexInGroup, pool, randomJedges));
          
          //ret.pieces.add(AbstractPiece.createFromParcelToMixedGroup(in, container, indexInGroup));
       }
@@ -168,6 +168,12 @@ public void setContainer(Container newParent, int indexInContainer)
 {
    containerParent = newParent;
    this.indexInContainer = indexInContainer;
+}
+
+// TODO: unnecessary method.
+public boolean isContainer()
+{
+   return containerParent == this;
 }
 
 public void replaceLoading(Container loadedContainer)
@@ -301,7 +307,7 @@ public void add(AbstractPiece piece)
 }
 
 /**
- * Move a Group of pieces into this Group - only use when this Group is in the same Container!
+ * Move a Group of pieces into this Group - only use when both Groups share the same Container!
  * @param other the Group to merge into this Group
  * @return whether or not the other Group was merged into this Group
  */

@@ -137,6 +137,14 @@ public boolean onTouchEvent(MotionEvent ev)
    //  ACTIONS: (scroll), (zoom), move or rotate piece, zoom in on piece, show PlayMenu, select?, select group?.
    //   rotate whole group, rotate all in group but around individual centers.
    
+   // TODO: when highlighting a group, do all these things:
+   //  draw a line around the group (with quite a bit of margin).
+   //  show the name of the group
+   //  draw around the pieces with a color, on a layer below all pieces (like BorderDrawable but also around
+   //   puzzle-outer edges), or on a layer above all pieces (line border, not gradient. I have to make special path segments different from PieceJedge for this expanded outline-border)
+   //  fade other pieces (give them 80% opacity), but note especially the other pieces that overlap pieces in the group
+   //   but are not in the group.
+   
    // TODO: ACTIONS in context menus: - ui.PlayMenu (do not use android builtin ContextMenu!)
    //  BG:
    //   rotate/modify bg

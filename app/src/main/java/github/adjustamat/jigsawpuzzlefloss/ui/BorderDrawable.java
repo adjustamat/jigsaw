@@ -28,6 +28,8 @@ public int rotateAndMoveAllFromWest = 0;
 //public @NonNull Direction turnAndMove = Direction.NORTH;
 //public @NonNull Direction iHeadingTurnAndMoveAll = Direction.WEST;
 
+// TODO: GradientBorderDrawable and OutlineHiliteBorder(works more like Jedge)
+
 // TODO: create methods drawMe(int rotateAndMoveAll) and drawAll()
 
 private BorderDrawable(
