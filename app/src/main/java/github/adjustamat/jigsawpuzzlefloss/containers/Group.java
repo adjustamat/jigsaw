@@ -22,6 +22,7 @@ import github.adjustamat.jigsawpuzzlefloss.pieces.AbstractPiece;
 import github.adjustamat.jigsawpuzzlefloss.pieces.LargerPiece;
 import github.adjustamat.jigsawpuzzlefloss.pieces.PieceJedge.HalfJedge;
 import github.adjustamat.jigsawpuzzlefloss.pieces.SinglePiece;
+import github.adjustamat.jigsawpuzzlefloss.ui.PlayMatView.PieceOrGroup;
 
 /**
  * A (named) group of {@link AbstractPiece}s ({@link SinglePiece}s and/or {@link LargerPiece}s).
@@ -32,7 +33,7 @@ import github.adjustamat.jigsawpuzzlefloss.pieces.SinglePiece;
  */
 public class Group
  extends Container
- implements GroupOrSinglePiece
+ implements GroupOrSinglePiece, PieceOrGroup
 {
 private static final String DBG = "Group";
 

@@ -331,7 +331,7 @@ private void startNewGame(int width, int height, Uri bitmapUri, Size bitmapSize)
 private void startGame()
 {
    // initialize PuzzleGraphics
-   PuzzleGraphics.init(currentGame);
+   PuzzleGraphics.init(currentGame, this);
    
    // initialize Box
    bigBoxAdapter = new BoxAdapter(currentGame.singlePiecesContainer);

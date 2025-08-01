@@ -158,7 +158,7 @@ public SinglePiece(ImagePuzzle imagePuzzle, int indexInBox,
 //   // TODO: make color with high contrast to getColor().
 //}
 
-protected VectorJedges getVectorJedges()
+public VectorJedges getVectorJedges()
 {
    return vectorJedges;
 }

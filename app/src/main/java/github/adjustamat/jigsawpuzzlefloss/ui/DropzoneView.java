@@ -30,7 +30,9 @@ public DropzoneView(Context context, @Nullable AttributeSet attrs, int defStyleA
    // TODO?
 }
 
-// TODO: show indicator
+// TODO: show indicator where current touch is. maybe the touch events are still received by
+//  the TemporaryView being moved. in that case, send this view the coordinates and invalidate it.
+// TODO: do I need to use the drag-and-drop api? probably not.
 
 /*
 view_dropzone_indicator.xml is not needed

@@ -24,11 +24,7 @@ public final List<Group> groups = new ArrayList<>();
 public final List<LargerPiece> largerPieces = new ArrayList<>();
 public final List<SinglePiece> singlePieces = new ArrayList<>();
 
-// draw this with low opacity (when placing something from another Container)
-public Group transparentGroup;
-public AbstractPiece transparentPiece;
-
-public PointF topLeft=new PointF();
+public PointF topLeft = new PointF();
 public PointF bottomRight = new PointF();
 
 /*
@@ -38,14 +34,14 @@ TODO: in PlayMat, use these AbstractPiece fields:
  // boolean lockedRotation
 */
 
-public PointF getTopLeft(){
-   // TODO: used by PlayMatView
-   return new PointF();
+public PointF getTopLeft()
+{
+   return topLeft;
 }
 
-public PointF getBottomRight(){
-   // TODO: used by PlayMatView
-   return new PointF();
+public PointF getBottomRight()
+{
+   return bottomRight;
 }
 
 public void remove(AbstractPiece p)

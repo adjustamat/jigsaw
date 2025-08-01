@@ -52,8 +52,24 @@ public void setPlayMatView(PlayMatView playMatView)
    this.playMatView = playMatView;
 }
 
-private int w;
-private int h;
+@SuppressLint("ClickableViewAccessibility")
+public boolean onTouchEvent(MotionEvent ev)
+{
+   if (playMatView == null)
+      return false;
+   
+   // TODO: when scrolling or zooming so we see outside the play mat, show that also in this MiniMapView by making
+   //  the view of the play mat even smaller and adding more empty white space inside and around the rectangle.
+   if (playMatView.isAllVisible())
+      return false;
+   
+   //ZoomEngine zoomPan = playMatView.zoomPan;
+   //zoomPan.get
+   
+   // TODO: when clicking/touching/dragging MiniMap, pan (scroll) the PlayMatView - see ZoomEngine.
+   //  - only available when the PlayMatView is zoomed in such that not all of it can be seen.
+   return true;
+}
 
 protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec)
 {
@@ -75,24 +91,8 @@ protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec)
    setMeasuredDimension(fixedWidth, height);
 }
 
-@SuppressLint("ClickableViewAccessibility")
-public boolean onTouchEvent(MotionEvent ev)
-{
-   if (playMatView == null)
-      return false;
-   
-   // TODO: when scrolling or zooming so we see outside the play mat, show that also in this MiniMapView by making
-   //  the view of the play mat even smaller and adding more empty white space inside and around the rectangle.
-   if (playMatView.isAllVisible())
-      return false;
-   
-   //ZoomEngine zoomPan = playMatView.zoomPan;
-   //zoomPan.get
-   
-   // TODO: when clicking/touching/dragging MiniMap, pan (scroll) the PlayMatView - see ZoomEngine.
-   //  - only available when the PlayMatView is zoomed in such that not all of it can be seen.
-   return true;
-}
+private int w;
+private int h;
 
 public void onDraw(@NonNull Canvas canvas)
 {

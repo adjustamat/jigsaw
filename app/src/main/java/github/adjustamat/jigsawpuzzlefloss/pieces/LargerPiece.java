@@ -955,7 +955,7 @@ public class LargerPieceJedges
    
    protected int width()
    {
-      return 0;// TODO! check the largest hole
+      return 0;// TODO! check the largest hole. see singlepiece.
    }
    
    protected int height()
@@ -1635,7 +1635,7 @@ public ArrayList<BorderDrawable> getBorder()
    return ret;
 } // method: getOutline()
 
-protected VectorJedges getVectorJedges()
+public VectorJedges getVectorJedges()
 {
    return vectorJedges;
 }

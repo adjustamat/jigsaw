@@ -26,6 +26,11 @@ public static final float STRAIGHT_EDGE_WIDTH = 0f;
 
 public static final Creator<PieceJedge> CREATOR = new Creator<PieceJedge>()
 {
+   /**
+    * {@link JedgeParams#init(HalfJedge[][], Direction)}
+    * @param in The Parcel to read the object's data from.
+    * @return an EdgeJedge or DoubleJedge
+    */
    @Override
    public PieceJedge createFromParcel(Parcel in)
    {
@@ -39,7 +44,8 @@ public static final Creator<PieceJedge> CREATOR = new Creator<PieceJedge>()
       case 3:
          return new EdgeJedge(STRAIGHT_WEST);
       default:
-         
+         // TODO: here's all the trouble. cannot create a DoubleJedge from parcel, need to use
+         //  JedgeParams.init(HalfJedge[][] pool, Direction dir) !!
          return ;//new DoubleJedge();
       }
    }
