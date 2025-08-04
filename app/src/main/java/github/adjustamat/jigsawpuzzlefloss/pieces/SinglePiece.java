@@ -94,7 +94,7 @@ public void serializeSinglePiece(Parcel dest)
    }
 }
 
-public static SinglePiece deserializeSinglePiece(Parcel in, Container loading, int i,
+public static SinglePiece deserialize(Parcel in, Container container, int i,
  HalfJedge[][] pool, RandomJedges randomJedges)
 {
    Direction rotation = Direction.values()[in.readInt()];
@@ -112,7 +112,7 @@ public static SinglePiece deserializeSinglePiece(Parcel in, Container loading, i
 //    south = new JedgeParams(in),
 //    west = new JedgeParams(in);
    
-   return new SinglePiece(loading, i,
+   return new SinglePiece(container, i,
     rotation, correct, relative, lockedRotation, lockedPlace,
     randomJedges,
     //north, east, south, west,

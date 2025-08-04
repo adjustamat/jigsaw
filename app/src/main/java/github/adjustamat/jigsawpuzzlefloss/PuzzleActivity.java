@@ -36,7 +36,6 @@ import androidx.recyclerview.widget.RecyclerView.OnItemTouchListener;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.MemoryCategory;
-import com.otaliastudios.zoom.ZoomLayout;
 
 import java.util.Random;
 
@@ -66,7 +65,7 @@ private class Views
    final FrameLayout frameFullscreenLayout;
    final LinearLayout llvPuzzleActivity;
    
-   final ZoomLayout viewPlayMatParent;
+   //final ZoomLayout viewPlayMatParent;
    final PlayMatView viewPlayMat;
    
    final ImageView imgSeparator;
@@ -90,7 +89,7 @@ private class Views
       this.llvPuzzleActivity = findViewById(R.id.llvPuzzleActivity);
       
       // TODO: construct PlayMatView here! Combine ZoomLayout into PlayMatView.
-      this.viewPlayMatParent = findViewById(R.id.viewPlayMatParent);
+//      this.viewPlayMatParent = findViewById(R.id.viewPlayMatParent);
       this.viewPlayMat = findViewById(R.id.viewPlayMat);
       
       this.imgSeparator = findViewById(R.id.imgSeparator);
@@ -172,9 +171,9 @@ private class Views
          lstBox.addOnItemTouchListener(bigBoxItemTouchListener);
       }
       if (height == LayoutParams.MATCH_PARENT)
-         viewPlayMatParent.setVisibility(View.GONE);
+         viewPlayMat.setVisibility(View.GONE);
       else
-         viewPlayMatParent.setVisibility(View.VISIBLE); // TODO: change params of viewPlayMatParent!
+         viewPlayMat.setVisibility(View.VISIBLE); // TODO: change params of viewPlayMatParent!
       
       imgBoxCover.setVisibility(View.GONE);
       viewMiniMap.setVisibility(View.GONE);
@@ -189,7 +188,7 @@ private class Views
       imgBoxCover.setVisibility(View.VISIBLE);
       viewMiniMap.setVisibility(View.VISIBLE);
       
-      viewPlayMatParent.setVisibility(View.VISIBLE); // TODO: change params of viewPlayMatParent?
+      viewPlayMat.setVisibility(View.VISIBLE); // TODO: change params of viewPlayMatParent?
       
       if (big) {
          big = false;
@@ -480,23 +479,40 @@ private void saveGame()
 
 private final OnBackPressedCallback onBackPressed = new OnBackPressedCallback(true)
 {
+   private AlertDialog alertDialog;
+   
    public void handleOnBackPressed()
    {
+      if (alertDialog != null) {
+         alertDialog.cancel();
+         alertDialog = null;
+         return;
+      }
+      
+      if (ui.viewPlayMat.handleOnBackPressed())
+         return;
+      
       saveGame();
       
-      new AlertDialog.Builder(PuzzleActivity.this)
-       .setNegativeButton(R.string.btnLeaveNot,
-        (dialog, which)->dialog.cancel())
-       .setNeutralButton(R.string.btnLeaveApp,
-        (dialog, which)->finishAndRemoveTask())
-       .setPositiveButton(R.string.btnLeaveToMenu,
-        (dialog, which)->{
-           if (isTaskRoot())
-              startActivity(new Intent(getApplicationContext(), Act.class));
-           else
-              finish();
-        })
-       .show();
+      alertDialog =
+       new AlertDialog.Builder(PuzzleActivity.this)
+        .setNegativeButton(R.string.btnLeaveNot,
+         (dialog, which)->{
+            alertDialog = null;
+            //dialog.cancel();
+         })
+        .setNeutralButton(R.string.btnLeaveApp,
+         (dialog, which)->finishAndRemoveTask())
+        .setPositiveButton(R.string.btnLeaveToMenu,
+         (dialog, which)->{
+            if (isTaskRoot()) {
+               alertDialog = null;
+               startActivity(new Intent(getApplicationContext(), Act.class));
+            }
+            else
+               finish();
+         })
+        .show();
    }
 };
 }

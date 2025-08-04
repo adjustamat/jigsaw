@@ -1,6 +1,8 @@
 package github.adjustamat.jigsawpuzzlefloss.containers;
 
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
 import android.graphics.PointF;
 import android.graphics.RectF;
 import android.os.Parcel;
@@ -18,6 +20,7 @@ import java.util.ListIterator;
 import github.adjustamat.jigsawpuzzlefloss.R;
 import github.adjustamat.jigsawpuzzlefloss.containers.Box.GroupOrSinglePiece;
 import github.adjustamat.jigsawpuzzlefloss.game.ImagePuzzle;
+import github.adjustamat.jigsawpuzzlefloss.game.ImagePuzzle.RandomJedges;
 import github.adjustamat.jigsawpuzzlefloss.pieces.AbstractPiece;
 import github.adjustamat.jigsawpuzzlefloss.pieces.LargerPiece;
 import github.adjustamat.jigsawpuzzlefloss.pieces.PieceJedge.HalfJedge;
@@ -46,7 +49,9 @@ public static class Dirty
 
 public final Dirty dirty = new Dirty(); // TODO: NO SERIALIZATION??
 
+// perhaps selected is not a property of a GroupOrSinglePiece, but a Set in Box instead.
 private boolean selected; // NO SERIALIZATION
+
 private boolean expanded; // NO SERIALIZATION
 
 Container containerParent; // NO SERIALIZATION
@@ -60,8 +65,10 @@ private @Nullable String name; // CONDITIONAL SERIALIZATION
  */
 public final PointF relativePos = new PointF(); // ALWAYS SERIALIZATION
 
-int largerPieces = 0; // ALWAYS SERIALIZATION
-final List<AbstractPiece> pieces = new LinkedList<>(); // ALWAYS SERIALIZATION
+//int largerPieces = 0; // ALWAYS SERIALIZATION
+//final List<AbstractPiece> pieces = new LinkedList<>(); // ALWAYS SERIALIZATION
+final List<SinglePiece> singleList = new LinkedList<>(); // ALWAYS SERIALIZATION
+final List<LargerPiece> largerList = new LinkedList<>(); // ALWAYS SERIALIZATION
 
 public void serializeGroup(Parcel dest, boolean singlesOnly)
 {
@@ -72,66 +79,90 @@ public void serializeGroup(Parcel dest, boolean singlesOnly)
       dest.writeString(name);
    dest.writeFloat(relativePos.x);
    dest.writeFloat(relativePos.y);
-   dest.writeInt(largerPieces);
-   dest.writeInt(pieces.size());
-   for (AbstractPiece piece: pieces) {
-      if (singlesOnly)
-         ((SinglePiece) piece).serializeSinglePiece(dest);
-      else if (piece instanceof SinglePiece) {
-         dest.writeInt(0);
-         ((SinglePiece) piece).serializeSinglePiece(dest);
-      }
-      else {
-         dest.writeInt(1);
-         ((LargerPiece) piece).serializeLargerPiece(dest);
-      }
+   //dest.writeInt(largerPieces);
+   dest.writeInt(singleList.size());
+   for (SinglePiece piece: singleList) {
+      piece.serializeSinglePiece(dest);
    }
+   dest.writeInt(largerList.size());
+   for (LargerPiece piece: largerList) {
+      piece.serializeLargerPiece(dest);
+   }
+//   dest.writeInt(pieces.size());
+//   for (AbstractPiece piece: pieces) {
+//      if (singlesOnly)
+//         ((SinglePiece) piece).serializeSinglePiece(dest);
+//      else if (piece instanceof SinglePiece) {
+//         dest.writeInt(0);
+//         ((SinglePiece) piece).serializeSinglePiece(dest);
+//      }
+//      else {
+//         dest.writeInt(1);
+//         ((LargerPiece) piece).serializeLargerPiece(dest);
+//      }
+//   }
 }
 
-public static Group deserializeBoxGroup(Parcel in, Loading loading, int i, HalfJedge[][] pool)
+//public static Group deserializeBoxGroup(Parcel in, Loading loading, int i,
+// HalfJedge[][] pool, RandomJedges randomJedges)
+//{
+//   Group ret = new Group(loading, i, in.readInt());
+//   deserializeGroup(ret, in, /*true,*/ loading, pool,randomJedges);
+//   return ret;
+//}
+//
+//public static Group deserializeMixedGroup(Parcel in, Loading loading, int i,
+// HalfJedge[][] pool, RandomJedges randomJedges)
+//{
+//   Group ret = new Group(loading, i, in.readInt());
+//   deserializeGroup(ret, in,  loading, pool, randomJedges);
+//   return ret;
+//}
+
+public static Group deserializeNonContainerGroup(Parcel in, Loading loading, int i,
+ HalfJedge[][] pool, RandomJedges randomJedges)
 {
    Group ret = new Group(loading, i, in.readInt());
-   deserializeGroup(ret, in, true, loading, pool);
+   deserializeGroup(ret, in, loading, pool, randomJedges);
    return ret;
 }
 
-public static Group deserializeMixedGroup(Parcel in, Loading loading, int i, HalfJedge[][] pool)
-{
-   Group ret = new Group(loading, i, in.readInt());
-   deserializeGroup(ret, in, false, loading, pool);
-   return ret;
-}
-
-public static Group deserializeTemporaryContainerGroup(Parcel in, int i, HalfJedge[][] pool)
+public static Group deserializeContainerGroup(Parcel in, int i,
+ HalfJedge[][] pool, RandomJedges randomJedges)
 {
    Group ret = getNewTemporaryContainer(i);
-   deserializeGroup(ret, in, false, ret, pool);
+   deserializeGroup(ret, in, ret, pool, randomJedges);
    return ret;
 }
 
-private static void deserializeGroup(Group ret, Parcel in, boolean singlesOnly,
- Container container, HalfJedge[][] pool)
+private static void deserializeGroup(Group ret, Parcel in, //boolean singlesOnly,
+ Container container, HalfJedge[][] pool, RandomJedges randomJedges)
 {
    if (in.readInt() == 1) {
       ret.name = in.readString();
    }
    ret.relativePos.x = in.readFloat();
    ret.relativePos.y = in.readFloat();
-   ret.largerPieces = in.readInt();
-   
+   //ret.largerPieces = in.readInt();
    int size = in.readInt();
-   for (int indexInGroup = 0; indexInGroup < size; indexInGroup++) {
-      if (singlesOnly)
-         ret.pieces.add(SinglePiece.deserializeSinglePiece(in, container, indexInGroup, pool, randomJedges));
-      else {
-         if (in.readInt() == 1)
-            ret.pieces.add(LargerPiece.deserializeLargerPiece(in, container, indexInGroup));
-         else
-            ret.pieces.add(SinglePiece.deserializeSinglePiece(in, container, indexInGroup, pool, randomJedges));
-         
-         //ret.pieces.add(AbstractPiece.createFromParcelToMixedGroup(in, container, indexInGroup));
-      }
+   for (int i = 0; i < size; i++) {
+      ret.singleList.add(SinglePiece.deserialize(in, container, i, pool, randomJedges));
    }
+   size = in.readInt();
+   for (int i = 0; i < size; i++) {
+      ret.largerList.add(LargerPiece.deserialize(in, container, i));
+   }
+//   int size = in.readInt();
+//   for (int indexInGroup = 0; indexInGroup < size; indexInGroup++) {
+//      if (singlesOnly)
+//         ret.pieces.add(SinglePiece.deserializeSinglePiece(in, container, indexInGroup, pool, randomJedges));
+//      else {
+//         if (in.readInt() == 1)
+//            ret.pieces.add(LargerPiece.deserializeLargerPiece(in, container, indexInGroup));
+//         else
+//            ret.pieces.add(SinglePiece.deserializeSinglePiece(in, container, indexInGroup, pool, randomJedges));
+//      }
+//   }
 }
 
 /**
@@ -180,7 +211,10 @@ public boolean isContainer()
 public void replaceLoading(Container loadedContainer)
 {
    setContainer(loadedContainer, this.indexInContainer);
-   for (AbstractPiece piece: pieces) {
+   for (AbstractPiece piece: singleList) {
+      piece.replaceLoading(loadedContainer);
+   }
+   for (AbstractPiece piece: largerList) {
       piece.replaceLoading(loadedContainer);
    }
 }
@@ -216,10 +250,40 @@ public void setName(@Nullable String name)
    this.name = name;
 }
 
-public static void layoutPiecesNoOverlap(Collection<AbstractPiece> pieces, float minMargin,
- @Nullable RectF[] within)
+public List<SinglePiece> getSinglePieces()
 {
-   Iterator<AbstractPiece> pieceIterator = pieces.iterator();
+   return singleList;
+}
+
+public Iterator<AbstractPiece> getAllPieces()
+{
+   return new Iterator<AbstractPiece>()
+   {
+      private int i = 0;
+      private final int size1 = singleList.size();
+      private final int size = size1 + largerList.size();
+      
+      public boolean hasNext()
+      {
+         return i < size;
+      }
+      
+      public AbstractPiece next()
+      {
+         AbstractPiece ret;
+         if (i < size1)
+            ret = singleList.get(i);
+         else
+            ret = largerList.get(i - size1);
+         i++;
+         return ret;
+      }
+   };
+}
+
+public static void layoutPiecesNoOverlap(Iterator<AbstractPiece> pieceIterator, int size,
+ float minMargin, @Nullable RectF[] within)
+{
    AbstractPiece piece;
    PointF jigBreadth;
    int c = 0;
@@ -253,7 +317,6 @@ public static void layoutPiecesNoOverlap(Collection<AbstractPiece> pieces, float
          }
       } // for(RectF within)
    }
-   int size = pieces.size();
    int cols = (size <= 12) ?3 :(size <= 30) ?5 :(size <= 56) ?7 :9;
    while (pieceIterator.hasNext()) {
       piece = pieceIterator.next();
@@ -273,14 +336,33 @@ public static void layoutPiecesNoOverlap(Collection<AbstractPiece> pieces, float
 public void layoutPiecesNoOverlap(float margin, @Nullable RectF[] within)
 {
    // TODO: first check if(dirty.layout) if this method is used to make an image for BoxAdapter.
-   layoutPiecesNoOverlap(pieces, margin, within);
+   layoutPiecesNoOverlap(getAllPieces(), getPieceCount(), margin, within);
    dirty.layout = false;
    // TODO: overlapping = false; dirty.overlapping = false;
 }
 
-public List<AbstractPiece> getAllPieces()
+/**
+ * Draw thumbnail for a temporary container or Box Group
+ * @return a temporary Bitmap for an ImageView
+ */
+public Bitmap getThumbnail()
 {
-   return pieces;
+   if (dirty.layout)
+      layoutPiecesNoOverlap(0f, null);
+   int size = getPieceCount();
+   // TODO: draw on a new Bitmap - make it the same size as SinglePiece!
+}
+
+public void drawOnPlayMat(Canvas canvas)
+{
+   for (LargerPiece piece: largerList) {
+      canvas.drawBitmap(piece.getUnrotatedFullSizeGraphics(),
+       piece.getPlayMatTranslationAndRotation(), null);
+   }
+   for (SinglePiece piece: singleList) {
+      canvas.drawBitmap(piece.getUnrotatedFullSizeGraphics(),
+       piece.getPlayMatTranslationAndRotation(), null);
+   }
 }
 
 public void add(AbstractPiece piece)
@@ -301,10 +383,14 @@ public void add(AbstractPiece piece)
          piecePos.offset(-relativePos.x, -relativePos.y);
       }
    }
-   piece.setGroup(this, size);
-   pieces.add(piece);
-   if (piece instanceof LargerPiece)
-      largerPieces++;
+   if (piece instanceof LargerPiece) {
+      piece.setGroup(this, largerList.size());
+      largerList.add((LargerPiece) piece);
+   }
+   else {
+      piece.setGroup(this, singleList.size());
+      singleList.add((SinglePiece) piece);
+   }
 }
 
 /**
@@ -332,7 +418,7 @@ private void add(Collection<AbstractPiece> pieces, boolean isContainer)
    
    for (AbstractPiece piece: pieces) {
       if (isContainer) {
-         // TODO: if this method was used by a new method called movePiecesFrom(), then don't forget to other.remove(piece)!
+         // TODO: if this method was used by a new method called movePiecesFrom(), then don't forget to other.remove(piece) first!
          piece.setContainer(this, pieces.size());
       }
       add(piece);
@@ -347,7 +433,7 @@ private void add(Collection<AbstractPiece> pieces, boolean isContainer)
  */
 public boolean movePieceFrom(Container other, AbstractPiece piece)
 {
-   other.remove(piece);
+   other.removeFromContainer(piece);
    piece.setContainer(this, pieces.size());
    add(piece);
 //   if (other instanceof Box) {
@@ -383,23 +469,37 @@ public boolean moveGroupFrom(Container other, Group group, Context ctx)
 
 private void deleteMerged()
 {
-   pieces.clear();  // merging this Group into another Group!
+   // merging this Group into another Group!
+   largerList.clear();
+   singleList.clear();
    containerParent = null;
 }
 
-public void remove(AbstractPiece p)
+public void removeFromContainer(AbstractPiece p)
 {
-   pieces.remove(p.getIndexInContainer());
-   if (isExpanded()) {
+   if (p instanceof LargerPiece) {
+      largerList.remove(p.getIndexInContainer());
+      // all objects with higher index must decrement index:
+      for (ListIterator<LargerPiece> i = largerList.listIterator(p.getIndexInContainer()); i.hasNext(); ) {
+         LargerPiece next = i.next();
+         next.decrementIndex();
+      }
+   }
+   else {
+      singleList.remove(p.getIndexInContainer());
+      // all objects with higher index must decrement index:
+      for (ListIterator<SinglePiece> i = singleList.listIterator(p.getIndexInContainer()); i.hasNext(); ) {
+         SinglePiece next = i.next();
+         next.decrementIndex();
+      }
+   }
+   
+   if (isExpanded()) { // expanded: only in Box!
       // TODO: remove 1 reference from Box.expandedList - maybe have to use Box method ungroupPiece - or
       //  is this method only used when moving a piece from a temporaryContainerGroup to playmat or box?
    }
    
-   // all objects with higher index must decrement index:
-   for (ListIterator<AbstractPiece> iterator = pieces.listIterator(p.getIndexInContainer()); iterator.hasNext(); ) {
-      AbstractPiece next = iterator.next();
-      next.decrementIndex();
-   }
+   
 }
 
 /**
@@ -416,27 +516,27 @@ public void removeGroup(Group group)
 
 public boolean hasLargerPieces()
 {
-   return largerPieces > 0;
+   return !largerList.isEmpty();// largerPieces > 0;
 }
 
 public int getLargerPieceCount()
 {
-   return largerPieces;
+   return largerList.size();
 }
 
 public boolean isLonelyPiece()
 {
-   return pieces.size() == 1;
+   return getPieceCount() == 1;
 }
 
 public boolean isEmpty()
 {
-   return pieces.isEmpty();
+   return getPieceCount() == 0;
 }
 
 public int getPieceCount()
 {
-   return pieces.size();
+   return largerList.size() + singleList.size();
 }
 
 public int getIndexInContainer()

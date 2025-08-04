@@ -72,13 +72,13 @@ public void serializeLargerPiece(Parcel dest)
 /**
  * Contructor for deserializing from savegame.
  */
-private LargerPiece(Container containerParent, int indexInContainer,
+private LargerPiece(Container loading, int indexInContainer,
  @NonNull Direction rotation, Point correctPuzzlePosition,
  PointF relativePos, boolean lockedRotation, boolean lockedInPlace,
  Parcel in
 )
 {
-   super(containerParent, indexInContainer,
+   super(loading, indexInContainer,
     rotation, correctPuzzlePosition, relativePos, lockedRotation, lockedInPlace);
    pieceCount = in.readInt();
    northPuzzleEdge = in.readInt() == 1;
@@ -92,7 +92,7 @@ private LargerPiece(Container containerParent, int indexInContainer,
    vectorJedges = new LargerPieceJedges(in);
 }
 
-public static LargerPiece deserializeLargerPiece(Parcel in, Container loading, int i)
+public static LargerPiece deserialize(Parcel in, Container container, int i)
 {
    Direction rotation = Direction.values()[in.readInt()];
    Point correct = new Point(in.readInt(), in.readInt());
@@ -104,7 +104,7 @@ public static LargerPiece deserializeLargerPiece(Parcel in, Container loading, i
    boolean lockedRotation = in.readInt() == 0,
     lockedPlace = in.readInt() == 0;
    
-   return new LargerPiece(loading, i,
+   return new LargerPiece(container, i,
     rotation, correct, relative, lockedRotation, lockedPlace,
     in
    );
@@ -1291,26 +1291,26 @@ private void copyIsEdge(SinglePiece p)
       southPuzzleEdge = true;
 }
 
-public Point getPuzzlePiece(PointF mouseOffset)
+public Point getPuzzlePiece(PointF clickOffset)
 {
    Point ret = new Point(correctPuzzlePosition);
-   ret.offset(getSubPieceX(mouseOffset.x), getSubPieceY(mouseOffset.y));
+   ret.offset(getSubPieceX(clickOffset.x), getSubPieceY(clickOffset.y));
    return ret;
 }
 
-public Point getSubPiece(PointF mouseOffset)
+public Point getSubPiece(PointF clickOffset)
 {
-   return new Point(getSubPieceX(mouseOffset.x), getSubPieceY(mouseOffset.y));
+   return new Point(getSubPieceX(clickOffset.x), getSubPieceY(clickOffset.y));
 }
 
-public int getSubPieceX(float mouseOffsetX)
+public int getSubPieceX(float clickOffsetX)
 {
-   return (int) (mouseOffsetX / (SIDE_SIZE * matrixWidth));
+   return (int) (clickOffsetX / (SIDE_SIZE * matrixWidth));
 }
 
-public int getSubPieceY(float mouseOffsetY)
+public int getSubPieceY(float clickOffsetY)
 {
-   return (int) (mouseOffsetY / (SIDE_SIZE * matrixHeight));
+   return (int) (clickOffsetY / (SIDE_SIZE * matrixHeight));
 }
 
 public ArrayList<BorderDrawable> getBorder()

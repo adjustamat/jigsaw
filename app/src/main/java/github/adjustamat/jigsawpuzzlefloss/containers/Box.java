@@ -90,7 +90,7 @@ public void ungroupPiece(Group group, int indexInGroup)
       return;
    }
    
-   SinglePiece piece = (SinglePiece) group.getAllPieces().get(indexInGroup);
+   SinglePiece piece = (SinglePiece) group.getSinglePieces().get(indexInGroup);
    
    // TODO: THIS PROBABLY WON'T WORK: maybe remove group methods from AbstractPiece!
    //  see also Group.add(AbstractPiece) (which uses AbstractPiece.setGroup())
@@ -98,7 +98,7 @@ public void ungroupPiece(Group group, int indexInGroup)
    
    // movePieceFrom(this,piece); NO! do everything manually in this method!
    
-   group.remove(piece); // make sure group.remove() works even when container is Box - it's a Container method!
+   group.removeFromContainer(piece); // make sure group.remove() works even when container is Box - it's a Container method!
    // TODO!
 }
 
@@ -133,7 +133,7 @@ public void reorder(int fromIndex, int toIndex)
    
 }
 
-public void remove(AbstractPiece p)
+public void removeFromContainer(AbstractPiece p)
 {
    list.remove(p.getIndexInContainer());
    expandedList.remove(p.getIndexInContainer());
@@ -158,7 +158,7 @@ public boolean movePieceFrom(Container other, AbstractPiece p)
    // only a SinglePiece can be put back into the box.
    if (p instanceof LargerPiece)
       return false;
-   other.remove(p);
+   other.removeFromContainer(p);
    p.setContainer(this, list.size());
    list.add((SinglePiece) p);
    

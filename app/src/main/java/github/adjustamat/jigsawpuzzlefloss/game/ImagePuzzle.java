@@ -108,13 +108,13 @@ public static ImagePuzzle loadFromDatabase(int gameID, DB db)
       if (isGroup != 0)
          box.add(Group.deserializeBoxGroup(in, loading, i, pool));
       else
-         box.add(SinglePiece.deserializeSinglePiece(in, loading, i, pool, randomJedges));
+         box.add(SinglePiece.deserialize(in, loading, i, pool, randomJedges));
    }
    
    size = in.readInt();
    List<Group> temporaryContainers = new ArrayList<>(size);
    for (int i = 0; i < size; i++) {
-      temporaryContainers.add(Group.deserializeTemporaryContainerGroup(in, i, pool));
+      temporaryContainers.add(Group.deserializeContainerGroup(in, i, pool));
    }
    
    size = in.readInt();
@@ -126,13 +126,13 @@ public static ImagePuzzle loadFromDatabase(int gameID, DB db)
    size = in.readInt();
    List<SinglePiece> playMatSinglePieces = new ArrayList<>(size);
    for (int i = 0; i < size; i++) {
-      playMatSinglePieces.add(SinglePiece.deserializeSinglePiece(in, loading, i, pool, randomJedges));
+      playMatSinglePieces.add(SinglePiece.deserialize(in, loading, i, pool, randomJedges));
    }
    
    size = in.readInt();
    List<LargerPiece> playMatLargerPieces = new ArrayList<>(size);
    for (int i = 0; i < size; i++) {
-      playMatLargerPieces.add(LargerPiece.deserializeLargerPiece(in, loading, i));
+      playMatLargerPieces.add(LargerPiece.deserialize(in, loading, i));
    }
    
    // done deserializing!

@@ -44,7 +44,7 @@ public PointF getBottomRight()
    return bottomRight;
 }
 
-public void remove(AbstractPiece p)
+public void removeFromContainer(AbstractPiece p)
 {
    List<? extends AbstractPiece> list = (p instanceof SinglePiece) ?singlePieces :largerPieces;
    
@@ -60,7 +60,7 @@ public void remove(AbstractPiece p)
 
 public boolean movePieceFrom(Container other, AbstractPiece p)
 {
-   other.remove(p);
+   other.removeFromContainer(p);
    p.setContainer(this, (p instanceof SinglePiece ?singlePieces :largerPieces).size());
    if (p instanceof SinglePiece) {
       singlePieces.add((SinglePiece) p);
@@ -148,5 +148,22 @@ public void loadData(List<Group> playMatGroups,
    for (LargerPiece piece: largerPieces) {
       piece.replaceLoading(this);
    }
+}
+
+/**
+ * Handle clicking on the play mat.
+ * @param clickPoint the point clicked
+ * @return the number of selected pieces on the play mat
+ */
+public int selectDeselect(PointF clickPoint){
+
+}
+
+/**
+ * Reset selection status of all pieces on the play mat
+ */
+public void deselectAll()
+{
+
 }
 }

@@ -160,7 +160,7 @@ protected Group groupParent;
 public void setGroup(@NonNull Group newGroup, int newIndex)
 {
    if (groupParent != null) {
-      groupParent.remove(this);
+      groupParent.removeFromContainer(this);
    }
    // TODO: do this but not in this method: containerParent.remove(this);
    // TODO: the group needs to be added to containerParent or the group needs to be a temporary container!
@@ -173,7 +173,7 @@ public void setGroup(@NonNull Group newGroup, int newIndex)
 public void removeFromGroup(Container newContainer, int newIndexInContainer)
 {
    if (groupParent != null) {
-      groupParent.remove(this);
+      groupParent.removeFromContainer(this);
       setNullGroup();
       // TODO: this AbstractPiece needs a new indexInContainer!
    }
@@ -226,6 +226,24 @@ public void setSelected(boolean b)
    selected = b;
 }
 
+// graphics:
+
+protected Path bufferedPath = null;
+protected Bitmap buffer; // TODO: image loader? no, this buffer can't exist in memory. (?)
+
+public Bitmap getUnrotatedFullSizeGraphics()
+{
+   if (buffer == null) { // TODO: for LargerPieces: make buffer=null when it grows!
+      VectorJedges vectorJedges = getVectorJedges();
+      int width = vectorJedges.width();
+      int height = vectorJedges.height();
+      buffer = Bitmap.createBitmap(width, height, Config.ARGB_8888);
+      Canvas canvas = new Canvas(buffer);
+      PuzzleGraphics.drawPiece(canvas, vectorJedges, width, height);
+   }
+   return buffer;
+}
+
 public void setRelativePos(float x, float y)
 {
    if (relativePos == null) {
@@ -242,23 +260,13 @@ public @Nullable PointF getRelativePos()
    return relativePos;
 }
 
-// graphics:
-
-protected Path bufferedPath = null;
-protected Bitmap buffer; // TODO: image loader?
-
-public Bitmap getUnrotatedFullSizeGraphics()
+public PointF getAbsolutePos()
 {
-   if (buffer == null) { // TODO: for LargerPieces: make buffer=null when it grows!
-      VectorJedges vectorJedges = getVectorJedges();
-      // TODO: image loader?
-      int width = vectorJedges.width();
-      int height = vectorJedges.height();
-      buffer = Bitmap.createBitmap(width, height, Config.ARGB_8888);
-      Canvas canvas = new Canvas(buffer);
-      PuzzleGraphics.drawPiece(canvas, vectorJedges, width, height);
-   }
-   return buffer;
+   PointF ret = new PointF();
+   ret.set(relativePos);
+   if (groupParent != null)
+      ret.offset(groupParent.relativePos.x, groupParent.relativePos.y);
+   return ret;
 }
 
 public Matrix getPlayMatTranslationAndRotation()
@@ -349,7 +357,7 @@ public abstract class VectorJedges
       }while (nextEdge != firstEdge);
    }
    
-   public Matrix getImageTranslateMatrix(ImagePuzzle imagePuzzle)
+   public Matrix getImageTranslation(ImagePuzzle imagePuzzle)
    {
       Matrix matrix = new Matrix();
       RectF jigBreadth = getJigBreadth();

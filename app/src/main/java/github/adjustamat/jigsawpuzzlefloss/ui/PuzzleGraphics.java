@@ -27,7 +27,6 @@ import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.target.CustomTarget;
 import com.bumptech.glide.request.transition.Transition;
 
-import github.adjustamat.jigsawpuzzlefloss.game.Direction;
 import github.adjustamat.jigsawpuzzlefloss.game.ImagePuzzle;
 import github.adjustamat.jigsawpuzzlefloss.pieces.AbstractPiece;
 import github.adjustamat.jigsawpuzzlefloss.pieces.AbstractPiece.VectorJedges;
@@ -104,23 +103,27 @@ public static void init(ImagePuzzle imagePuzzle, Context ctx)
 }
 
 public static void drawRotatingPiece(Canvas playMatCanvas, AbstractPiece piece,
- PointF mousePoint, PointF position,
- Direction originalRotation, boolean clockwise, @FloatRange(from=0, to=1) float amount)
+ PointF clickPoint, boolean clockwise, @FloatRange(from=0, to=1) float amount)
 {
    VectorJedges vectorJedges = piece.getVectorJedges();
    // TODO: is this path scaled properly? how about theImagePuzzle.pieceImageSize?
    Path pieceShapePath = vectorJedges.drawAllOuterJedges();
    
+   playMatCanvas.save();
+   
    // move to the playMat-coordinates of the piece:
+   PointF position = piece.getAbsolutePos();
    playMatCanvas.translate(position.x, position.y);
    
    // rotate:
-   float degrees = originalRotation.degrees;
+   float degrees = piece.currentNorthDirection.degrees;
    degrees += (clockwise ?90 :-90) * amount;
-   playMatCanvas.rotate(-degrees, mousePoint.x, mousePoint.y);
+   playMatCanvas.rotate(-degrees, clickPoint.x, clickPoint.y);
    
    // draw the outline:
    playMatCanvas.drawPath(pieceShapePath, outerPaint);
+   
+   playMatCanvas.restore();
 }
 
 /**
@@ -138,7 +141,7 @@ public static void drawPiece(Canvas pieceBufferCanvas, VectorJedges vectorJedges
    Path pieceShapePath = vectorJedges.drawAllOuterJedges();
    
    // offset (translate) BitmapShader to the correct part of the puzzle image:
-   shader.setLocalMatrix(vectorJedges.getImageTranslateMatrix(theImagePuzzle));
+   shader.setLocalMatrix(vectorJedges.getImageTranslation(theImagePuzzle));
    //piecePaint.setShader(shader); // TODO: is it necessary to do this again?
    
    // draw the puzzle piece:

@@ -48,23 +48,22 @@
         android:orientation="vertical"
         >
 
-        <com.otaliastudios.zoom.ZoomLayout android:id="@+id/viewPlayMatParent"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            >
-            <github.adjustamat.jigsawpuzzlefloss.ui.PlayMatView android:id="@+id/viewPlayMat"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                />
-        </com.otaliastudios.zoom.ZoomLayout>
-
-        <!--        <github.adjustamat.jigsawpuzzlefloss.ui.PlayMatView-->
-        <!--            android:id="@+id/viewPlayMat"-->
+        <!--        <com.otaliastudios.zoom.ZoomLayout android:id="@+id/viewPlayMatParent"-->
         <!--            android:layout_width="match_parent"-->
         <!--            android:layout_height="0dp"-->
         <!--            android:layout_weight="1"-->
-        <!--            />-->
+        <!--            >-->
+        <!--            <github.adjustamat.jigsawpuzzlefloss.ui.PlayMatView android:id="@+id/viewPlayMat"-->
+        <!--                android:layout_width="wrap_content"-->
+        <!--                android:layout_height="wrap_content"-->
+        <!--                />-->
+        <!--        </com.otaliastudios.zoom.ZoomLayout>-->
+
+        <github.adjustamat.jigsawpuzzlefloss.ui.PlayMatView android:id="@+id/viewPlayMat"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            />
 
         <ImageView android:id="@+id/imgSeparator"
             style="@style/Widget.AppCompat.ImageButton"

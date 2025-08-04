@@ -20,7 +20,6 @@ import com.otaliastudios.zoom.ZoomEngine;
 import github.adjustamat.jigsawpuzzlefloss.PuzzleActivity;
 import github.adjustamat.jigsawpuzzlefloss.containers.Group;
 import github.adjustamat.jigsawpuzzlefloss.containers.PlayMat;
-import github.adjustamat.jigsawpuzzlefloss.pieces.AbstractPiece;
 import github.adjustamat.jigsawpuzzlefloss.pieces.LargerPiece;
 import github.adjustamat.jigsawpuzzlefloss.pieces.SinglePiece;
 
@@ -40,8 +39,8 @@ public class PlayMatView
 
 ZoomEngine zoomPan;
 PlayMat playMat;
-PuzzleActivity activity;
-private final Handler handler;
+private PuzzleActivity activity;
+private Handler handler;
 
 public PlayMatView(Context context)
 {
@@ -64,7 +63,6 @@ public PlayMatView(Context context, @Nullable AttributeSet attrs, int defStyleAt
    super(context, attrs, defStyleAttr, defStyleRes);
    //setLongClickable(true);
 //   setOnLongClickListener(this);
-   handler = new Handler(Looper.getMainLooper());
    // TODO: does the parent ZoomLayout support View.OnScrollChangeListener? see: View.setOnSCrollChangeListener()
    //  But if it was a zoom gesture, some other algorithm has to be used to calculate what new parts come into view.
    //  View.OnScrollChangeListener could be used to draw part of the playmat (only the parts
@@ -76,6 +74,39 @@ public PlayMatView(Context context, @Nullable AttributeSet attrs, int defStyleAt
 public void cancelHandlerDelayed()
 {
    handler.removeCallbacks(delayedLongPress);
+}
+
+public void handleOnPause()
+{
+   fingers = 0;
+   setTouchState(TouchState.NONE);
+}
+
+public void unPause(PuzzleActivity activity)
+{
+   this.activity = activity;
+   this.handler = new Handler(Looper.getMainLooper());
+}
+
+public boolean handleOnBackPressed()
+{
+   if (fingers > 0) {
+      fingers = 0;
+      return true;
+   }
+   
+   if (lastState == TouchState.MENU) {
+      setTouchState(TouchState.NONE); // TODO: hide menu
+      return true;
+   }
+   
+   if (selected > 0) {
+      playMat.deselectAll();
+      selected = 0;
+      return true;
+   }
+   
+   return false; // show backbutton choices in PuzzleActivity
 }
 
 private static class TouchFinger
@@ -92,11 +123,12 @@ public interface PieceOrGroup { }
 private final TouchFinger first = new TouchFinger();
 private final TouchFinger second = new TouchFinger();
 private int fingers;
+private int selected;
 private final Runnable delayedLongPress = ()->{
-   setTouchState(TouchState.HOLD/*, first*/);
+   setTouchState(TouchState.HOLD);
 };
 private TouchState lastState = TouchState.NONE;
-private TouchState predictedUpState = TouchState.NONE;
+//private UpAction predictedUpState = null;
 private PieceOrGroup dragged;
 private PieceOrGroup lastTouched;
 
@@ -108,18 +140,25 @@ private void setTouchState(TouchState newCurrent/*, TouchFinger finger*/)
    if (fingers == 0)
       return;
    
-   // TODO?
+   boolean cancel = false;
+   
    if (newCurrent == TouchState.HOLD) {
       if (lastState == newCurrent) {
-         // trigger menu. or do it in the other method, which only calls setTouchState(NONE)
-         
+      
+      
       }
-      
-      predictedUpState = TouchState.HOLD;
-      
-      // TODO: show something like a menu with low opacity, which materializes on UP. but a second finger
-      //  can cancel HOLD and turn it into FLICK_2_ROTATE // touch first finger and drag/flick with second finger
-   }
+      else if (lastState == TouchState.TOUCH) {
+         // TODO: start animation, first slow, then accelerating, which after another long-press-delay shows menu.
+         // TODO: show signifyer/indicator, something like a menu with low opacity, which materializes on UP.
+         //  but moving the finger turns it into HOLD_DRAG and hides the menu immediately.
+         //  but a second finger can cancel HOLD and turn it into FLICK_2_ROTATE (touch first finger and drag/flick with second finger)
+         //predictedUpState = TouchState.HOLD;
+      }
+      else if (lastState == TouchState.TOUCH_2GR) {
+         // TODO: show signifyer/indicator
+      }
+      else cancel = true;
+   } // newCurrent == HOLD
    
    // TODO: for a DRAG_2_PAN_RV to become PINCH_2_ZOOM_PAN_RV, the distance between fingers
    //  has to significantly change both from lastDistance and from downDistance.
@@ -130,9 +169,9 @@ private void setTouchState(TouchState newCurrent/*, TouchFinger finger*/)
    //  TOUCH_2 or immediately DRAG_2_PAN_RV.
    
    // TODO: after starting DRAG_2GR or HOLD_DRAG_2GR, breaking fingers apart or even lifting second finger are all
-   //  ignored. only first finger is listened to.
-   
-   lastState = newCurrent;
+   //  ignored. only first finger is listened to. but if a new finger is DOWN: CANCEL!
+   if (!cancel)
+      lastState = newCurrent;
 }
 
 /*
@@ -174,16 +213,28 @@ private void setTouchState(TouchState newCurrent/*, TouchFinger finger*/)
    */
 enum TouchState
 {
-   NONE, CLICKED,
+   NONE,
+   CLICKED_ONCE,
+   MENU,
    
-   TOUCH, DOUBLECLICK_TOUCH, HOLD,
-   DRAG, DOUBLECLICK_DRAG_ZOOM, HOLD_DRAG,
+   TOUCH,
+   HOLD,
+   MENU_HOLD,
+   DRAG,
+   HOLD_DRAG,
    
-   // no TOUCH_2,
-   DRAG_2_PAN_RV, FLICK_2_ROTATE, PINCH_2_ZOOM_PAN_RV,
+   DOUBLECLICK_TOUCH,
+   DOUBLECLICK_DRAG_ZOOM,
    
-   TOUCH_2GR, HOLD_2GR,
-   DRAG_2GR, HOLD_DRAG_2GR,
+   // no TOUCH_2, (because no HOLD_2)
+   DRAG_2_PAN_RV,
+   FLICK_2_ROTATE,
+   PINCH_2_ZOOM_PAN_RV,
+   
+   TOUCH_2GR,
+   HOLD_2GR,
+   DRAG_2GR,
+   HOLD_DRAG_2GR,
 }
 
 enum UpAction
@@ -195,14 +246,15 @@ enum UpAction
 public boolean onTouchEvent(MotionEvent ev)
 {
    // TODO: EVENTS (gestures) and ACTIONS that need pairing:
-   //  1-FINGER EVENTS: click, doubleclick, drag/flick, hold, hold_drag after long-click
+   //  1-FINGER EVENTS: click (select/deselect piece, bg: deselect all but only when only 1 piece is selected, otherwise have to use back button)
+   //  , doubleclick (show 1 piece), drag/flick, hold, hold_drag after long-click
    //  2-FINGER EVENTS:
    //   click with two fingers together CLICK_2GR, DRAG_2GR, DRAG_2GR-fling (THROW GROUP), HOLD_DRAG_2GR
    //   long-click HOLD_2GR, FLICK_2_ROTATE (ROTATE PIECE)
-   //   drag with two fingers apart, pinch, rotate with two fingers apart.
+   //   drag/rotate with two fingers apart (DRAG_2_PAN_RV), pinch (PINCH_2_ZOOM_PAN_RV),
    //  DRAG: ( moving diagonally, horizontally, vertically, changing direction, changing velocity ) ?
    //  EVENTS DURING DRAG_DROP: stationary hover over drag target, hover near to edge (edge scrolling), release.
-   //  ACTIONS: (scroll), (zoom), move or rotate piece, zoom in on piece, show PlayMenu, select?, select group?.
+   //  ACTIONS: (scroll), (zoom), move or rotate piece, show one piece zoomed-in, show PlayMenu, select?, select group?.
    //   rotate whole group, rotate all in group but around individual centers.
    
    // TODO: when highlighting a group, do all these things:
@@ -248,6 +300,7 @@ public boolean onTouchEvent(MotionEvent ev)
       // viewConf.getScaledDoubleTapSlop()
       
       setTouchState(TouchState.TOUCH);
+      // TODO: when DOUBLECLICK_TOUCH, also set delay but even longer.
       handler.postDelayed(delayedLongPress, ViewConfiguration.getLongPressTimeout());
       break;
    
@@ -272,7 +325,7 @@ public boolean onTouchEvent(MotionEvent ev)
       
       float diffX = second.downX - first.lastX;
       float diffY = second.downY - first.lastY;
-      double distance = Math.sqrt(diffX * diffX + diffY * diffY);
+      double distance = Math.hypot(diffX, diffY); // Math.sqrt(diffX * diffX + diffY * diffY);
       
       viewConf = ViewConfiguration.get(getContext());
       
@@ -314,7 +367,7 @@ public boolean onTouchEvent(MotionEvent ev)
       switch (lastState) {
       
       case TOUCH:
-         // TODO: only after moving too much (slop) do we cancel delayedLongPress.
+         // TODO: only after moving too much (slop) do we cancel delayedLongPress and setTouchState(DRAG).
          break;
       }
       
@@ -349,7 +402,7 @@ public boolean onTouchEvent(MotionEvent ev)
       
       // TODO: finalize rotate if second finger rotated a piece and left it rotated when lifting finger. or if flicked!
       // TODO: can lifting a second finger do something else?
-      switch (predictedUpState) {
+      switch (lastState) {
       
       }
       
@@ -369,9 +422,13 @@ public boolean onTouchEvent(MotionEvent ev)
       //  https://developer.android.com/reference/android/view/ViewConfiguration#getScaledMinimumFlingVelocity(int,%20int,%20int)
       
       
-      // TODO: if(sensed a click or something) doSomething();
-      switch (predictedUpState) {
+      
+      switch (lastState) {
+      // TODO: if(lastState == HOLD) // trigger menu, call setTouchState(NONE)
+      
+      
       // TODO: when single CLICK, delay! because double click must be able to happen.
+      //  after the delay, set state from CLICKED_ONCE to NONE.
       //ViewConfiguration.getJumpTapTimeout()
       //ViewConfiguration.getDoubleTapTimeout()
       }
@@ -404,6 +461,10 @@ protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec)
    
    PointF topLeft = playMat.getTopLeft();
    PointF bottomRight = playMat.getBottomRight();
+   
+   float w = bottomRight.x - topLeft.x;
+   float h = bottomRight.y - topLeft.y;
+   topLeft.length();
    
    // TODO: calculate PlayMat width and height, and add space for panning outside and for zooming out.
    // TODO: combine with ZoomLayout. see onDraw() below.
@@ -443,11 +504,7 @@ public void onDraw(@NonNull Canvas canvas)
        piece.getPlayMatTranslationAndRotation(), null);
    }
    for (Group group: playMat.groups) {
-      for (AbstractPiece piece: group.getAllPieces()) {
-         // TODO: larger pieces must be in the beginning of the group list.
-         canvas.drawBitmap(piece.getUnrotatedFullSizeGraphics(),
-          piece.getPlayMatTranslationAndRotation(), null);
-      }
+      group.drawOnPlayMat(canvas);
    }
    for (SinglePiece piece: playMat.singlePieces) {
       canvas.drawBitmap(piece.getUnrotatedFullSizeGraphics(),

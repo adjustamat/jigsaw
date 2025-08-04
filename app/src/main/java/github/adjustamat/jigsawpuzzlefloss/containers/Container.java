@@ -13,11 +13,17 @@ public abstract boolean movePieceFrom(Container other, AbstractPiece p);
 
 public abstract boolean moveGroupFrom(Container other, Group group, Context ctx);
 
-public abstract void remove(AbstractPiece p);
+/**
+ * The piece has to still have the index that it had in this container!
+ * @param p a piece to remove from this container
+ */
+public abstract void removeFromContainer(AbstractPiece p);
 
 public abstract void removeGroup(Group group);
 
-public static class Loading extends Container{
+public static class Loading
+ extends Container
+{
    public boolean movePieceFrom(Container other, AbstractPiece p)
    {
       return false;
@@ -28,7 +34,7 @@ public static class Loading extends Container{
       return false;
    }
    
-   public void remove(AbstractPiece p)
+   public void removeFromContainer(AbstractPiece p)
    {
    }
    

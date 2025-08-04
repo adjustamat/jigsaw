@@ -85,9 +85,10 @@ public void onBindViewHolder(@NonNull BoxItemView holder, int position)
       Group group = (Group) or; // Groups in Box have only SinglePieces, no LargerPiece!
       if (group.isExpanded()) {
          int index = position - group.getIndexInContainer();
-         onBind(holder, (SinglePiece) group.getAllPieces().get(index));
+         onBind(holder, (SinglePiece) group.getSinglePieces().get(index));
       }
       else {
+         
          // TODO: generate or get RecyclerView thumbnail from group, see Group.layoutPiecesNoOverlap and Group.dirty
       }
    }
