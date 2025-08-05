@@ -150,13 +150,27 @@ public void loadData(List<Group> playMatGroups,
    }
 }
 
+public AbstractPiece getPieceAt(PointF clickPoint)
+{
+   return null;
+}
+
 /**
  * Handle clicking on the play mat.
  * @param clickPoint the point clicked
  * @return the number of selected pieces on the play mat
  */
-public int selectDeselect(PointF clickPoint){
-
+public int selectDeselect(PointF clickPoint)
+{
+   AbstractPiece piece = getPieceAt(clickPoint);
+   if (piece == null) {
+      // TODO!
+   }
+   else {
+      // TODO!
+   }
+   // TODO: return selected count
+   return 0;
 }
 
 /**
@@ -166,4 +180,5 @@ public void deselectAll()
 {
 
 }
+
 }

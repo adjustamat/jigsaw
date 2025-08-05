@@ -206,11 +206,16 @@ private class Views
 
 private Views ui;
 private PlayMenu menu;
+private BoxAdapter bigBoxAdapter;
+private MiniBoxAdapter miniBoxAdapter;
 
-BoxAdapter bigBoxAdapter;
-MiniBoxAdapter miniBoxAdapter;
+public PlayMenu getMenu()
+{
+   return menu;
+}
 
 private boolean fullscreenMode;
+
 
 /**
  * Whether or not the system UI should be auto-hidden after
@@ -395,6 +400,11 @@ public void onCreate(@Nullable Bundle savedInstanceState)
    readIntent();
 }
 
+public Handler getMainHandler()
+{
+   return mainHandler;
+}
+
 private ImagePuzzle currentGame;
 
 @Override
@@ -411,6 +421,9 @@ public void onResume()
    // are available.
    if (autoFullscreen)
       delayAutoHideUI(INITIAL_AUTO_HIDE_DELAY_MILLIS);
+   
+   // resume PlayMat
+   ui.viewPlayMat.unPause(this);
 }
 
 @Override
@@ -425,6 +438,9 @@ public void onPause()
       window.getDecorView().setSystemUiVisibility(0);
    }
    endFullscreen();
+   
+   // pause PlayMat
+   ui.viewPlayMat.handleOnPause();
 }
 
 private void toggle()
