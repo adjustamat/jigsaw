@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -9,11 +10,13 @@
     tools:ignore="ContentDescription"
     >
 
-<!--  TODO: set CropImageOptions -->
+    <!--  TODO: set CropImageOptions -->
     <com.canhub.cropper.CropImageView android:id="@+id/viewCrop"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="0.5"/>
+        android:layout_weight="0.5"
+        app:cornerShape="oval"
+        />
 
 
     <!--  maybe btnCropOnly is ImageButton with ic_fullscreen  -->
@@ -35,8 +38,8 @@
             android:text="@string/btnStart"/>
         <TextView android:id="@+id/lblNoSizeSelected"
             android:layout_width="wrap_content"
-            android:layout_marginStart="4dp"
             android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
             android:text="@string/lblNoSizeSelected"
             android:textColor="@color/color_placeholder_text"/>
     </LinearLayout>

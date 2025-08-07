@@ -142,7 +142,7 @@ public static void drawPiece(Canvas pieceBufferCanvas, VectorJedges vectorJedges
    
    // offset (translate) BitmapShader to the correct part of the puzzle image:
    shader.setLocalMatrix(vectorJedges.getImageTranslation(theImagePuzzle));
-   //piecePaint.setShader(shader); // TODO: is it necessary to do this again?
+   piecePaint.setShader(shader); // TODO: is it necessary to do this again?
    
    // draw the puzzle piece:
    pieceBufferCanvas.drawPath(pieceShapePath, piecePaint);

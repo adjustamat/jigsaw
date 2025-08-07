@@ -1,6 +1,5 @@
 package github.adjustamat.jigsawpuzzlefloss.ui;
 
-import android.graphics.PointF;
 import android.os.Handler;
 import android.view.View;
 import android.widget.LinearLayout;
@@ -43,14 +42,16 @@ public PlayMenu(PuzzleActivity parent)
 public void hideMenu()
 {
    llhParent.setVisibility(View.GONE);
+   // TODO: cancel animation!
 }
 
-public void solidifyMenu()
+public void showMenuNow()
 {
    // TODO: all children of llv's go from INVISIBLE to VISIBLE. Cancel animation. opacity to full.
 }
 
-public void animateShowMenu(@Nullable AbstractPiece piece, PointF clickPosition)
+public void animateShowMenu(@Nullable AbstractPiece[] piece, float clickX, float clickY, boolean twoFingersTogether,
+ Runnable onMenuFinished)
 {
    // TODO: start animation, first slow, then accelerating, which after another long-press-delay solidifies menu.
    
@@ -63,15 +64,20 @@ public void animateShowMenu(@Nullable AbstractPiece piece, PointF clickPosition)
    //   rotate/modify bg
    //   group pieces together (rectangular selection, custom path selection)
    //    (can move already grouped pieces to new group)
-   //  PIECE:
+   //   ((also find the closest pieces and highlight and show menu for them too.))
+   //  PIECE: (( find all pieces under clickPoint and closeby/near. show all these pieces under the finger, locked too. ))
    //   lockedRotation
    //   lockedInPlace
-   //  PIECE IN A GROUP:
-   //   move whole group (click with second finger while still holding a finger down - disable
+   //  PIECE IN A GROUP: -or- MORE THAN ONE PIECE SELECTED:
+   //   move whole group (click with second finger while still holding a finger down - DO NOT disable
    //    this menu item if the first finger lifts while menu is showing)
+   //   rotate whole group,
+   //   rotate all in group but around individual centers. (not just for group, also just several selected pieces)
+   
+   // during an automation-animation, the view does not respond to any touch events.
    
    // TODO: set position of llhParent after knowing how many menu items will show.
-   //  center menu around clickPosition, but avoid a circle around it. Use margins to jump over clickPosition
+   //  center menu around clickPoint, but avoid a circle around it. Use margins to jump over clickPoint
    
    // TODO: Consider screen orientation.
    llhParent.setVisibility(View.VISIBLE);

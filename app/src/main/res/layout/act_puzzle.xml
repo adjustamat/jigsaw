@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/frameFullscreenLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -16,6 +17,18 @@
     TODO: temporary views (view_temporary_container) can be children of frameFullscreenLayout.
       add dropzone views along the edges of the screen (transparent but show indicators when hovering) when starting
       drag of temporary view. -->
+
+    <com.canhub.cropper.CropImageView android:id="@+id/viewPiece"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone"
+        app:cropShowCropOverlay="false"
+        app:cropGuidelines="off"
+        app:cropAutoZoomEnabled="false"
+        app:cropBorderLineThickness="0px"
+        app:cropCenterMoveEnabled="false"
+        />
+<!-- TODO: make sure to show the piece in viewPiece with the current rotation, so no hint is given to the piece's correct rotation! -->
 
     <LinearLayout android:id="@+id/llhMenus"
         android:layout_width="wrap_content"

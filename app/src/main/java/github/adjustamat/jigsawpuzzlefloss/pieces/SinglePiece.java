@@ -35,23 +35,23 @@ class SinglePieceJedges
  extends VectorJedges
 {
    final PieceJedge[] nesw = new PieceJedge[4];
-   final JedgeParams[] neswParameters = new JedgeParams[4]; // TODO: remove?
+   final JedgeParams[] neswParameters = new JedgeParams[4];
    
-   public SinglePieceJedges(HalfJedge[][] pool,
-    int x, int y, RandomJedges parameters
+   public SinglePieceJedges(int x, int y, RandomJedges parameters
     //@Nullable JedgeParams north, @Nullable JedgeParams east, @Nullable JedgeParams south, @Nullable JedgeParams west
    )
    {
-      neswParameters[0] = parameters.getNorth(x, y);
-      neswParameters[1] = parameters.getEast(x, y);
-      neswParameters[2] = parameters.getSouth(x, y);
-      neswParameters[3] = parameters.getWest(x, y);
-      for (Direction d: Direction.values()) { // for(int i = 0; i < 4; i++)
-         int i = d.ordinal(); // Direction d = Direction.values()[i];
-         nesw[i] = neswParameters[i] != null
-          ?neswParameters[i].init(pool, d)
-          :PieceJedge.getEdgeJedge(d);
-      }
+      neswParameters[0] = parameters.getNorthParams(x, y);
+      neswParameters[1] = parameters.getEastParams(x, y);
+      neswParameters[2] = parameters.getSouthParams(x, y);
+      neswParameters[3] = parameters.getWestParams(x, y);
+//      for (Direction d: Direction.values()) { // for(int i = 0; i < 4; i++)
+//         int i = d.ordinal(); // Direction d = Direction.values()[i];
+//         nesw[i] = neswParameters[i] != null
+//          ?neswParameters[i].getDoubleJedge( d)
+//          :PieceJedge.getEdgeJedge(d);
+//      }
+      
       nesw[3].linkNext(nesw[0].linkNext(nesw[1].linkNext(nesw[2].linkNext(nesw[3]))));
    }
    
@@ -114,9 +114,9 @@ public static SinglePiece deserialize(Parcel in, Container container, int i,
    
    return new SinglePiece(container, i,
     rotation, correct, relative, lockedRotation, lockedPlace,
-    randomJedges,
+    randomJedges
     //north, east, south, west,
-    pool);
+   );
 }
 
 /**
@@ -124,14 +124,13 @@ public static SinglePiece deserialize(Parcel in, Container container, int i,
  */
 private SinglePiece(Container loading, int indexInContainer,
  Direction rotation, Point correct, PointF relative, boolean lockedRotation, boolean lockedPlace,
- RandomJedges randomJedges,
+ RandomJedges randomJedges
  //@Nullable JedgeParams north, @Nullable JedgeParams east, @Nullable JedgeParams south, @Nullable JedgeParams west,
- HalfJedge[][] pool
 )
 {
    super(loading, indexInContainer,
     rotation, correct, relative, lockedRotation, lockedPlace);
-   vectorJedges = new SinglePieceJedges(pool, correct.x, correct.y, randomJedges);
+   vectorJedges = new SinglePieceJedges(correct.x, correct.y, randomJedges);
 }
 
 /**
@@ -141,12 +140,13 @@ public SinglePiece(ImagePuzzle imagePuzzle, int indexInBox,
 // Point coordinates,
 // @Nullable JedgeParams north, @Nullable JedgeParams east, @Nullable JedgeParams south, @Nullable JedgeParams west,
  int x, int y,
- HalfJedge[][] pool, int randomRotation
+// HalfJedge[][] pool,
+ int randomRotation
 )
 {
    super(imagePuzzle.singlePiecesContainer, indexInBox,
     Direction.values()[randomRotation], new Point(x, y));
-   vectorJedges = new SinglePieceJedges(pool, x, y, imagePuzzle.randomJedges);
+   vectorJedges = new SinglePieceJedges(x, y, imagePuzzle.randomJedges);
 }
 
 //public Color getColor(){

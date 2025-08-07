@@ -232,7 +232,7 @@ protected Path bufferedPath = null;
 protected Bitmap buffer; // TODO: image loader? no, this buffer can't exist in memory. (?)
 
 public Bitmap getUnrotatedFullSizeGraphics()
-{
+{ // TODO: maybe this method should return Rotated FullSize graphics!
    if (buffer == null) { // TODO: for LargerPieces: make buffer=null when it grows!
       VectorJedges vectorJedges = getVectorJedges();
       int width = vectorJedges.width();
@@ -302,7 +302,7 @@ public PointF getCurrentJigBreadth()
 }
 
 public abstract class VectorJedges
-{ // TODO: perhaps we don't need VectorJedges at all, just JedgeParams.init and a buffer in LargerPiece with calculated outerJedges and holes.
+{ // TODO: perhaps we don't need VectorJedges at all, just JedgeParams, RandomJedges, and a buffer in LargerPiece with calculated outerJedges and holes.
 //   /**
 //    * Create a closed vector graphics Path of the outer edge of this AbstractPiece, with the supplied top-left corner.
 //    * @param startX X of the top-left corner

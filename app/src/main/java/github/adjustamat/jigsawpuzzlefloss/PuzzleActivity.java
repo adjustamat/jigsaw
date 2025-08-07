@@ -4,6 +4,8 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Configuration;
+import android.graphics.Bitmap;
+import android.graphics.Point;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
@@ -36,12 +38,15 @@ import androidx.recyclerview.widget.RecyclerView.OnItemTouchListener;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.MemoryCategory;
+import com.canhub.cropper.CropImageView;
 
 import java.util.Random;
 
 import github.adjustamat.jigsawpuzzlefloss.db.DB;
 import github.adjustamat.jigsawpuzzlefloss.db.Global;
 import github.adjustamat.jigsawpuzzlefloss.game.ImagePuzzle;
+import github.adjustamat.jigsawpuzzlefloss.pieces.LargerPiece;
+import github.adjustamat.jigsawpuzzlefloss.pieces.SinglePiece;
 import github.adjustamat.jigsawpuzzlefloss.ui.BoxAdapter;
 import github.adjustamat.jigsawpuzzlefloss.ui.BoxAdapter.MiniBoxAdapter;
 import github.adjustamat.jigsawpuzzlefloss.ui.MiniMapView;
@@ -64,7 +69,7 @@ private class Views
 {
    final FrameLayout frameFullscreenLayout;
    final LinearLayout llvPuzzleActivity;
-   
+   final CropImageView viewPiece;
    //final ZoomLayout viewPlayMatParent;
    final PlayMatView viewPlayMat;
    
@@ -81,15 +86,17 @@ private class Views
    final OnItemTouchListener miniBoxItemTouchListener;
    final LayoutParams boxParams;
    final int miniBoxHeight;
-   boolean big = true; // initially true, so setMiniBoxLayout works.
+   boolean big = true; // initially true, so that setMiniBoxLayout() works.
+   
+   // TODO: hide llvPuzzleActivity when viewPiece is visible.
    
    public Views(Context ctx)
    {
       this.frameFullscreenLayout = findViewById(R.id.frameFullscreenLayout);
       this.llvPuzzleActivity = findViewById(R.id.llvPuzzleActivity);
+      this.viewPiece = findViewById(R.id.viewPiece);
       
-      // TODO: construct PlayMatView here! Combine ZoomLayout into PlayMatView.
-//      this.viewPlayMatParent = findViewById(R.id.viewPlayMatParent);
+      // construct PlayMatView here?
       this.viewPlayMat = findViewById(R.id.viewPlayMat);
       
       this.imgSeparator = findViewById(R.id.imgSeparator);
@@ -159,6 +166,42 @@ private class Views
       });
    }
    
+   private void showSinglePiece(LargerPiece largerPiece, Point subPiece)
+   {
+      Bitmap bitmap = largerPiece.getSinglePieceGraphics(subPiece);
+      // TODO: rotate to piece.currentNorthDirection
+      viewPiece.setImageBitmap(bitmap);
+      showSinglePieceView();
+   }
+   
+   private void showSinglePiece(SinglePiece piece)
+   {
+      Bitmap bitmap = piece.getUnrotatedFullSizeGraphics();
+      // TODO: rotate to piece.currentNorthDirection
+      viewPiece.setImageBitmap(bitmap);
+      showSinglePieceView();
+   }
+   
+   private void showSinglePieceView()
+   {
+      // TODO: save previous visibility of these 3 so they can be restored:
+      llhBottom.setVisibility(View.GONE);
+      viewPlayMat.setVisibility(View.GONE);
+      imgSeparator.setVisibility(View.GONE);
+      
+      viewPiece.setVisibility(View.VISIBLE);
+   }
+   
+   private void hideSinglePiece()
+   {
+      viewPiece.setVisibility(View.GONE);
+      
+      // TODO: save previous visibility in showSinglePiece()
+      llhBottom.setVisibility(View.VISIBLE);
+      viewPlayMat.setVisibility(View.VISIBLE);
+      imgSeparator.setVisibility(View.VISIBLE);
+   }
+   
    private void setBigBoxLayout(int height)
    {
       
@@ -215,7 +258,6 @@ public PlayMenu getMenu()
 }
 
 private boolean fullscreenMode;
-
 
 /**
  * Whether or not the system UI should be auto-hidden after

@@ -1,5 +1,8 @@
 package github.adjustamat.jigsawpuzzlefloss.pieces;
 
+import android.graphics.Bitmap;
+import android.graphics.Bitmap.Config;
+import android.graphics.Canvas;
 import android.graphics.Path;
 import android.graphics.Point;
 import android.graphics.PointF;
@@ -18,6 +21,7 @@ import github.adjustamat.jigsawpuzzlefloss.pieces.PieceJedge.DoubleJedge;
 import github.adjustamat.jigsawpuzzlefloss.pieces.PieceJedge.JedgeParams;
 import github.adjustamat.jigsawpuzzlefloss.pieces.SinglePiece.SinglePieceJedges;
 import github.adjustamat.jigsawpuzzlefloss.ui.BorderDrawable;
+import github.adjustamat.jigsawpuzzlefloss.ui.PuzzleGraphics;
 
 /**
  * Two or more {@link SinglePiece}s that fit together.
@@ -108,6 +112,18 @@ public static LargerPiece deserialize(Parcel in, Container container, int i)
     rotation, correct, relative, lockedRotation, lockedPlace,
     in
    );
+}
+
+public Bitmap getSinglePieceGraphics(Point subPiece)
+{
+   VectorJedges vectorJedges = getVectorJedges();
+   int width = AbstractPiece.MAX_BUFFER_SIZE; // vectorJedges.width();
+   int height = AbstractPiece.MAX_BUFFER_SIZE; // vectorJedges.height();
+   Bitmap b = Bitmap.createBitmap(width, height, Config.ARGB_8888);
+   Canvas canvas = new Canvas(b);
+   PuzzleGraphics.drawSubPiece(canvas, vectorJedges, subPiece, width, height);
+   // TODO: render just like in SinglePiece.java - maybe not use vectorJedges but new datatype that just uses data in ImagePuzzle.
+   return null;
 }
 
 private static class HoleIndex

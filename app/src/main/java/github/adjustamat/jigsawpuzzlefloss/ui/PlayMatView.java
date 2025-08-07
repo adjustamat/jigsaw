@@ -74,7 +74,7 @@ public PlayMatView(Context context, @Nullable AttributeSet attrs, int defStyleAt
 
 public void cancelHandlerDelayed()
 {
-   handler.removeCallbacks(delayedLongPress);
+   handler.removeCallbacks(onLongHold);
 }
 
 public void handleOnPause()
@@ -138,7 +138,7 @@ private TouchState lastState = TouchState.NONE;
 
 public interface PieceOrGroup { }
 
-private AbstractPiece lastTouched; // we can always see if the piece is in a group.
+private AbstractPiece[] lastTouched; // we can always see if the piece is in a group.
 
 private PieceOrGroup dragged;
 
@@ -146,48 +146,73 @@ private PieceOrGroup dragged;
 public AbstractPiece transparentDraggedPiece;
 public Group transparentDraggedGroup;
 
-private final Runnable delayedLongPress = ()->{
-   if (lastState == TouchState.TOUCH || lastState == TouchState.DOUBLECLICK_TOUCH) {
-      { // TODO: synchronized?
-         PointF clickPoint = new PointF(first.downX, first.downY);
-         menu.animateShowMenu(playMat.getPieceAt(clickPoint), clickPoint);
-         setTouchState(TouchState.HOLD);
-      }
+private final Runnable onSingleTap = ()->{
+   if (lastState == TouchState.TAP_ONE)
+      selected = playMat.selectOrDeselect(first.downX, first.downY); // perform click!
+   setTouchState(TouchState.NONE);
+};
+
+private final Runnable onLongerHoldMenuFinished = ()->{
+   setTouchState(TouchState.MENU_HOLD);
+};
+
+private final Runnable onLongHold = ()->{
+//   synchronized (first) {
+   if (fingers == 0)
+      return;
+   if (lastState == TouchState.TOUCH || lastState == TouchState.DBLTAP_TOUCH) {
+      setTouchState(TouchState.HOLD);
+      //PointF clickPoint = new PointF(first.downX, first.downY);
+      menu.animateShowMenu(lastTouched, first.downX, first.downY,
+       false, onLongerHoldMenuFinished);
    }
    else if (lastState == TouchState.TOUCH_2GR) {
+      menu.animateShowMenu(lastTouched, first.downX, first.downY,
+       true, onLongerHoldMenuFinished);
       setTouchState(TouchState.HOLD_2GR);
    }
    // else do nothing
+//   } // synchronized(first)
 };
 
-private void setTouchState(TouchState newCurrent/*, TouchFinger finger*/)
-{
-   if (fingers == 0 || newCurrent == null || newCurrent == TouchState.NONE) {
-      fingers = 0;
-      lastState = TouchState.NONE;
-      return;
+private void setTouchState(@NonNull TouchState newCurrent)
+{ // all calls to this method should be done inside a synchronized (first) {   } // no, everything is in UI-thread.
+   if (lastState == TouchState.AUTOMATING) {
+      if (newCurrent == TouchState.AUTOMATING_DONE)
+         newCurrent = TouchState.NONE;
+      else
+         return;
    }
-   
-   
+   if (newCurrent == TouchState.NONE) {
+      fingers = 0;
+      // TODO: cancel (menu) animations and Runnables!
+   }
+//   if(newCurrent == TouchState.AUTOMATING){
+//      fingers = 0;
+//   }
+
+//   if(fingers==0)
+//      newCurrent = TouchState.NONE;
    lastState = newCurrent;
 }
 
 enum TouchState
 {
    NONE,
-   CLICKED_ONCE,
+   TAP_ONE, // CLICKED_ONCE
    MENU,
    MENU_GROUP,
+   AUTOMATING, // complex animation
+   AUTOMATING_DONE,
    
    TOUCH,
    HOLD,
    MENU_HOLD,
-   MENU_GROUP_HOLD_DRAG,
    DRAG,
-   HOLD_DRAG,
+   MENU_GROUP_HOLD_DRAG,
    
-   DOUBLECLICK_TOUCH,
-   DOUBLECLICK_DRAG_ZOOM,
+   DBLTAP_TOUCH,
+   DBLTAP_DRAG_ZOOM,
    
    TOUCH_2,
    FLICK_2_ROTATE,
@@ -196,10 +221,9 @@ enum TouchState
    LIFTED_PAN_RV,
    
    TOUCH_2GR,
-   HOLD_2GR, // maybe never used - do not use delay!
+   HOLD_2GR,
    DRAG_2GR,
-   HOLD_DRAG_2GR, // maybe never used
-   LIFTED_2GR_CLICK,
+   LIFTED_2GR_TAP,
    LIFTED_2GR
 }
 
@@ -207,21 +231,27 @@ enum TouchState
 public boolean onTouchEvent(MotionEvent ev)
 {
    // TODO: EVENTS (gestures) and ACTIONS that need pairing:
-   //  1-FINGER EVENTS: click (select/deselect piece, bg: deselect all but only when only 1 piece is selected, otherwise have to use back button)
-   //  , doubleclick (show 1 piece), drag/flick, hold, hold_drag after long-click
+   //  1-FINGER EVENTS:
+   //   tap - (Runnable!) select/deselect piece, bg: deselect all but only when only 1 piece is selected, otherwise have to use back button
+   //   doubletap - show one piece zoomed-in
+   //   doubletouch-drag - zoom only, send touch events that zoom and scroll to ZoomEngine
+   //   drag - move or rotate piece, bg: do nothing, or show Box on vertical movement
+   //   drag-flick - throw piece to new(ask!) temporary container, detect flick on UP, save the last few drag events (when a temporary container already exists, require much less speed to flick, but always show an undo button attached to the temporary container!)
+   //   hold - show PlayMenu
    //  2-FINGER EVENTS:
-   //   click with two fingers together CLICK_2GR, DRAG_2GR, DRAG_2GR-fling (THROW GROUP), HOLD_DRAG_2GR
-   //   long-click HOLD_2GR, FLICK_2_ROTATE (ROTATE PIECE)
-   //   drag/rotate with two fingers apart (DRAG_2_PAN_RV), pinch (PINCH_2_ZOOM_PAN_RV),
-   //  DRAG: ( moving diagonally, horizontally, vertically, changing direction, changing velocity ) ?
-   //  EVENTS DURING DRAG_DROP: stationary hover over drag target, hover near to edge (edge scrolling), release.
-   //  ACTIONS: (scroll), (zoom), move or rotate piece, show one piece zoomed-in, show PlayMenu, select?, select group?.
-   //   rotate whole group, rotate all in group but around individual centers.
+   //   tap_2GR (click with two fingers together) - select group
+   //   DRAG_2GR - move selected group, bg: move closest group
+   //   DRAG_2GR-flick - throw group to new(ask!) temporary container, detect flick on UP, save the last few drag events
+   //   HOLD_2GR - show PlayMenu
+   //   FLICK_2_ROTATE - rotate piece
+   //   DRAG_2_PAN_RV (drag/rotate with two fingers apart) - scroll and rotate view, send touch events that zoom and scroll to ZoomEngine
+   //   PINCH_2_ZOOM_PAN_RV - zoom and scroll and rotate view in 90 degree increments (like FLICK_2_ROTATE but without UP event needed, show indicator icon instead of rotating with outlines)
    
+   //  EVENTS DURING DRAG_DROP:
+   //   stationary hover over drag target - (Runnable, only a short delay - show PlayMenu)
+   //   hover near to edge - (Runnable which copies itself (loops) - edge scrolling while dragging)
+   //   release (drop) - (save the last few drag events, see if pieces were moved together and negative acceleration or stopped a few milliseconds, make a sound and visible indicator that the pieces did or didn't fit together.)
    
-   
-   // TODO: send touch events that zoom and scroll to parent ZoomLayout by returning false,
-   //  or modify https://github.com/natario1/ZoomLayout (ZoomImageView) to handle all touch events in one class
    int prevFingers = fingers;
    ViewConfiguration viewConf;
    switch (ev.getActionMasked()) {
@@ -245,6 +275,11 @@ public boolean onTouchEvent(MotionEvent ev)
       first.maxFat = first.downFat = first.lastFat = ev.getSize(0);
       fingers = 1;
       
+      lastTouched = playMat.getPieceAt(first.lastX, first.lastY);
+      
+      getParent().requestDisallowInterceptTouchEvent(true);
+      
+      // TODO: maybe if it's fat enough, move directly to TOUCH_2GR and fingers = 2;
       
       viewConf = ViewConfiguration.get(getContext());
       
@@ -256,7 +291,7 @@ public boolean onTouchEvent(MotionEvent ev)
       
       setTouchState(TouchState.TOUCH);
       // TODO: when DOUBLECLICK_TOUCH, also set delay but even longer.
-      handler.postDelayed(delayedLongPress, ViewConfiguration.getLongPressTimeout());
+      handler.postDelayed(onLongHold, ViewConfiguration.getLongPressTimeout());
       break;
    
    case MotionEvent.ACTION_POINTER_DOWN:
@@ -370,6 +405,8 @@ public boolean onTouchEvent(MotionEvent ev)
       if (fingers == 0)
          break;
       fingers = 0; // last finger up.
+      
+      getParent().requestDisallowInterceptTouchEvent(false);
       
       viewConf = ViewConfiguration.get(getContext());
       

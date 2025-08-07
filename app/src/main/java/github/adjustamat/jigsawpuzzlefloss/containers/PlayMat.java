@@ -150,24 +150,28 @@ public void loadData(List<Group> playMatGroups,
    }
 }
 
-public AbstractPiece getPieceAt(PointF clickPoint)
+public AbstractPiece[] getPieceAt(float clickX, float clickY)
+{
+   return null;
+}
+
+public Group getClosestGroup(float clickX, float clickY)
 {
    return null;
 }
 
 /**
  * Handle clicking on the play mat.
- * @param clickPoint the point clicked
  * @return the number of selected pieces on the play mat
  */
-public int selectDeselect(PointF clickPoint)
+public int selectOrDeselect(float clickX, float clickY)
 {
-   AbstractPiece piece = getPieceAt(clickPoint);
+   AbstractPiece[] piece = getPieceAt(clickX, clickY);
    if (piece == null) {
-      // TODO!
+      // TODO: if only one piece is selected, deselect it. otherwise, do nothing.
    }
    else {
-      // TODO!
+      // select or deselect piece
    }
    // TODO: return selected count
    return 0;
@@ -178,7 +182,7 @@ public int selectDeselect(PointF clickPoint)
  */
 public void deselectAll()
 {
-
+   // Called on BackPressed
 }
 
 }

@@ -16,7 +16,7 @@ import github.adjustamat.jigsawpuzzlefloss.game.Direction;
  * A jigsaw edge, or straight edge for a puzzle "edge piece" (see {@link AbstractPiece#isEdgePiece()}), being one of four sides of a SinglePiece.
  */
 public abstract class PieceJedge
- implements Parcelable
+// implements Parcelable
 {
 private static final Line STRAIGHT_NORTH = new Line(new float[]{120f, 0f});
 private static final Line STRAIGHT_EAST = new Line(new float[]{0f, 120f});
@@ -24,38 +24,38 @@ private static final Line STRAIGHT_SOUTH = new Line(new float[]{-120f, 0f});
 private static final Line STRAIGHT_WEST = new Line(new float[]{0f, -120f});
 public static final float STRAIGHT_EDGE_WIDTH = 0f;
 
-public static final Creator<PieceJedge> CREATOR = new Creator<PieceJedge>()
-{
-   /**
-    * {@link JedgeParams#init(HalfJedge[][], Direction)}
-    * @param in The Parcel to read the object's data from.
-    * @return an EdgeJedge or DoubleJedge
-    */
-   @Override
-   public PieceJedge createFromParcel(Parcel in)
-   {
-      switch (in.readInt()) {
-      case 0:
-         return new EdgeJedge(STRAIGHT_NORTH);
-      case 1:
-         return new EdgeJedge(STRAIGHT_EAST);
-      case 2:
-         return new EdgeJedge(STRAIGHT_SOUTH);
-      case 3:
-         return new EdgeJedge(STRAIGHT_WEST);
-      default:
-         // TODO: here's all the trouble. cannot create a DoubleJedge from parcel, need to use
-         //  JedgeParams.init(HalfJedge[][] pool, Direction dir) !!
-         return ;//new DoubleJedge();
-      }
-   }
-   
-   @Override
-   public PieceJedge[] newArray(int size)
-   {
-      return new PieceJedge[size];
-   }
-};
+//public static final Creator<PieceJedge> CREATOR = new Creator<PieceJedge>()
+//{
+//   /**
+//    * {@link JedgeParams#getDoubleJedge(ImagePuzzle, Direction)}
+//    * @param in The Parcel to read the object's data from.
+//    * @return an EdgeJedge or DoubleJedge
+//    */
+//   @Override
+//   public PieceJedge createFromParcel(Parcel in)
+//   {
+//      switch (in.readInt()) {
+//      case 0:
+//         return new EdgeJedge(STRAIGHT_NORTH);
+//      case 1:
+//         return new EdgeJedge(STRAIGHT_EAST);
+//      case 2:
+//         return new EdgeJedge(STRAIGHT_SOUTH);
+//      case 3:
+//         return new EdgeJedge(STRAIGHT_WEST);
+//      default:
+//         // TODO: here's all the trouble. cannot create a DoubleJedge from parcel, need to use
+//         //  JedgeParams.getDoubleJedge() !!
+//         return ;
+//      }
+//   }
+//
+//   @Override
+//   public PieceJedge[] newArray(int size)
+//   {
+//      return new PieceJedge[size];
+//   }
+//};
 
 public static EdgeJedge getEdgeJedge(Direction d)
 {
@@ -478,32 +478,31 @@ public static class JedgeParams
       neck2 = rng.nextInt(3);
    }
    
-   public DoubleJedge getDoubleJedge(){
-      return doubleJedge;
-   }
-   
    /*
-   TODO: perhaps we don't need VectorJedges at all, just JedgeParams.init and a buffer in LargerPiece with calculated outerJedges and holes.
+   TODO: perhaps we don't need VectorJedges at all, just this method, and a buffer in LargerPiece with calculated outerJedges and holes.
     */
-   public DoubleJedge init(HalfJedge[][] pool, Direction dir)
-   {
-      int rotationIndex;
-      switch (dir) {
-      case EAST: case SOUTH:
-         rotationIndex = (in ?4 :0) + dir.ordinal();
-         return doubleJedge = new DoubleJedge(
-          pool[neck1 * 6 + curv1 * 2][rotationIndex],
-          pool[neck2 * 6 + curv2 * 2 + 1][rotationIndex]
-         );
-      default: // WEST: NORTH:
-         // in/out is flipped:
-         rotationIndex = (in ?0 :4) + dir.ordinal();
-         return doubleJedge = new DoubleJedge(
-          // first/second is flipped:
-          pool[neck2 * 6 + curv2 * 2][rotationIndex],
-          pool[neck1 * 6 + curv1 * 2 + 1][rotationIndex]
-         );
+   public @NonNull DoubleJedge getDoubleJedge(Direction dir){
+      if(doubleJedge==null){
+         getAllJigsawEdges(); // generate pool if not already generated.
+         int rotationIndex;
+         switch (dir) {
+         case EAST: case SOUTH:
+            rotationIndex = (in ?4 :0) + dir.ordinal();
+            doubleJedge = new DoubleJedge(
+             pool[neck1 * 6 + curv1 * 2][rotationIndex],
+             pool[neck2 * 6 + curv2 * 2 + 1][rotationIndex]
+            );
+         default: // WEST: NORTH:
+            // in/out is flipped:
+            rotationIndex = (in ?0 :4) + dir.ordinal();
+            doubleJedge = new DoubleJedge(
+             // first/second is flipped:
+             pool[neck2 * 6 + curv2 * 2][rotationIndex],
+             pool[neck1 * 6 + curv1 * 2 + 1][rotationIndex]
+            );
+         }
       }
+      return doubleJedge;
    }
 } // class JedgeParams
 }
