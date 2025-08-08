@@ -7,7 +7,10 @@ import android.graphics.PointF;
 import android.os.Handler;
 import android.os.SystemClock;
 import android.util.AttributeSet;
+import android.view.GestureDetector;
 import android.view.MotionEvent;
+import android.view.ScaleGestureDetector;
+import android.view.VelocityTracker;
 import android.view.View;
 import android.view.ViewConfiguration;
 
@@ -81,6 +84,10 @@ public void handleOnPause()
 {
    fingers = 0; // cancel all touch events
    setTouchState(TouchState.NONE);
+   
+   activity = null;
+   handler = null;
+   menu = null;
 }
 
 public void unPause(PuzzleActivity activity)
@@ -88,6 +95,13 @@ public void unPause(PuzzleActivity activity)
    this.activity = activity;
    this.handler = activity.getMainHandler();
    this.menu = activity.getMenu();
+   ViewConfiguration viewConf = ViewConfiguration.get(activity);
+   bigSlopSqd = viewConf.getScaledPagingTouchSlop();
+   bigSlopSqd *= bigSlopSqd;
+   slopSqd = viewConf.getScaledTouchSlop();
+   slopSqd *= slopSqd;
+   doubleTapSlopSqd = viewConf.getScaledDoubleTapSlop();
+   doubleTapSlopSqd *= doubleTapSlopSqd;
 }
 
 public boolean handleOnBackPressed()
@@ -125,24 +139,28 @@ private static class TouchFinger
     maxFat;
 }
 
+private int fingers;
+private TouchState lastState = TouchState.NONE;
+private boolean movingSelection; // selected pieces/groups is in PlayMat
+private boolean movingPiece; // lastTouched[0] (lastTouched should be only one piece)
+private boolean movingGroup; // lastTouched[0].group
+
 private final TouchFinger first = new TouchFinger();
 private final TouchFinger second = new TouchFinger();
 private float downAngle,
  lastAngle;
-private double downDistance,
- lastDistance;
+private double downDistanceSqd,
+ lastDistanceSqd;
 
-private int fingers;
+private int slopSqd;
+private int doubleTapSlopSqd;
+private int bigSlopSqd;
+
 private int selected;
-private TouchState lastState = TouchState.NONE;
+private AbstractPiece[] lastTouched;
 
-public interface PieceOrGroup { }
-
-private AbstractPiece[] lastTouched; // we can always see if the piece is in a group.
-
-private PieceOrGroup dragged;
-
-// draw transparentDragged with low opacity (when placing something from another Container)
+// TODO: draw transparent piece/group with low opacity (when placing something from another Container)
+//  draw transparentDraggedGroup as only outlines (lonely piece becomes draggedPiece)
 public AbstractPiece transparentDraggedPiece;
 public Group transparentDraggedGroup;
 
@@ -153,8 +171,19 @@ private final Runnable onSingleTap = ()->{
 };
 
 private final Runnable onLongerHoldMenuFinished = ()->{
-   setTouchState(TouchState.MENU_HOLD);
+   if (fingers == 0)
+      setTouchState(TouchState.MENU);
+   else
+      setTouchState(TouchState.MENU_HOLD);
 };
+
+public void setMenuGroupDrag()
+{
+   if (fingers == 0)
+      setTouchState(TouchState.MENU_GROUP);
+   else
+      setTouchState(TouchState.MENU_GROUP_HOLD_DRAG);
+}
 
 private final Runnable onLongHold = ()->{
 //   synchronized (first) {
@@ -167,9 +196,9 @@ private final Runnable onLongHold = ()->{
        false, onLongerHoldMenuFinished);
    }
    else if (lastState == TouchState.TOUCH_2GR) {
+      setTouchState(TouchState.HOLD_2GR);
       menu.animateShowMenu(lastTouched, first.downX, first.downY,
        true, onLongerHoldMenuFinished);
-      setTouchState(TouchState.HOLD_2GR);
    }
    // else do nothing
 //   } // synchronized(first)
@@ -199,11 +228,11 @@ private void setTouchState(@NonNull TouchState newCurrent)
 enum TouchState
 {
    NONE,
-   TAP_ONE, // CLICKED_ONCE
+   TAP_ONE,
    MENU,
    MENU_GROUP,
    AUTOMATING, // complex animation
-   AUTOMATING_DONE,
+   AUTOMATING_DONE, // special case of NONE
    
    TOUCH,
    HOLD,
@@ -260,13 +289,6 @@ public boolean onTouchEvent(MotionEvent ev)
    //  has to significantly change both from lastDistance and from downDistance.
    
    
-   
-   // TODO: after HOLD, DRAG, or HOLD_DRAG: TOUCH_2GR no longer possible, instead becomes
-   //  TOUCH_2 or immediately DRAG_2_PAN_RV.
-   
-   // TODO: after starting DRAG_2GR or HOLD_DRAG_2GR, breaking fingers apart or even lifting second finger are all
-   //  ignored. only first finger is listened to. but if a new finger is DOWN: CANCEL!
-   
    case MotionEvent.ACTION_DOWN:
       first.id = ev.getPointerId(0);
       first.down = SystemClock.elapsedRealtime();
@@ -315,7 +337,8 @@ public boolean onTouchEvent(MotionEvent ev)
       
       float diffX = second.downX - first.lastX;
       float diffY = second.downY - first.lastY;
-      downDistance = lastDistance = Math.hypot(diffX, diffY); // Math.sqrt(diffX * diffX + diffY * diffY);
+      downDistanceSqd = lastDistanceSqd = diffX * diffX + diffY * diffY;
+      // Math.hypot(diffX, diffY); // Math.sqrt(diffX * diffX + diffY * diffY);
       downAngle = lastAngle = (float) Math.atan2(diffY, diffX);
       
       
@@ -334,20 +357,21 @@ public boolean onTouchEvent(MotionEvent ev)
       if (fingers == 0)
          break;
       
-      // TODO: when touching two fingers 2gr, ignore all ACTION_MOVE with non-primary finger.
-      
       int id = ev.getPointerId(ev.getActionIndex());
-      
       if (id == first.id) {
       
       }
       else {
-      
+         // TODO: when touching two fingers together, .
+         //  after starting DRAG_2GR, breaking fingers apart or even lifting second finger (LIFTED_2GR) are all
+         //  ignored. only first finger is listened to. (ignore all ACTION_MOVE with non-primary finger)
+         //  but if a new finger is DOWN: CANCEL!
+         
       }
       
       // THROW (same as DRAG) // THROW_2GR (same as DRAG_2GR)
       
-      viewConf = ViewConfiguration.get(getContext());
+      // TODO: do this in unPause() : viewConf = ViewConfiguration.get(getContext());
       
       //ViewConfigurationCompat.getScaledHorizontalScrollFactor()
       //ViewConfigurationCompat.getScaledVerticalScrollFactor()
@@ -381,6 +405,12 @@ public boolean onTouchEvent(MotionEvent ev)
          // TODO: is ViewConfiguration.getTapTimeout() useful?
          break;
       }
+      
+      /** TODO
+       * @see VelocityTracker
+       * @see GestureDetector
+       * @see ScaleGestureDetector
+       */
       
       // TODO: after DRAG_2GR or HOLD_2GR, no CLICK_2GR!
       
