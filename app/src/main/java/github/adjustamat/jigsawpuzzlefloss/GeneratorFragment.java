@@ -10,7 +10,6 @@ import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.SurfaceHolder;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
@@ -97,7 +96,7 @@ private class CustomSizeListener
    }
 }
 
-private class SizeOption
+private static class SizeOption
 {
    final AppCompatRadioButton radioButton;
    final int circa;
@@ -171,7 +170,6 @@ private class SizeOption
 }
 
 private class Views
- implements SurfaceHolder.Callback
 {
    final CropImageView viewCrop;
    final Button btnCropOnly;
@@ -298,7 +296,6 @@ private class Views
    
    /**
     * TODO: maybe change some settings of the view, see {@link CropImageOptions}
-    * @param free
     */
    void setFreeCropMode(boolean free)
    {
@@ -367,31 +364,6 @@ private class Views
          llvGeneratorSizes.addView(option.radioButton, i++);
       }
    }
-   
-   public void surfaceCreated(@NonNull SurfaceHolder holder)
-   {
-   
-   }
-   
-   public void surfaceChanged(@NonNull SurfaceHolder holder, int format, int width, int height)
-   {
-   
-   }
-   
-   public void surfaceDestroyed(@NonNull SurfaceHolder holder)
-   {
-   
-   }
-
-//   public void surfaceRedrawNeeded(@NonNull SurfaceHolder holder)
-//   {
-//
-//   }
-//
-//   public void surfaceRedrawNeededAsync(@NonNull SurfaceHolder holder, @NonNull Runnable drawingFinished)
-//   {
-//      Callback2.super.surfaceRedrawNeededAsync(holder, drawingFinished);
-//   }
 }
 
 private Views ui;

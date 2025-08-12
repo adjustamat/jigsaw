@@ -47,7 +47,7 @@ public void hideMenu()
 
 public void showMenuNow()
 {
-   // TODO: all children of llv's go from INVISIBLE to VISIBLE. Cancel animation. opacity to full.
+   // TODO: all children of llv's go from INVISIBLE to VISIBLE. Cancel animation! opacity to full.
 }
 
 public void animateShowMenu(@Nullable AbstractPiece[] piece, float clickX, float clickY, boolean twoFingersTogether,

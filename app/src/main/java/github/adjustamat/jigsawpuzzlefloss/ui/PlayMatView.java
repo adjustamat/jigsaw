@@ -1,5 +1,6 @@
 package github.adjustamat.jigsawpuzzlefloss.ui;
 
+import android.animation.Animator;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Canvas;
@@ -18,6 +19,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.otaliastudios.zoom.ZoomEngine;
+
+import java.util.Iterator;
 
 import github.adjustamat.jigsawpuzzlefloss.PuzzleActivity;
 import github.adjustamat.jigsawpuzzlefloss.containers.Group;
@@ -75,15 +78,10 @@ public PlayMatView(Context context, @Nullable AttributeSet attrs, int defStyleAt
    // TODO: https://developer.android.com/reference/android/view/OrientationEventListener
 }
 
-public void cancelHandlerDelayed()
-{
-   handler.removeCallbacks(onLongHold);
-}
-
 public void handleOnPause()
 {
    fingers = 0; // cancel all touch events
-   setTouchState(TouchState.NONE);
+   setTouchState(TouchState.UP_NONE);
    
    activity = null;
    handler = null;
@@ -96,11 +94,11 @@ public void unPause(PuzzleActivity activity)
    this.handler = activity.getMainHandler();
    this.menu = activity.getMenu();
    ViewConfiguration viewConf = ViewConfiguration.get(activity);
-   bigSlopSqd = viewConf.getScaledPagingTouchSlop();
+   this.bigSlopSqd = viewConf.getScaledPagingTouchSlop();
    bigSlopSqd *= bigSlopSqd;
-   slopSqd = viewConf.getScaledTouchSlop();
+   this.slopSqd = viewConf.getScaledTouchSlop();
    slopSqd *= slopSqd;
-   doubleTapSlopSqd = viewConf.getScaledDoubleTapSlop();
+   this.doubleTapSlopSqd = viewConf.getScaledDoubleTapSlop();
    doubleTapSlopSqd *= doubleTapSlopSqd;
 }
 
@@ -111,8 +109,8 @@ public boolean handleOnBackPressed()
       return true;
    }
    
-   if (lastState == TouchState.MENU) {
-      setTouchState(TouchState.NONE);
+   if (lastState == TouchState.UP_MENU) {
+      setTouchState(TouchState.UP_NONE);
       menu.hideMenu();
       return true;
    }
@@ -130,26 +128,135 @@ private static class TouchFinger
 {
    long down;
    int id;
-   float downX,
-    downY;
-   float lastX,
-    lastY;
-   float downFat,
-    lastFat,
-    maxFat;
+   float downX;
+   float downY;
+   float lastX;
+   float lastY;
+   float downFat;
+   float maxFat;
+   float lastFat;
+   
+   public TouchFinger(int id, float downX, float downY, float downFat)
+   {
+      down(id, downX, downY, downFat);
+   }
+   
+   public void copy(TouchFinger other)
+   {
+      down = other.down;
+      id = other.id;
+      downX = other.downX;
+      downY = other.downY;
+      lastX = other.lastX;
+      lastY = other.lastY;
+      downFat = other.downFat;
+      maxFat = other.maxFat;
+      lastFat = other.lastFat;
+   }
+   
+   public void update(float x, float y, float fat)
+   {
+      lastX = x;
+      lastY = y;
+      lastFat = fat;
+      maxFat = Math.max(maxFat, fat);
+   }
+   
+   public void down(int id, float x, float y, float fat)
+   {
+      this.down = SystemClock.elapsedRealtime();
+      this.id = id;
+      this.downX = lastX = x;
+      this.downY = lastY = y;
+      this.maxFat = downFat = lastFat = fat;
+   }
 }
 
+private static class Move
+{
+   public final long time;
+   public final float x;
+   public final float y;
+   
+   public Move(long time, float x, float y)
+   {
+      this.time = time;
+      this.x = x;
+      this.y = y;
+   }
+}
+
+private static class RecentMoves
+{
+   //   private final long[] time;
+//   private final float[] x;
+//   private final float[] y;
+   private final Move[] moves;
+   private final int size;
+   private int logged = 0;
+   private int currentPosition = 0;
+   
+   public RecentMoves(int size)
+   {
+      this.size = size;
+      moves = new Move[size];
+//      time = new long[size];
+//      x = new float[size];
+//      y = new float[size];
+   }
+   
+   public void log(long time, float x, float y)
+   {
+      moves[currentPosition] = new Move(time, x, y);
+//      this.time[currentPosition] = time;
+//      this.x[currentPosition] = x;
+//      this.y[currentPosition] = y;
+      logged++;
+      if (currentPosition == size - 1) currentPosition = 0;
+      else currentPosition++;
+   }
+   
+   public Iterator<Move> toIterator()
+   {
+      return new Iterator<Move>()
+      {
+         private int i = 0;
+         private final int length = logged < size ?logged :size;
+         
+         public boolean hasNext()
+         {
+            return i < length;
+         }
+         
+         public Move next()
+         {
+            int index = currentPosition - i;
+            if (index < 0)
+               index += size;
+            if (index >= size)
+               index -= size;
+            Move ret = moves[index];
+            i++;
+            return ret;
+         }
+      };
+   } // toIterator()
+}
+
+// TODO: always primary finger, with one exception: FLICK_2_ROTATE. recentmoves resets on POINTER_DOWN and DOWN.
+// TODO: or use velocitytracker instead of recentmoves
+private RecentMoves recentMoves;
 private int fingers;
-private TouchState lastState = TouchState.NONE;
+private TouchState lastState = TouchState.UP_NONE;
 private boolean movingSelection; // selected pieces/groups is in PlayMat
 private boolean movingPiece; // lastTouched[0] (lastTouched should be only one piece)
 private boolean movingGroup; // lastTouched[0].group
 
-private final TouchFinger first = new TouchFinger();
-private final TouchFinger second = new TouchFinger();
-private float downAngle,
+private final TouchFinger first = new TouchFinger(-1, 0f, 0f, 0f);
+private TouchFinger second;
+private double downAngle,
  lastAngle;
-private double downDistanceSqd,
+private float downDistanceSqd,
  lastDistanceSqd;
 
 private int slopSqd;
@@ -164,15 +271,33 @@ private AbstractPiece[] lastTouched;
 public AbstractPiece transparentDraggedPiece;
 public Group transparentDraggedGroup;
 
+public void cancelHandlerDelayed()
+{
+   handler.removeCallbacks(onSingleTap);
+   handler.removeCallbacks(onLongHold);
+   handler.removeCallbacks(onLongerHoldMenuFinished);
+   handler.removeCallbacks(onPanFlingFinished);
+}
+
+Animator panFlingAnimator; // TODO: or use Scroller.fling() in android.widget
+
+private final Runnable onPanFlingFinished = ()->{
+   setTouchState(TouchState.UP_NONE);
+};
+
+private final Runnable onAutomationFinished = ()->{
+   setTouchState(TouchState.AUTOMATING_DONE);
+};
+
 private final Runnable onSingleTap = ()->{
-   if (lastState == TouchState.TAP_ONE)
+   if (lastState == TouchState.UP_TAP)
       selected = playMat.selectOrDeselect(first.downX, first.downY); // perform click!
-   setTouchState(TouchState.NONE);
+   setTouchState(TouchState.UP_NONE);
 };
 
 private final Runnable onLongerHoldMenuFinished = ()->{
    if (fingers == 0)
-      setTouchState(TouchState.MENU);
+      setTouchState(TouchState.UP_MENU);
    else
       setTouchState(TouchState.MENU_HOLD);
 };
@@ -180,13 +305,13 @@ private final Runnable onLongerHoldMenuFinished = ()->{
 public void setMenuGroupDrag()
 {
    if (fingers == 0)
-      setTouchState(TouchState.MENU_GROUP);
+      setTouchState(TouchState.UP_MENU_GROUP);
    else
-      setTouchState(TouchState.MENU_GROUP_HOLD_DRAG);
+      setTouchState(TouchState.MENU_GROUP_DRAG);
 }
 
 private final Runnable onLongHold = ()->{
-//   synchronized (first) {
+//   synchronized (first) { // no, everything is in UI-thread.
    if (fingers == 0)
       return;
    if (lastState == TouchState.TOUCH || lastState == TouchState.DBLTAP_TOUCH) {
@@ -208,13 +333,15 @@ private void setTouchState(@NonNull TouchState newCurrent)
 { // all calls to this method should be done inside a synchronized (first) {   } // no, everything is in UI-thread.
    if (lastState == TouchState.AUTOMATING) {
       if (newCurrent == TouchState.AUTOMATING_DONE)
-         newCurrent = TouchState.NONE;
+         newCurrent = TouchState.UP_NONE;
       else
          return;
    }
-   if (newCurrent == TouchState.NONE) {
+   if (newCurrent == TouchState.UP_NONE) {
       fingers = 0;
-      // TODO: cancel (menu) animations and Runnables!
+      cancelHandlerDelayed();
+      
+      menu.hideMenu(); // cancel menu animation and hide menu
    }
 //   if(newCurrent == TouchState.AUTOMATING){
 //      fingers = 0;
@@ -227,33 +354,400 @@ private void setTouchState(@NonNull TouchState newCurrent)
 
 enum TouchState
 {
-   NONE,
-   TAP_ONE,
-   MENU,
-   MENU_GROUP,
+   UP_NONE, // default state
+   UP_TAP, // unknown: either single tap or first tap of a DBLTAP
+   UP_MENU, // context menu is showing
+   UP_MENU_GROUP, // group menu choice selected
+   UP_PAN_FLING, // fling animation
    AUTOMATING, // complex animation
-   AUTOMATING_DONE, // special case of NONE
+   AUTOMATING_DONE, // special case of UP_NONE
    
-   TOUCH,
-   HOLD,
-   MENU_HOLD,
-   DRAG,
-   MENU_GROUP_HOLD_DRAG,
+   TOUCH, // one finger down
+   HOLD, // one finger down, after one delay
+   MENU_HOLD, // one finger down, after two delays, context menu is showing
+   DRAG, // one finger down and moved
+   MENU_GROUP_DRAG, // group menu choice selected, one finger down (and moved)
    
-   DBLTAP_TOUCH,
-   DBLTAP_DRAG_ZOOM,
+   DBLTAP_TOUCH, // second tap of a DBLTAP: one finger down
+   DBLTAP_DRAG_ZOOM, // second tap of a DBLTAP: one finger down and moved
    
-   TOUCH_2,
-   FLICK_2_ROTATE,
-   DRAG_2_PAN_RV,
-   PINCH_2_ZOOM_PAN_RV,
-   LIFTED_PAN_RV,
+   TOUCH_2, // two fingers down
+   FLICK_2_ROTATE, // two fingers down
+   DRAG_2_PAN_RV, // two fingers down
+   PINCH_2_ZOOM_PAN_RV, // two fingers down
    
-   TOUCH_2GR,
-   HOLD_2GR,
-   DRAG_2GR,
-   LIFTED_2GR_TAP,
-   LIFTED_2GR
+   LIFTED_PAN_RV, // one finger lifted from DRAG_2 or PINCH_2
+   
+   TOUCH_2GR, // two fingers down together
+   HOLD_2GR, // two fingers down together
+   DRAG_2GR, // two fingers down together and moved
+   
+   LIFTED_2GR_TAP, // one finger lifted from TOUCH_2GR
+   LIFTED_2GR // one finger lifted from HOLD_2GR or DRAG_2GR
+}
+
+private void onActionDown(MotionEvent ev)
+{
+   first.down(ev.getPointerId(0), ev.getX(), ev.getY(),
+    ev.getSize(0));
+   fingers = 1;
+   // TODO: maybe if it's fat enough, move directly to TOUCH_2GR and fingers = 2;
+   
+   lastTouched = playMat.getPieceAt(first.lastX, first.lastY);
+   
+   
+   
+   // viewConf = ViewConfiguration.get(getContext()); // TODO: do this in unPause()
+   //ViewConfiguration.getJumpTapTimeout()
+   //ViewConfiguration.getDoubleTapTimeout()
+   // viewConf.getScaledDoubleTapSlop()
+   
+   switch (lastState) {
+   case UP_NONE:
+      setTouchState(TouchState.TOUCH);
+      handler.postDelayed(onLongHold, ViewConfiguration.getLongPressTimeout());
+      break;
+   
+   case UP_TAP:
+      setTouchState(TouchState.DBLTAP_TOUCH); // set delay but even longer
+      handler.postDelayed(onLongHold, ViewConfiguration.getLongPressTimeout() * 2L);
+      handler.removeCallbacks(onSingleTap);
+      break;
+   
+   
+   case UP_MENU:
+      setTouchState(TouchState.UP_NONE); // menu.hideMenu(); // and cancel all
+      break;
+   
+   case UP_MENU_GROUP:
+      setTouchState(TouchState.MENU_GROUP_DRAG);
+      break;
+   
+   case UP_PAN_FLING:
+      handler.removeCallbacks(onPanFlingFinished);
+      // TODO: cancel fling animation without finishing it. - see android.widget.OverScroller, GestureDetector, VelocityTracker, ScrollFlingDetector
+      // overScroller.forceFinished(true);
+      // copy of case UP_NONE:
+      setTouchState(TouchState.TOUCH);
+      handler.postDelayed(onLongHold, ViewConfiguration.getLongPressTimeout());
+      break;
+   
+   default:
+      setTouchState(TouchState.UP_NONE); // cancel all
+   }
+}
+
+private void onActionPointerDown(MotionEvent ev)
+{
+   if (fingers >= 2) { // cancel on too many fingers (3)
+      fingers = 0;
+      return;
+   }
+   // fingers == 1
+   second = new TouchFinger(ev.getPointerId(ev.getActionIndex()), ev.getX(), ev.getY(),
+    ev.getSize(1));
+   fingers++;
+   // fingers == 2
+   
+   // TODO: is two fingers touching at the same time 1 event or 2? - or 1 when together, 2 when apart? probably 2 events.
+   
+   // TODO: are fingers apart or together? (how sense that two fingers went down at the same time, as one?)
+   //   check fatness of touch?
+   
+   float diffX = second.lastX - first.lastX;
+   float diffY = second.lastY - first.lastY;
+   downDistanceSqd = lastDistanceSqd = diffX * diffX + diffY * diffY;
+   // Math.hypot(diffX, diffY); // Math.sqrt(diffX * diffX + diffY * diffY);
+   downAngle = lastAngle = Math.atan2(diffY, diffX);
+   
+   // TODO: when touching two fingers together:
+   //  after starting DRAG_2GR, breaking fingers apart or even lifting second finger (LIFTED_2GR) are all
+   //  ignored. only first finger is listened to. (ignore all ACTION_MOVE with non-primary finger)
+   //  but if a new finger is DOWN: CANCEL! see paper!
+   
+   boolean twoFingersTogether = downDistanceSqd < bigSlopSqd; // TODO: test this!
+   
+   if (twoFingersTogether) {
+      long since = second.down - first.down;
+      if (lastState == TouchState.TOUCH && since < ViewConfiguration.getZoomControlsTimeout()) {
+         setTouchState(TouchState.TOUCH_2GR);
+      }
+      else {
+         setTouchState(TouchState.UP_NONE); // cancel all
+      }
+   }
+   else { // two fingers apart:
+      switch (lastState) {
+      case TOUCH:
+         handler.removeCallbacks(onLongHold);
+         setTouchState(TouchState.TOUCH_2);
+         break;
+      case HOLD:
+         menu.hideMenu();
+         setTouchState(TouchState.TOUCH_2);
+         break;
+      case DRAG:
+         setTouchState(TouchState.TOUCH_2);
+         break;
+      case LIFTED_PAN_RV:
+         setTouchState(TouchState.DRAG_2_PAN_RV);
+         break;
+      default:
+         setTouchState(TouchState.UP_NONE); // cancel all
+      }
+   } // two fingers apart
+}
+
+private void onActionMove(MotionEvent ev)
+{
+   if (fingers == 1) {
+      
+      first.update(ev.getX(), ev.getY(), ev.getSize(0));
+      
+      switch (lastState) {
+      
+      case TOUCH: {
+         
+         // TODO: only after moving too much (slop) do we cancel delayedLongPress and setTouchState(DRAG).
+         break;
+      }
+      case DBLTAP_TOUCH: {
+         
+         break;
+      }
+      case DBLTAP_DRAG_ZOOM: {
+         
+         break;
+      }
+      
+      case HOLD: {
+         
+         break;
+      }
+      case DRAG: {
+         
+         break;
+      }
+      
+      case MENU_GROUP_DRAG: {
+         
+         break;
+      }
+      case LIFTED_2GR: {
+         
+         break;
+      }
+      case LIFTED_2GR_TAP: {
+         
+         break;
+      }
+      
+      // default: ignore!
+      } // switch(lastState)
+   } // fingers == 1
+   else { // fingers == 2
+      
+      float distanceSqd;
+      double angle;
+      
+      int id = ev.getPointerId(ev.getActionIndex());
+      if (id == first.id) {
+         float diffX = second.lastX - ev.getX();
+         float diffY = second.lastY - ev.getY();
+         distanceSqd = diffX * diffX + diffY * diffY;
+         angle = Math.atan2(diffY, diffX);
+         
+         switch (lastState) {
+         case TOUCH_2GR: {
+            
+            break;
+         }
+         case HOLD_2GR: {
+            
+            break;
+         }
+         case DRAG_2GR: {
+            
+            break;
+         }
+         
+         case TOUCH_2: {
+            
+            break;
+         }
+         case FLICK_2_ROTATE: {
+            setTouchState(TouchState.UP_NONE); // cancel all (primary finger)
+            break;
+         }
+         case PINCH_2_ZOOM_PAN_RV: {
+            
+            break;
+         }
+         case DRAG_2_PAN_RV: {
+            
+            // TODO: for a DRAG_2_PAN_RV to become PINCH_2_ZOOM_PAN_RV, the distance between fingers
+            //  has to significantly change both from lastDistance and from downDistance.
+            //  don't use a ScaleGestureDetector, copy its useful code instead.
+            break;
+         }
+         
+         // default: ignore!
+         } // switch(lastState)
+         first.update(ev.getX(), ev.getY(), ev.getSize(ev.getActionIndex()));
+      } // primary finger (fingers == 2)
+      else { // non-primary finger (fingers == 2)
+         float diffX = ev.getX() - first.lastX;
+         float diffY = ev.getY() - first.lastY;
+         distanceSqd = diffX * diffX + diffY * diffY;
+         angle = Math.atan2(diffY, diffX);
+         
+         switch (lastState) {
+         case TOUCH_2: {
+            
+            // TODO: see paper: slop!
+            break;
+         }
+         case FLICK_2_ROTATE: {
+            
+            // TODO: only here is recentmoves of the non-primary finger. otherwise, primary finger. it resets on POINTER_DOWN and DOWN.
+            // TODO: or use velocitytracker instead of recentmoves?
+            break;
+         }
+         case PINCH_2_ZOOM_PAN_RV: {
+            
+            break;
+         }
+         case DRAG_2_PAN_RV: {
+            
+            // TODO: for a DRAG_2_PAN_RV to become PINCH_2_ZOOM_PAN_RV, the distance between fingers
+            //  has to significantly change both from lastDistance and from downDistance.
+            break;
+         }
+         // default: ignore!
+         } // switch(lastState)
+         second.update(ev.getX(), ev.getY(), ev.getSize(ev.getActionIndex()));
+      } // non-primary finger
+      
+      // TODO: compare to last distance and angle before this
+      
+      lastDistanceSqd = distanceSqd;
+      
+      lastAngle = angle;
+   } // fingers == 2
+   
+   // TODO: when DOUBLETAP_DRAG_ZOOM: show a zoom icon below finger. arrows pointing SW(-) and NE(+).
+   
+   // TODO: to get to FLICK_2_ROTATE, second.down must be after a significant delay after first.down!
+   long since = second.down - first.down;
+   
+   
+   
+   // THROW (same as DRAG) // THROW_2GR (same as DRAG_2GR) - TODO: check direction which temp container to send to!
+   
+   
+   // TODO: TouchState.UP_PAN_FLING
+   
+   // TODO: do this in unPause() : viewConf = ViewConfiguration.get(getContext());
+   
+   //ViewConfigurationCompat.getScaledHorizontalScrollFactor()
+   //ViewConfigurationCompat.getScaledVerticalScrollFactor()
+   
+   //viewConf.getScaledPagingTouchSlop() - ? - save this for ACTION_UP/ACTION_POINTER_UP
+   //viewConf.getScaledTouchSlop()
+   //viewConf.getScaledHoverSlop() ViewConfigurationCompat.getScaledHoverSlop()
+   
+   
+   
+   
+   // TODO: call setTouchState()!
+}
+
+private void onActionPointerUp(MotionEvent ev)
+{
+   fingers--;
+   
+   int id = ev.getPointerId(ev.getActionIndex());
+   if (id == first.id) {
+      // cancel on lifting the primary finger while another is still pressed TODO: only sometimes!
+      fingers = 0; // TODO: unless both are lifted "at the same time"! (close enough)
+      // TODO: is ViewConfiguration.getTapTimeout() useful?
+      return;
+   }
+   
+   /** TODO: copy code from here:
+    * @see VelocityTracker
+    * @see GestureDetector
+    * @see ScaleGestureDetector
+    */
+   
+   // TODO: after DRAG_2GR or HOLD_2GR, no CLICK_2GR!
+   // TODO: when touching two fingers together:
+   //  after starting DRAG_2GR, breaking fingers apart or even lifting second finger (LIFTED_2GR) are all
+   //  ignored. only first finger is listened to. (ignore all ACTION_MOVE with non-primary finger)
+   //  but if a new finger is DOWN: CANCEL!
+   
+   // THROW (same as DRAG) // THROW_2GR (same as DRAG_2GR)
+   
+   //ViewConfigurationCompat.getScaledMaximumFlingVelocity()
+   //ViewConfigurationCompat.getScaledMinimumFlingVelocity()
+   // TODO: flick - android.view.VelocityTracker: look at the code! write code that can handle diagonal movement.
+   //  https://developer.android.com/reference/android/view/ViewConfiguration#getScaledMinimumFlingVelocity(int,%20int,%20int)
+   
+   
+   // TODO: finalize rotate if second finger rotated a piece and left it rotated when lifting finger. or if flicked!
+   // TODO: can lifting a second finger do something else?
+   switch (lastState) {
+   
+   
+   case DRAG: // do nothing, same as MENU_HOLD
+   case MENU_HOLD: // do nothing, same as DRAG
+      break;
+   default:
+      // TODO: drop if holding something.
+      setTouchState(TouchState.UP_NONE);
+   }
+   
+   // do not set second = null yet, do that in ACTION_UP instead.
+}
+
+private void onActionUp(MotionEvent ev)
+{
+   fingers = 0; // last finger up.
+   // THROW (same as DRAG) // THROW_2GR (same as DRAG_2GR)
+   //ViewConfigurationCompat.getScaledMaximumFlingVelocity()
+   //ViewConfigurationCompat.getScaledMinimumFlingVelocity()
+   // TODO: flick - android.view.VelocityTracker: look at the code! write code that can handle diagonal movement.
+   //  https://developer.android.com/reference/android/view/ViewConfiguration#getScaledMinimumFlingVelocity(int,%20int,%20int)
+   
+   // TODO: after DRAG, no CLICK! after DRAG_2GR or HOLD_2GR, no CLICK_2GR!
+   
+   switch (lastState) {
+   case TOUCH:
+      setTouchState(TouchState.UP_TAP);
+      handler.postDelayed(onSingleTap, ViewConfiguration.getDoubleTapTimeout());
+      break;
+   case DBLTAP_TOUCH:
+      
+      break;
+   
+   case LIFTED_2GR_TAP:
+      
+      break;
+   case HOLD:
+      menu.showMenuNow();
+      // HOLD case continues in MENU_HOLD
+   case MENU_HOLD:
+      setTouchState(TouchState.UP_MENU);
+      break;
+//      case DBLTAP_DRAG_ZOOM: // same as LIFTED_PAN_RV, no, just default.
+//      case LIFTED_PAN_RV: // same as DBLTAP_DRAG_ZOOM, no, just default.
+   
+   default:
+      // TODO: drop if holding something.
+      setTouchState(TouchState.UP_NONE);
+   }
+   
+   second = null;
 }
 
 @SuppressLint("ClickableViewAccessibility")
@@ -281,192 +775,45 @@ public boolean onTouchEvent(MotionEvent ev)
    //   hover near to edge - (Runnable which copies itself (loops) - edge scrolling while dragging)
    //   release (drop) - (save the last few drag events, see if pieces were moved together and negative acceleration or stopped a few milliseconds, make a sound and visible indicator that the pieces did or didn't fit together.)
    
+   
+   //ViewConfiguration.getJumpTapTimeout()
+   
+   // TODO: this is probably not needed.
    int prevFingers = fingers;
-   ViewConfiguration viewConf;
+   
    switch (ev.getActionMasked()) {
-   
-   // TODO: for a DRAG_2_PAN_RV to become PINCH_2_ZOOM_PAN_RV, the distance between fingers
-   //  has to significantly change both from lastDistance and from downDistance.
-   
-   
    case MotionEvent.ACTION_DOWN:
-      first.id = ev.getPointerId(0);
-      first.down = SystemClock.elapsedRealtime();
-      first.downX = first.lastX = ev.getX();
-      first.downY = first.lastY = ev.getY();
-      first.maxFat = first.downFat = first.lastFat = ev.getSize(0);
-      fingers = 1;
-      
-      lastTouched = playMat.getPieceAt(first.lastX, first.lastY);
-      
+      if (lastState == TouchState.AUTOMATING)
+         break;
       getParent().requestDisallowInterceptTouchEvent(true);
-      
-      // TODO: maybe if it's fat enough, move directly to TOUCH_2GR and fingers = 2;
-      
-      viewConf = ViewConfiguration.get(getContext());
-      
-      
-      
-      //ViewConfiguration.getJumpTapTimeout()
-      //ViewConfiguration.getDoubleTapTimeout()
-      // viewConf.getScaledDoubleTapSlop()
-      
-      setTouchState(TouchState.TOUCH);
-      // TODO: when DOUBLECLICK_TOUCH, also set delay but even longer.
-      handler.postDelayed(onLongHold, ViewConfiguration.getLongPressTimeout());
+      onActionDown(ev);
       break;
-   
    case MotionEvent.ACTION_POINTER_DOWN:
       if (fingers == 0)
          break;
-      if (fingers >= 2) { // cancel on too many fingers (3)
-         fingers = 0;
-         break;
-      }
-      second.id = ev.getPointerId(ev.getActionIndex());
-      second.down = SystemClock.elapsedRealtime();
-      second.downX = second.lastX = ev.getX();
-      second.downY = second.lastY = ev.getY();
-      second.maxFat = second.downFat = second.lastFat = ev.getSize(1);
-      fingers++;
-      
-      long since = second.down - first.down;
-      
-      // TODO: to get to FLICK_2_ROTATE, second finger must be after a delay after first.down, otherwise it's
-      //  DRAG_2_PAN. also, must not drag first finger. but HOLD is fine.
-      
-      float diffX = second.downX - first.lastX;
-      float diffY = second.downY - first.lastY;
-      downDistanceSqd = lastDistanceSqd = diffX * diffX + diffY * diffY;
-      // Math.hypot(diffX, diffY); // Math.sqrt(diffX * diffX + diffY * diffY);
-      downAngle = lastAngle = (float) Math.atan2(diffY, diffX);
-      
-      
-      viewConf = ViewConfiguration.get(getContext());
-      
-      
-      // TODO: are fingers apart or together? (how sense that two fingers went down at the same time, as one?)
-      // TODO: check fatness of touch?
-      // TODO: is two fingers touching at the same time 1 event or 2? - or 1 when together, 2 when apart?
-      // TODO: for two-finger hold:
-      //  handler.postDelayed(delayedLongPress, ViewConfiguration.getLongPressTimeout());
-      
+      onActionPointerDown(ev);
       break;
-   
-   case MotionEvent.ACTION_MOVE: {
+   case MotionEvent.ACTION_MOVE:
       if (fingers == 0)
          break;
-      
-      int id = ev.getPointerId(ev.getActionIndex());
-      if (id == first.id) {
-      
-      }
-      else {
-         // TODO: when touching two fingers together, .
-         //  after starting DRAG_2GR, breaking fingers apart or even lifting second finger (LIFTED_2GR) are all
-         //  ignored. only first finger is listened to. (ignore all ACTION_MOVE with non-primary finger)
-         //  but if a new finger is DOWN: CANCEL!
-         
-      }
-      
-      // THROW (same as DRAG) // THROW_2GR (same as DRAG_2GR)
-      
-      // TODO: do this in unPause() : viewConf = ViewConfiguration.get(getContext());
-      
-      //ViewConfigurationCompat.getScaledHorizontalScrollFactor()
-      //ViewConfigurationCompat.getScaledVerticalScrollFactor()
-      
-      //viewConf.getScaledPagingTouchSlop() - ? - save this for ACTION_UP/ACTION_POINTER_UP
-      //viewConf.getScaledTouchSlop()
-      //viewConf.getScaledHoverSlop() ViewConfigurationCompat.getScaledHoverSlop()
-      
-      switch (lastState) {
-      
-      case TOUCH:
-         // TODO: only after moving too much (slop) do we cancel delayedLongPress and setTouchState(DRAG).
-         break;
-      }
-      
-      
-      
-      // TODO: call setTouchState()!
-      
-      
-      
+      onActionMove(ev);
       break;
-   }
    case MotionEvent.ACTION_POINTER_UP:
       if (fingers == 0)
          break;
-      int id = ev.getPointerId(ev.getActionIndex());
-      if (id == first.id) {
-         // cancel on lifting the primary finger while another is still pressed
-         //fingers = 0; TODO: unless both are lifted "at the same time"! (close enough)
-         // TODO: is ViewConfiguration.getTapTimeout() useful?
-         break;
-      }
-      
-      /** TODO
-       * @see VelocityTracker
-       * @see GestureDetector
-       * @see ScaleGestureDetector
-       */
-      
-      // TODO: after DRAG_2GR or HOLD_2GR, no CLICK_2GR!
-      
-      viewConf = ViewConfiguration.get(getContext());
-      
-      // THROW (same as DRAG) // THROW_2GR (same as DRAG_2GR)
-      //ViewConfigurationCompat.getScaledMaximumFlingVelocity()
-      //ViewConfigurationCompat.getScaledMinimumFlingVelocity()
-      // TODO: flick - android.view.VelocityTracker: look at the code! write code that can handle diagonal movement.
-      //  https://developer.android.com/reference/android/view/ViewConfiguration#getScaledMinimumFlingVelocity(int,%20int,%20int)
-      
-      
-      // TODO: finalize rotate if second finger rotated a piece and left it rotated when lifting finger. or if flicked!
-      // TODO: can lifting a second finger do something else?
-      switch (lastState) {
-      
-      }
-      
+      onActionPointerUp(ev);
       break;
-   
    case MotionEvent.ACTION_UP:
       if (fingers == 0)
          break;
-      fingers = 0; // last finger up.
-      
       getParent().requestDisallowInterceptTouchEvent(false);
-      
-      viewConf = ViewConfiguration.get(getContext());
-      
-      // THROW (same as DRAG) // THROW_2GR (same as DRAG_2GR)
-      //ViewConfigurationCompat.getScaledMaximumFlingVelocity()
-      //ViewConfigurationCompat.getScaledMinimumFlingVelocity()
-      // TODO: flick - android.view.VelocityTracker: look at the code! write code that can handle diagonal movement.
-      //  https://developer.android.com/reference/android/view/ViewConfiguration#getScaledMinimumFlingVelocity(int,%20int,%20int)
-      
-      
-      // TODO: after DRAG, no CLICK! after DRAG_2GR or HOLD_2GR, no CLICK_2GR!
-      
-      
-      switch (lastState) {
-      // TODO: if(lastState == HOLD) // trigger menu, call setTouchState(NONE)
-      
-      
-      // TODO: when single CLICK, delay! because double click must be able to happen.
-      //  after the delay, set state from CLICKED_ONCE to NONE.
-      //ViewConfiguration.getJumpTapTimeout()
-      //ViewConfiguration.getDoubleTapTimeout()
-      }
-      
+      onActionUp(ev);
       break;
-   
    case MotionEvent.ACTION_CANCEL:
       fingers = 0;
-      // default: error
-   }
+   } // switch(ev.getActionMasked())
    
+   // TODO: this is probably not needed.
    if (prevFingers != fingers && fingers == 0) {
       cancelHandlerDelayed();
    }
