@@ -3,11 +3,13 @@ package github.adjustamat.jigsawpuzzlefloss.ui;
 import android.animation.Animator;
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.res.Configuration;
+import android.content.res.Resources;
 import android.graphics.Canvas;
 import android.graphics.PointF;
 import android.os.Handler;
-import android.os.SystemClock;
 import android.util.AttributeSet;
+import android.util.DisplayMetrics;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
@@ -93,13 +95,41 @@ public void unPause(PuzzleActivity activity)
    this.activity = activity;
    this.handler = activity.getMainHandler();
    this.menu = activity.getMenu();
+
+//   private static final int MINIMUM_FLING_VELOCITY = 50;
+// Maximum velocity to initiate a fling, as measured in dips per second
+//   private static final int MAXIMUM_FLING_VELOCITY = 8000;
+   
    ViewConfiguration viewConf = ViewConfiguration.get(activity);
    this.bigSlopSqd = viewConf.getScaledPagingTouchSlop();
    bigSlopSqd *= bigSlopSqd;
-   this.slopSqd = viewConf.getScaledTouchSlop();
+   
+   // Distance the first touch can wander before we stop considering this event a double tap (in dips)
+   this.slopSqd = viewConf.getScaledTouchSlop(); // DOUBLE_TAP_TOUCH_SLOP = TOUCH_SLOP = 8
    slopSqd *= slopSqd;
-   this.doubleTapSlopSqd = viewConf.getScaledDoubleTapSlop();
+   
+   // Distance in dips between the first touch and second touch to still be considered a double tap
+   this.doubleTapSlopSqd = viewConf.getScaledDoubleTapSlop(); // DOUBLE_TAP_SLOP = 100
+   //this.doubleTapSlopSqd =
    doubleTapSlopSqd *= doubleTapSlopSqd;
+   
+   final Resources res = activity.getResources();
+   final DisplayMetrics metrics = res.getDisplayMetrics();
+   final Configuration config = res.getConfiguration();
+   final float sizeAndDensity;
+   if (config.isLayoutSizeAtLeast(Configuration.SCREENLAYOUT_SIZE_XLARGE)) {
+      sizeAndDensity = metrics.density * 1.5f;
+   }
+   else {
+      sizeAndDensity = metrics.density;
+   }
+   
+   this.twogetherDistanceLimitSqd = (int) (sizeAndDensity * 100 + 0.5f);
+   twogetherDistanceLimitSqd *= twogetherDistanceLimitSqd;
+   
+   this.distanceZoomSlopSqd = viewConf.getScaledTouchSlop() * 2;
+   distanceZoomSlopSqd *= distanceZoomSlopSqd;
+   
 }
 
 public boolean handleOnBackPressed()
@@ -136,10 +166,9 @@ private static class TouchFinger
    float maxFat;
    float lastFat;
    
-   public TouchFinger(int id, float downX, float downY, float downFat)
-   {
-      down(id, downX, downY, downFat);
-   }
+   private TouchFinger(){ id = -2; }
+   
+   private TouchFinger(MotionEvent ev){ down(ev); }
    
    public void copy(TouchFinger other)
    {
@@ -154,71 +183,110 @@ private static class TouchFinger
       lastFat = other.lastFat;
    }
    
-   public void update(float x, float y, float fat)
+   public void update(MotionEvent ev)
    {
-      lastX = x;
-      lastY = y;
-      lastFat = fat;
-      maxFat = Math.max(maxFat, fat);
+      lastX = ev.getX();
+      lastY = ev.getY();
+      lastFat = ev.getSize(ev.getActionIndex());
+      maxFat = Math.max(maxFat, lastFat);
    }
    
-   public void down(int id, float x, float y, float fat)
+   public void down(MotionEvent ev)
    {
-      this.down = SystemClock.elapsedRealtime();
-      this.id = id;
-      this.downX = lastX = x;
-      this.downY = lastY = y;
-      this.maxFat = downFat = lastFat = fat;
+      int index = ev.getActionIndex();
+      this.down = ev.getEventTime();
+      this.id = ev.getPointerId(index);
+      this.downX = lastX = ev.getX();
+      this.downY = lastY = ev.getY();
+      this.maxFat = downFat = lastFat = ev.getSize(index);
+   }
+}
+
+public static abstract class Recent<DT>
+{
+   public final long time;
+   public final DT data;
+   
+   protected Recent(long time, DT data)
+   {
+      this.time = time;
+      this.data = data;
    }
 }
 
 private static class Move
+ extends Recent<PointF>
 {
-   public final long time;
-   public final float x;
-   public final float y;
+//   public final long time;
+//   public final float x;
+//   public final float y;
    
    public Move(long time, float x, float y)
    {
-      this.time = time;
-      this.x = x;
-      this.y = y;
+      super(time, new PointF(x, y));
+//      this.time = time;
+//      this.x = x;
+//      this.y = y;
+   }
+   
+//   public long getTime()
+//   {
+//      return time;
+//   }
+}
+
+private static class Move2 extends Recent<Float>{
+   
+   protected Move2(long time, Float data)
+   {
+      super(time, data);
    }
 }
 
-private static class RecentMoves
+private static class Recents<RT extends Recent<?>>
 {
    //   private final long[] time;
 //   private final float[] x;
 //   private final float[] y;
-   private final Move[] moves;
+   private final Recent<?>[] recents;
    private final int size;
+   public final int millisPerItem;
    private int logged = 0;
    private int currentPosition = 0;
+   private int prevPosition = -1;
    
-   public RecentMoves(int size)
+   public Recents(int size, int millisPerItem)
    {
       this.size = size;
-      moves = new Move[size];
+      this.millisPerItem = millisPerItem;
+      recents = new Recent[size];
 //      time = new long[size];
 //      x = new float[size];
 //      y = new float[size];
    }
    
-   public void log(long time, float x, float y)
+   public void log(RT newItem) // TODO: long time, float x, float y
    {
-      moves[currentPosition] = new Move(time, x, y);
+      logged++;
+      if (prevPosition > -1) {
+         long deltaTime = (newItem.time - recents[prevPosition].time);
+         
+      }
+      else {
+         recents[currentPosition] = newItem;//new Move(time, x, y);
 //      this.time[currentPosition] = time;
 //      this.x[currentPosition] = x;
 //      this.y[currentPosition] = y;
-      logged++;
+      }
+      prevPosition = currentPosition;
       if (currentPosition == size - 1) currentPosition = 0;
       else currentPosition++;
+      
    }
    
-   public Iterator<Move> toIterator()
+   public Iterator<RT> toIterator()
    {
-      return new Iterator<Move>()
+      return new Iterator<RT>()
       {
          private int i = 0;
          private final int length = logged < size ?logged :size;
@@ -228,14 +296,15 @@ private static class RecentMoves
             return i < length;
          }
          
-         public Move next()
+         public RT next()
          {
             int index = currentPosition - i;
             if (index < 0)
                index += size;
             if (index >= size)
                index -= size;
-            Move ret = moves[index];
+            //noinspection unchecked
+            RT ret = (RT) recents[index];
             i++;
             return ret;
          }
@@ -245,14 +314,14 @@ private static class RecentMoves
 
 // TODO: always primary finger, with one exception: FLICK_2_ROTATE. recentmoves resets on POINTER_DOWN and DOWN.
 // TODO: or use velocitytracker instead of recentmoves
-private RecentMoves recentMoves;
+private Recents<Move> recentMoves;
 private int fingers;
 private TouchState lastState = TouchState.UP_NONE;
 private boolean movingSelection; // selected pieces/groups is in PlayMat
 private boolean movingPiece; // lastTouched[0] (lastTouched should be only one piece)
 private boolean movingGroup; // lastTouched[0].group
 
-private final TouchFinger first = new TouchFinger(-1, 0f, 0f, 0f);
+private final TouchFinger first = new TouchFinger();
 private TouchFinger second;
 private double downAngle,
  lastAngle;
@@ -262,6 +331,8 @@ private float downDistanceSqd,
 private int slopSqd;
 private int doubleTapSlopSqd;
 private int bigSlopSqd;
+private int twogetherDistanceLimitSqd;
+private int distanceZoomSlopSqd;
 
 private int selected;
 private AbstractPiece[] lastTouched;
@@ -388,8 +459,7 @@ enum TouchState
 
 private void onActionDown(MotionEvent ev)
 {
-   first.down(ev.getPointerId(0), ev.getX(), ev.getY(),
-    ev.getSize(0));
+   first.down(ev);
    fingers = 1;
    // TODO: maybe if it's fat enough, move directly to TOUCH_2GR and fingers = 2;
    
@@ -444,33 +514,29 @@ private void onActionPointerDown(MotionEvent ev)
       return;
    }
    // fingers == 1
-   second = new TouchFinger(ev.getPointerId(ev.getActionIndex()), ev.getX(), ev.getY(),
-    ev.getSize(1));
-   fingers++;
-   // fingers == 2
+   second = new TouchFinger(ev);
+   fingers++; // fingers = 2;
    
-   // TODO: is two fingers touching at the same time 1 event or 2? - or 1 when together, 2 when apart? probably 2 events.
+   // is two fingers touching at the same time 1 event or 2? - or 1 when together, 2 when apart? - probably 2 events always.
    
-   // TODO: are fingers apart or together? (how sense that two fingers went down at the same time, as one?)
-   //   check fatness of touch?
+   // are fingers apart or together? (how sense that two fingers went down at the same time, as one?) check fatness of touch?
    
    float diffX = second.lastX - first.lastX;
    float diffY = second.lastY - first.lastY;
+   downAngle = lastAngle = Math.atan2(diffY, diffX);
+   diffX = Math.abs(diffX);
+   diffY = Math.abs(diffY);
    downDistanceSqd = lastDistanceSqd = diffX * diffX + diffY * diffY;
    // Math.hypot(diffX, diffY); // Math.sqrt(diffX * diffX + diffY * diffY);
-   downAngle = lastAngle = Math.atan2(diffY, diffX);
    
-   // TODO: when touching two fingers together:
-   //  after starting DRAG_2GR, breaking fingers apart or even lifting second finger (LIFTED_2GR) are all
-   //  ignored. only first finger is listened to. (ignore all ACTION_MOVE with non-primary finger)
-   //  but if a new finger is DOWN: CANCEL! see paper!
-   
-   boolean twoFingersTogether = downDistanceSqd < bigSlopSqd; // TODO: test this!
+   boolean twoFingersTogether = downDistanceSqd < twogetherDistanceLimitSqd; // < bigSlopSqd; // TODO: test this!
    
    if (twoFingersTogether) {
       long since = second.down - first.down;
-      if (lastState == TouchState.TOUCH && since < ViewConfiguration.getZoomControlsTimeout()) {
+      if (lastState == TouchState.TOUCH && since < ViewConfiguration.getJumpTapTimeout()) {
          setTouchState(TouchState.TOUCH_2GR);
+         // TODO: recentmoves can be used to track distance? maybe this can become ZOOM_PAN_RV if distance is increased.
+         handler.postDelayed(onLongHold, ViewConfiguration.getLongPressTimeout());
       }
       else {
          setTouchState(TouchState.UP_NONE); // cancel all
@@ -502,7 +568,7 @@ private void onActionMove(MotionEvent ev)
 {
    if (fingers == 1) {
       
-      first.update(ev.getX(), ev.getY(), ev.getSize(0));
+      
       
       switch (lastState) {
       
@@ -544,6 +610,8 @@ private void onActionMove(MotionEvent ev)
       
       // default: ignore!
       } // switch(lastState)
+      
+      first.update(ev);
    } // fingers == 1
    else { // fingers == 2
       
@@ -554,8 +622,10 @@ private void onActionMove(MotionEvent ev)
       if (id == first.id) {
          float diffX = second.lastX - ev.getX();
          float diffY = second.lastY - ev.getY();
-         distanceSqd = diffX * diffX + diffY * diffY;
          angle = Math.atan2(diffY, diffX);
+         diffX = Math.abs(diffX);
+         diffY = Math.abs(diffY);
+         distanceSqd = diffX * diffX + diffY * diffY;
          
          switch (lastState) {
          case TOUCH_2GR: {
@@ -588,18 +658,21 @@ private void onActionMove(MotionEvent ev)
             // TODO: for a DRAG_2_PAN_RV to become PINCH_2_ZOOM_PAN_RV, the distance between fingers
             //  has to significantly change both from lastDistance and from downDistance.
             //  don't use a ScaleGestureDetector, copy its useful code instead.
+            // Math.abs(span - mInitialSpan) > mSpanSlop
             break;
          }
          
          // default: ignore!
          } // switch(lastState)
-         first.update(ev.getX(), ev.getY(), ev.getSize(ev.getActionIndex()));
+         first.update(ev);
       } // primary finger (fingers == 2)
       else { // non-primary finger (fingers == 2)
          float diffX = ev.getX() - first.lastX;
          float diffY = ev.getY() - first.lastY;
-         distanceSqd = diffX * diffX + diffY * diffY;
          angle = Math.atan2(diffY, diffX);
+         diffX = Math.abs(diffX);
+         diffY = Math.abs(diffY);
+         distanceSqd = diffX * diffX + diffY * diffY;
          
          switch (lastState) {
          case TOUCH_2: {
@@ -625,7 +698,7 @@ private void onActionMove(MotionEvent ev)
          }
          // default: ignore!
          } // switch(lastState)
-         second.update(ev.getX(), ev.getY(), ev.getSize(ev.getActionIndex()));
+         second.update(ev);
       } // non-primary finger
       
       // TODO: compare to last distance and angle before this
